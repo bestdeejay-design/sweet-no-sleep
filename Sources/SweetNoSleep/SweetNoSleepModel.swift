@@ -53,6 +53,7 @@ final class SweetNoSleepModel: ObservableObject {
     private var breakTimer: Timer?
     private var sessionEndDate: Date?
     private var sessionCompletionAction: SessionCompletionAction?
+    private var pendingImmediateSleepToken: UUID?
     private var manualAwake = false
     private var agentLeases: [String: Date] = [:]
     private var agentLeaseTimer: Timer?
@@ -208,6 +209,10 @@ final class SweetNoSleepModel: ObservableObject {
             self.statusMessage = message
             self.setTemporaryMood(.resting, duration: 1.8, then: .idle)
         }
+        powerKeeper.onWarning = { [weak self] message in
+            self?.powerWarning = message
+            self?.statusMessage = message
+        }
         schedulePlayfulMoment()
     }
 
@@ -230,6 +235,7 @@ final class SweetNoSleepModel: ObservableObject {
     }
 
     func startManualAwake() {
+        cancelPendingImmediateSleepRequest()
         manualAwake = true
         sessionTimer?.invalidate()
         sessionTimer = nil
@@ -240,7 +246,7 @@ final class SweetNoSleepModel: ObservableObject {
         startPowerAssertions(reason: "Sweet No Sleep — ручной режим")
         guard isKeepingAwake else { return }
         statusMessage = "Киви следит, чтобы Mac не уснул"
-        setMood(.working)
+        setMood(isBreakDue ? .breakReminder : .working)
     }
 
     func startFocusSession(confirmedImmediateSleep: Bool = false) {
@@ -249,6 +255,7 @@ final class SweetNoSleepModel: ObservableObject {
             return
         }
 
+        cancelPendingImmediateSleepRequest()
         let minutes = min(max(selectedMinutes, 15), 240)
         startPowerAssertions(reason: "Sweet No Sleep — фокус-сессия, \(minutes) мин")
         guard isKeepingAwake else { return }
@@ -259,7 +266,7 @@ final class SweetNoSleepModel: ObservableObject {
         sessionCompletionAction = completionAction
         isFocusSession = true
         statusMessage = "Фокус-сессия началась · \(minutes) мин"
-        setMood(.working)
+        setMood(isBreakDue ? .breakReminder : .working)
         updateCountdown()
         sessionTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             self?.updateCountdown()
@@ -267,6 +274,7 @@ final class SweetNoSleepModel: ObservableObject {
     }
 
     func stopKeepingAwake() {
+        cancelPendingImmediateSleepRequest()
         let wasRunning = isKeepingAwake || isFocusSession || manualAwake || !agentLeases.isEmpty
         sessionTimer?.invalidate()
         sessionTimer = nil
@@ -335,6 +343,7 @@ final class SweetNoSleepModel: ObservableObject {
     }
 
     private func renewAgentLease(sessionID: String) {
+        cancelPendingImmediateSleepRequest()
         agentLeases[sessionID] = Date().addingTimeInterval(Self.agentLeaseTimeout)
         if activeAgentCount != agentLeases.count {
             activeAgentCount = agentLeases.count
@@ -349,9 +358,11 @@ final class SweetNoSleepModel: ObservableObject {
         if !isKeepingAwake {
             startPowerAssertions(reason: "Sweet No Sleep — работа AI-агента")
         }
-        if isKeepingAwake {
-            powerWarning = nil
-            if !isFocusSession && !manualAwake { setMood(.working) }
+        if isKeepingAwake,
+           !isFocusSession,
+           !manualAwake,
+           (mood == .idle || mood == .resting) {
+            setMood(isBreakDue ? .breakReminder : .working)
         }
     }
 
@@ -419,17 +430,24 @@ final class SweetNoSleepModel: ObservableObject {
     }
 
     func endDragging() {
-        mood = isKeepingAwake ? .working : .idle
+        mood = isBreakDue ? .breakReminder : (isKeepingAwake ? .working : .idle)
     }
 
-    func beginWandering() {
-        guard isPetVisible, roamingEnabled, mood != .dragging else { return }
+    @discardableResult
+    func beginWandering() -> Bool {
+        guard isPetVisible,
+              roamingEnabled,
+              animationsEnabled,
+              !isBreakDue,
+              (mood == .idle || mood == .working)
+        else { return false }
         mood = .walking
+        return true
     }
 
     func endWandering() {
         guard mood == .walking else { return }
-        mood = isKeepingAwake ? .working : .idle
+        mood = isBreakDue ? .breakReminder : (isKeepingAwake ? .working : .idle)
     }
 
     func dismissBreakReminder(snoozeMinutes: Int? = nil) {
@@ -446,6 +464,10 @@ final class SweetNoSleepModel: ObservableObject {
     }
 
     // MARK: Private helpers
+
+    private func cancelPendingImmediateSleepRequest() {
+        pendingImmediateSleepToken = nil
+    }
 
     private func startPowerAssertions(reason: String) {
         guard !isKeepingAwake else { return }
@@ -537,8 +559,19 @@ final class SweetNoSleepModel: ObservableObject {
 
         guard shouldSleepImmediately, !otherWorkRemains else { return }
         // Let the release of our assertions reach power management first.
+        let sleepToken = UUID()
+        pendingImmediateSleepToken = sleepToken
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
-            guard let self, let error = self.powerKeeper.requestImmediateSleep() else { return }
+            guard let self, self.pendingImmediateSleepToken == sleepToken else { return }
+            self.pendingImmediateSleepToken = nil
+            // A new manual, focus or agent session can begin during the short
+            // delay needed to release the IOKit assertion. Never sleep through it.
+            guard !self.isKeepingAwake,
+                  !self.isFocusSession,
+                  !self.manualAwake,
+                  self.agentLeases.isEmpty
+            else { return }
+            guard let error = self.powerKeeper.requestImmediateSleep() else { return }
             self.statusMessage = "Сессия завершена, но сон не запущен: \(error)"
             self.powerWarning = error
         }
@@ -558,7 +591,7 @@ final class SweetNoSleepModel: ObservableObject {
                   self.animationsEnabled,
                   self.playfulMomentsEnabled,
                   !self.isBreakDue,
-                  self.mood != .dragging
+                  (self.mood == .working || self.mood == .idle)
             else {
                 self.schedulePlayfulMoment()
                 return
@@ -601,7 +634,8 @@ final class SweetNoSleepModel: ObservableObject {
         mood = newMood
         moodTimer = Timer.scheduledTimer(withTimeInterval: duration, repeats: false) { [weak self] _ in
             guard let self else { return }
-            self.mood = self.isKeepingAwake ? (finalMood == .idle ? .working : finalMood) : finalMood
+            let fallback = self.isKeepingAwake && finalMood == .idle ? .working : finalMood
+            self.mood = self.isBreakDue ? .breakReminder : fallback
         }
     }
 

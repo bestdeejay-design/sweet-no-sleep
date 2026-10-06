@@ -123,9 +123,11 @@ final class PetPanelController {
         model.$petSize.dropFirst().sink { [weak self] size in
             self?.updateSize(CGFloat(size))
         }.store(in: &cancellables)
-        model.$isBreakDue.dropFirst().sink { [weak self] _ in
+        model.$isBreakDue.dropFirst().sink { [weak self] isDue in
             guard let self else { return }
-            self.updateSize(CGFloat(self.model.petSize))
+            // @Published emits from willSet, so use the emitted value instead of
+            // re-reading model.isBreakDue before Swift has assigned it.
+            self.updateSize(CGFloat(self.model.petSize), showsBreakReminder: isDue)
         }.store(in: &cancellables)
         model.$alwaysOnTop.dropFirst().sink { [weak self] isPinned in
             self?.updateLevel(isPinned: isPinned)
@@ -202,9 +204,9 @@ final class PetPanelController {
         )
     }
 
-    private func updateSize(_ petSize: CGFloat) {
+    private func updateSize(_ petSize: CGFloat, showsBreakReminder override: Bool? = nil) {
         guard let panel else { return }
-        let showsReminder = model.isBreakDue
+        let showsReminder = override ?? model.isBreakDue
         let size = panelSize(for: petSize, showsBreakReminder: showsReminder)
         let previousFrame = panel.frame
         let visibleFrame = (NSScreen.screens.first(where: { $0.frame.intersects(previousFrame) }) ?? NSScreen.main)?.visibleFrame
@@ -268,7 +270,14 @@ final class PetPanelController {
     }
 
     private func wanderOnce() {
-        guard let panel, panel.isVisible, model.roamingEnabled, model.mood != .dragging else { return }
+        guard let panel,
+              panel.isVisible,
+              model.roamingEnabled,
+              model.animationsEnabled,
+              !model.isBreakDue,
+              !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion,
+              model.mood != .dragging
+        else { return }
         guard let screen = NSScreen.screens.first(where: { $0.frame.intersects(panel.frame) }) ?? NSScreen.main else { return }
 
         var safeFrame = screen.visibleFrame.insetBy(dx: 18, dy: 18)
@@ -279,7 +288,7 @@ final class PetPanelController {
             y: CGFloat.random(in: safeFrame.minY...safeFrame.maxY)
         )
 
-        model.beginWandering()
+        guard model.beginWandering() else { return }
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 4.8
             context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)

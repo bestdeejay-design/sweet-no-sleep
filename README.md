@@ -31,6 +31,12 @@ open "dist/Sweet No Sleep — Kiwi Cat.app"
 
 Скрипт собирает release-бинарник, помещает его в минимальный `.app` bundle и подписывает ad-hoc для локального запуска. Держите приложение по стабильному пути: это важно для автозапуска. Для распространения другим людям понадобятся Developer ID-подпись, notarization и app icon.
 
+Перед сборкой можно прогнать переносимые проверки (shell hooks и JSON-паки); на Mac команда также собирает Swift Package:
+
+```bash
+./Scripts/check-project.sh
+```
+
 ## Где что настроить
 
 Нажмите значок Sweet No Sleep в строке меню и выберите **Настройки** — это не настройка macOS, а окно параметров самого приложения. В нём три раздела:
@@ -97,7 +103,11 @@ Resources/PetSkins/           # встроенные JSON-паки
 Scripts/build-app.sh          # сборка .app и копирование ресурсов
 Scripts/agent-event.sh        # отдельные start/heartbeat/done/failed события
 Scripts/agent-session.sh      # обёртка команды с heartbeat и итоговым событием
+Scripts/check-project.sh      # переносимые проверки проекта и сборка Swift Package на Mac
+Scripts/validate-skins.py     # проверка встроенных или пользовательских JSON-паков
+Scripts/test-agent-hooks.sh   # smoke-тесты hooks с mock-командой open
 docs/SKIN_AUTHORING.md        # формат и установка новых скинов
+docs/CODE_AUDIT.md            # аудит, найденные исправления и Mac-чеклист
 ```
 
 ## Направления следующего этапа

@@ -153,6 +153,7 @@ struct KiwiPetView: View {
 
     var sizeOverride: CGFloat? = nil
     var allowsDragging = true
+    var tracksCursor = true
     var onDragChanged: ((CGSize) -> Void)?
     var onDragEnded: (() -> Void)?
 
@@ -180,7 +181,7 @@ struct KiwiPetView: View {
                     time: timeline.date.timeIntervalSinceReferenceDate,
                     mood: model.mood,
                     palette: .palette(for: model.activeSkin),
-                    gaze: cursorGaze(canvasSize: canvasSize, topInset: model.isBreakDue ? PetBreakReminderBubble.height : 0),
+                    gaze: tracksCursor ? cursorGaze(canvasSize: canvasSize, topInset: model.isBreakDue ? PetBreakReminderBubble.height : 0) : .zero,
                     reducedMotion: reduceMotion
                 )
             }
@@ -188,10 +189,12 @@ struct KiwiPetView: View {
         }
         .frame(width: canvasSize, height: canvasSize)
         .background {
-            WindowAccessor(window: $trackedWindow)
-                .frame(width: 1, height: 1)
-                .opacity(0)
-                .allowsHitTesting(false)
+            if tracksCursor {
+                WindowAccessor(window: $trackedWindow)
+                    .frame(width: 1, height: 1)
+                    .opacity(0)
+                    .allowsHitTesting(false)
+            }
         }
         .contentShape(Rectangle())
         .gesture(dragGesture)
@@ -282,7 +285,8 @@ struct KiwiPetView: View {
                 radius: radius,
                 time: time,
                 palette: palette,
-                effect: profile.celebrationEffect
+                effect: profile.celebrationEffect,
+                reducedMotion: reducedMotion
             )
         }
         if mood == .curious || mood == .breakReminder {
@@ -486,12 +490,13 @@ struct KiwiPetView: View {
         radius: CGFloat,
         time: Double,
         palette: PetPalette,
-        effect: PetCelebrationEffect
+        effect: PetCelebrationEffect,
+        reducedMotion: Bool
     ) {
-        let twinkle = CGFloat(0.72 + (sin(time * 7) + 1) * 0.14)
+        let twinkle = reducedMotion ? 0.86 : CGFloat(0.72 + (sin(time * 7) + 1) * 0.14)
         switch effect {
         case .leaves:
-            let drift = CGFloat(sin(time * 4)) * radius * 0.035
+            let drift = reducedMotion ? 0 : CGFloat(sin(time * 4)) * radius * 0.035
             drawLeaf(
                 in: &context,
                 from: CGPoint(x: center.x - radius * 0.84, y: center.y - radius * 0.24 + drift),

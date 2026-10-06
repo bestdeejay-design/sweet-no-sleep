@@ -98,15 +98,35 @@ enum PetSkinLibrary {
             roots.append(bundleResources.appendingPathComponent("PetSkins", isDirectory: true))
         }
 
-        let developmentResources = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appendingPathComponent("Resources/PetSkins", isDirectory: true)
-        roots.append(developmentResources)
+        // #filePath may be absolute in Xcode or relative under SwiftPM. Also
+        // search upward from the running executable so `swift run --package-path`
+        // works even when the process was launched from a different directory.
+        let workingDirectory = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let sourceFile = URL(fileURLWithPath: String(#filePath), relativeTo: workingDirectory)
+            .absoluteURL
+            .standardizedFileURL
+        appendRepositoryRoots(startingAt: sourceFile.deletingLastPathComponent(), to: &roots)
 
+        if let executable = Bundle.main.executableURL {
+            appendRepositoryRoots(startingAt: executable.deletingLastPathComponent(), to: &roots)
+        }
+        appendRepositoryRoots(startingAt: workingDirectory, to: &roots)
+
+        // User packs are last and can intentionally override a bundled ID.
         if let userDirectory { roots.append(userDirectory) }
-        return roots
+
+        var seenPaths = Set<String>()
+        return roots.filter { seenPaths.insert($0.standardizedFileURL.path).inserted }
+    }
+
+    private static func appendRepositoryRoots(startingAt start: URL, to roots: inout [URL]) {
+        var directory = start.standardizedFileURL
+        for _ in 0..<8 {
+            roots.append(directory.appendingPathComponent("Resources/PetSkins", isDirectory: true))
+            let parent = directory.deletingLastPathComponent()
+            guard parent.path != directory.path else { break }
+            directory = parent
+        }
     }
 
     private static func skinFolders(in root: URL) -> [URL] {
@@ -116,8 +136,10 @@ enum PetSkinLibrary {
             options: [.skipsHiddenFiles]
         ) else { return [] }
 
-        return folders.filter { url in
-            (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
-        }
+        return folders
+            .filter { url in
+                (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
+            }
+            .sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
     }
 }

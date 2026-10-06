@@ -170,7 +170,7 @@ private struct MenuBarDashboard: View {
 
     private var companionCard: some View {
         HStack(spacing: 15) {
-            KiwiPetView(model: model, sizeOverride: 104, allowsDragging: false)
+            KiwiPetView(model: model, sizeOverride: 104, allowsDragging: false, tracksCursor: false)
                 .frame(width: 116, height: 116)
                 .background(
                     RadialGradient(

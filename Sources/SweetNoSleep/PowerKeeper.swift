@@ -18,6 +18,7 @@ final class PowerKeeper {
     private var reason = "Sweet No Sleep — focus session"
     private var shouldKeepDisplayOn = false
     var onFailure: ((String) -> Void)?
+    var onWarning: ((String) -> Void)?
 
     private(set) var isActive = false
 
@@ -133,11 +134,14 @@ final class PowerKeeper {
         }
 
         if shouldKeepDisplayOn {
-            _ = createAssertion(
+            let displayResult = createAssertion(
                 type: kIOPMAssertionTypeNoDisplaySleep as CFString,
                 name: "\(reason) — экран",
                 id: &displayAssertion
             )
+            if displayResult != kIOReturnSuccess {
+                onWarning?("После пробуждения не удалось оставить экран включённым (код \(displayResult)); Mac всё ещё защищён от системного сна.")
+            }
         }
     }
 
