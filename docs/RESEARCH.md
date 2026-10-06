@@ -1,141 +1,141 @@
-# Исследование продукта и дизайн-спецификация
+# Product research and design specification
 
-**Проект:** Sweet No Sleep — Kiwi Cat
-**Платформа:** macOS 14+, SwiftUI + AppKit
-**Цель:** дружелюбный рабочий компаньон и прозрачное, понятное управление тем, когда Mac не должен уснуть.
+**Project:** Sweet No Sleep — Kiwi Cat
+**Platform:** macOS 14+, SwiftUI + AppKit
+**Goal:** a friendly desktop companion with clear controls for when the Mac should stay awake.
 
-Это техническое и UX-исследование, а не обещание, что любое IDE или агент будет работать непрерывно. Сам питомец может управлять системными idle-sleep assertions; состояние стороннего агента требует отдельной интеграции.
+This is technical and UX research, not a guarantee that every IDE or agent will keep running. The pet can manage system idle-sleep assertions; knowing whether a third-party agent is active requires an explicit integration.
 
 ---
 
-## 1. Что именно нужно решить
+## 1. Product problem
 
-У продукта две связанные, но разные роли:
+The product has two related but distinct roles:
 
-1. **Персонаж рабочего слоя** должен быть живым, узнаваемым и отзывчивым, но не мешать набору текста и не заставлять пользователя постоянно смотреть на него.
-2. **Контроль бодрствования** должен иметь явное начало, понятную причину, таймер, заметный статус и надёжное освобождение assertion. Нельзя делать бессрочное удержание сна скрытым побочным эффектом красивой анимации.
+1. **The desktop character** should feel alive, recognizable, and responsive without interfering with typing or demanding constant attention.
+2. **Awake-state control** should have an explicit start, a clear reason, a timer, visible status, and reliable assertion cleanup. Indefinite sleep prevention must not be a hidden side effect of an animation.
 
-Ключевой сценарий — долгая сессия тестов или агента:
+The key scenario is a long test or agent session:
 
 ```text
-пользователь запускает фокус-сессию
-→ Киви показывает «на смене» и удерживает idle-сон
-→ экран может погаснуть отдельно, если это разрешено
-→ по таймеру защита снимается
-→ по выбору пользователя macOS возвращается к обычным правилам сна
+user starts a focus session
+→ Kiwi shows that it is on duty and holds an idle-sleep assertion
+→ the display may turn off separately, if allowed
+→ the assertion is released when the timer ends
+→ macOS resumes its normal sleep behavior, unless the user explicitly chose immediate sleep
 ```
 
-Агент может открыть или продлить сессию через явные локальные события `start` и `heartbeat`, а затем сообщить `done` или `failed`; без такой интеграции приложение не делает выводов о состоянии процесса.
+An agent can start or renew a session through explicit local events (`start` and `heartbeat`) and report `done` or `failed`. Without such an integration, the app does not infer agent state from open processes or windows.
 
 ---
 
-## 2. Исследование рабочего слоя macOS
+## 2. macOS desktop layer
 
-### Рекомендуемый примитив
+### Recommended primitive
 
-Для персонажа подходит **прозрачный borderless `NSPanel` с `NSHostingView`**, а не обычное главное окно приложения:
+A **transparent, borderless `NSPanel` hosted by `NSHostingView`** is a good fit for the character instead of a conventional main window:
 
-- `NSPanel` предназначен для плавающих вспомогательных окон;
-- `.nonactivatingPanel` помогает не отбирать фокус у IDE;
-- прозрачный фон и SwiftUI-hosting дают чистый бесшовный слой;
-- `.canJoinAllSpaces` и `.fullScreenAuxiliary` дают питомцу возможность оставаться рядом между Spaces и в полноэкранном пространстве;
-- уровень `.floating` — отдельная настройка, поскольку он может перекрывать код или диалоги.
+- `NSPanel` is intended for floating auxiliary windows;
+- `.nonactivatingPanel` helps avoid stealing focus from an IDE;
+- a transparent background and SwiftUI hosting provide a seamless layer;
+- `.canJoinAllSpaces` and `.fullScreenAuxiliary` allow the pet to remain nearby across Spaces and fullscreen contexts;
+- `.floating` is a user setting because it can cover code or dialogs.
 
-Это соответствует назначению панелей в macOS HIG: вспомогательная информация может плавать над другими окнами. Окно питомца намеренно не делает вид, что находится «под обоями»: такой слой хуже поддерживается, ограничивает клики и зависит от внутреннего устройства WindowServer. Для реального ежедневного использования надёжнее панель с управляемым уровнем.
+This aligns with the macOS HIG description of panels as floating auxiliary information. The window is intentionally not presented as a wallpaper layer: that is less supported, limits interaction, and depends on WindowServer internals. A controllable panel is more reliable for daily use.
 
-### Текущее решение
+### Current implementation
 
-Киви отображается в отдельном прозрачном `NSPanel`, неактивирующем приложение. Он не использует Screen Recording, Accessibility API или чтение заголовков других окон. Перетаскивание управляет только собственным окном. Пользователь может скрыть его или отключить «Поверх окон».
+Kiwi uses a transparent, non-activating `NSPanel`. It does not use Screen Recording, the Accessibility API, or read other windows' titles. Dragging only moves its own window. Users can hide the pet or disable **Keep above other windows**.
 
-### Ограничения
+### Limits
 
-- `.floating` всё равно способен заслонить важный контрол; поэтому режим прогулки выключен по умолчанию и можно скрыть питомца одним кликом.
-- Полноэкранные Spaces и разные мониторы имеют собственную геометрию. Сейчас окно подключается ко всем Spaces, а прогулка ограничена видимой областью текущего дисплея; выбор экрана и интеллектуальное избегание окон — следующий этап.
-- «Рабочий слой» не означает системный wallpaper-layer: это обычное управляемое окно поверх рабочего окружения.
-
----
-
-## 3. Исследование анимации персонажа
-
-### Принципы, которые делают персонажа приятным
-
-1. **Secondary motion вместо постоянной суеты.** Небольшое дыхание, редкое моргание, хвост с задержкой, лёгкое покачивание головы. Силуэт остаётся читаемым.
-2. **Чёткий набор состояний.** `idle → working → celebrating / resting`, плюс `dragging` и `walking`. Каждое действие должно иметь начало и конец — питомец не должен застревать в реакции.
-3. **Причина движения видна.** Клик вызывает улыбку/искры; включённая защита — рабочую позу и сияние; завершение таймера — короткую радость; перетаскивание — вытягивание и шаги.
-4. **Темп ниже частоты интерфейсных анимаций.** Canvas обновляется до ~24 кадров/с в обычном режиме; при Reduce Motion движения стоят, но лёгкое обновление взгляда сохраняется для слежения за курсором. Скрытый питомец перестаёт обновляться.
-5. **Никакой обязательной аудио/мигающей реакции.** Яркие эффекты короткие и редкие; отдельный звук сейчас не используется.
-6. **Сначала силуэт и палитра.** У Kiwi тёплая шерсть, контрастные ушки, зелёный значок киви, затем — реакции и эффекты.
-
-### Текущий визуальный язык
-
-- три встроенных JSON-скина: `Kiwi` (тёплый), `Moonlight` (ночной) и `Strawberry` (розовый); пользовательские цветовые паки добавляются через Application Support;
-- рисование из векторных `Path` на `Canvas`, без внешних зависимостей и лицензируемых спрайтов;
-- дыхание, слежение глазами за системным курсором, редкое моргание и качание хвоста;
-- случайные короткие танцы, потягивания и любопытные взгляды только во время активного удержания бодрствования; есть отдельный выключатель;
-- напоминание о короткой зрительной паузе через настраиваемый интервал, только во время активной сессии; его можно отложить/подтвердить, оно не блокирует работу;
-- прогулка включается отдельно; Reduce Motion и ручное отключение анимаций соблюдаются.
-
-### Когда стоит добавлять Rive/Lottie/спрайты
-
-Не сейчас. Для трёх палитр и нескольких поз процедурный SwiftUI Canvas проще компилировать, легче масштабировать и проще расширять новыми эффектами. Если появятся сложные авторские циклы (ходьба с ногами, сон на боку, смена костюма по суставам), можно вынести rig/animation clips в Rive или собственный формат спрайт-листов. При этом статичные `PetDefinition` и анимационный runtime нужно отделить от системной логики.
+- `.floating` can still cover a control, so roaming is off by default and the pet can be hidden from the menu.
+- Fullscreen Spaces and multiple displays have distinct geometry. The panel joins all Spaces and roaming is limited to the visible area of its current display; monitor selection and window avoidance remain future work.
+- A “desktop layer” is not a system wallpaper layer; it is a normal, managed window above the desktop environment.
 
 ---
 
-## 4. Настройки и информационная архитектура
+## 3. Character animation
 
-### Два уровня управления
+### Principles for a pleasant character
 
-- **Menu bar dashboard** — ежедневная панель: состояние, ручной switch, длительность, «Начать фокус», countdown, «Завершить», показать/спрятать и Settings.
-- **Окно настроек** — редкие и более длинные решения, разделённые на «Фокус», «Питомец» и «Питание».
+1. **Secondary motion, not constant activity.** Subtle breathing, occasional blinking, a delayed tail sway, and slight head movement keep the silhouette readable.
+2. **A clear state set.** `idle → working → celebrating / resting`, plus `dragging` and `walking`. Every action has a beginning and end; the pet should not get stuck in a reaction.
+3. **Visible reasons for movement.** A click earns a smile/sparkle; awake mode gets a working pose and glow; a completed timer gets a brief celebration; dragging gets a stretched pose and steps.
+4. **A lower update rate than typical interface animation.** Canvas updates at up to about 24 fps normally. With Reduce Motion, body movement pauses while a light update can remain for pointer gaze. Hidden pets stop updating.
+5. **No required audio or flashing.** Bright effects are brief and rare; there is no sound by default.
+6. **Silhouette and palette first.** Kiwi has warm fur, distinct ears, and a green fruit badge; reactions and effects are secondary.
 
-Это сохраняет меню коротким и не превращает питомца в мини-системные настройки.
+### Current visual language
 
-### Что должно быть постоянно понятно
+- Three bundled JSON skins: `Kiwi`, `Moonlight`, and `Strawberry`; user color packs load from Application Support.
+- The pet is drawn with vector `Path` shapes on `Canvas`, without external artwork dependencies.
+- Breathing, pointer-following eyes, occasional blinking, and tail movement.
+- Short random dances, stretches, and curious looks only during an active awake session; there is an independent toggle.
+- A configurable reminder suggests a short eye break during an active session; it can be snoozed or dismissed and does not block work.
+- Roaming is optional, starts about 3 seconds after enable, and then runs about every 28 seconds. It respects system Reduce Motion and the animation toggle.
 
-- Mac сейчас удерживается от idle sleep или нет;
-- сессия ручная или ограничена таймером;
-- сколько осталось времени;
-- что произойдёт в конце;
-- удерживается ли ещё и экран;
-- как немедленно завершить сессию.
+### When to add Rive, Lottie, or sprites
 
-Сон «сразу» — не действие по умолчанию. Пользователь включает эту политику сам и подтверждает старт конкретной сессии. Более мягкая политика — снять assertion и позволить macOS уснуть по настроенному idle timeout.
-
-### Доступность и уважение к рабочему процессу
-
-- Reduce Motion, контрастные подписи статуса, VoiceOver labels;
-- прозрачный персонаж без большой постоянной подложки;
-- прогулка выключена по умолчанию;
-- отдельное управление размером, видимостью и уровнем окна;
-- нет системных звуков и push-уведомлений; мягкий таймер паузы opt-in и показывается в самой панели питомца.
+Not yet. For three palettes and a handful of poses, procedural SwiftUI Canvas is simpler to compile, scale, and extend. If the project needs authored cycles such as legged walking, side-sleeping, or articulated costumes, a rig/clip format such as Rive or a custom sprite sheet may be appropriate. Keep static `PetDefinition` data and the animation runtime separate from system power logic.
 
 ---
 
-## 5. Исследование power management: возможности и границы
+## 4. Settings and information architecture
 
-### Как работает реализация
+### Two levels of control
 
-Для работы пользователя используется временный assertion `PreventUserIdleSystemSleep` с именованной причиной Sweet No Sleep. Apple описывает его как защиту от автоматического сна из-за отсутствия активности; это не отменяет сон по другим причинам. Отдельно можно взять `NoDisplaySleep`, если пользователь хочет, чтобы дисплей тоже оставался включённым. Для основной задачи второй assertion обычно не нужен: экран может гаснуть, а система продолжает работу.
+- **Menu-bar dashboard:** daily status, manual switch, duration, Start Focus, countdown, End, show/hide, and Settings.
+- **Settings window:** less frequent choices in Focus, Pet, and Power sections.
 
-`ProcessInfo.beginActivity(.userInitiated, reason:)` используется как сигнал системе, что приложение сопровождает явно запрошенную пользователем работу; возвращённый токен хранится до завершения. IOKit assertion добавляет явный power-management контракт и причину, видимую через `pmset -g assertions`. На wake assertion ID перевыпускаются. При стопе, завершении сессии и выходе приложения все удерживаемые ресурсы освобождаются.
+This keeps the menu short and avoids turning the pet into a miniature system-settings app.
 
-### Чего assertion не гарантирует
+### What should always be clear
 
-Это не «замок, который невозможно открыть»:
+- whether the Mac is currently held awake;
+- whether the session is manual or timed;
+- how much time remains;
+- what happens at the end;
+- whether the display is also held on;
+- how to stop a session immediately.
 
-- assertion защищает от сна **по бездействию**, а не отменяет сон, выбранный пользователем;
-- закрытие крышки MacBook, критически низкий заряд, принудительный shutdown/sleep и политика системы имеют приоритет;
-- он не гарантирует доступность интернета, авторизацию, продолжение конкретного процесса агента или обход его собственных таймаутов;
-- он не превращает «открыто IDE» в «агент работает»;
-- запрет display sleep расходует больше энергии, поэтому выключен по умолчанию.
+Immediate sleep is not the default. The user selects that policy and confirms each specific focus session. The softer option releases the app's assertion and lets macOS use its configured idle timeout.
 
-### Автоматическое «агент закончил»
+### Accessibility and respect for the workflow
 
-Надёжно определить это только по наличию запущенных приложений нельзя: IDE может быть открыта без активного агента, а агент может работать в shell-процессе, удалённой среде или отдельном дочернем процессе. Глобальное сканирование окон/командной строки было бы хрупким и может давать лишние разрешения или ложные решения.
+- System Reduce Motion, accessible status labels, and VoiceOver labels.
+- A transparent character rather than a large permanent background.
+- Roaming is off by default and can be stopped by disabling animations or enabling Reduce Motion.
+- Independent controls for size, visibility, and window level.
+- No system sounds or push notifications; the optional break prompt is shown in the pet panel.
 
-В текущем срезе уже есть минимальный **opt-in local URL bridge**: `sweetnosleep://agent/start|heartbeat|done|failed?session=<id>`. `Scripts/agent-event.sh` посылает отдельное событие, а `Scripts/agent-session.sh <id> -- <command> ...` оборачивает команду событиями начала/завершения и heartbeat раз в минуту. Heartbeat обновляет 180-секундный lease; несколько ID могут быть активны одновременно. Bridge выключен по умолчанию, события не вызывают немедленный сон, а пропущенный heartbeat автоматически снимает зависшую lease. Это не аутентифицированный межпроцессный протокол: любой локальный процесс может открыть зарегистрированную схему, поэтому включать bridge стоит только для доверенных hooks.
+---
 
-Правильный путь — **адаптеры с явными событиями**:
+## 5. Power management: behavior and limits
+
+### Current implementation
+
+The app takes a temporary, named `PreventUserIdleSystemSleep` assertion only after an explicit user action. Apple describes it as protection against automatic sleep caused by inactivity; it does not override every reason the Mac may sleep. A separate `NoDisplaySleep` assertion is available if the user also wants the display to stay on. For the main use case, the display assertion is normally unnecessary: the screen can turn off while the system remains awake.
+
+`ProcessInfo.beginActivity(.userInitiated, reason:)` signals that the app is accompanying work explicitly requested by the user, and its token is held until completion. The IOKit assertion provides the explicit power-management contract and a reason visible in `pmset -g assertions`. Assertion IDs are recreated after wake. Assertions and the activity token are released on stop, session completion, and app termination.
+
+### What an assertion cannot guarantee
+
+This is not an unbreakable lock:
+
+- it protects against **idle system sleep**, not sleep requested by the user;
+- closing a MacBook lid, critical battery, forced shutdown/sleep, and system policy take precedence;
+- it does not guarantee network access, authentication, a third-party agent process, or bypass the agent's own timeouts;
+- it does not make “IDE is open” equivalent to “agent is working”;
+- display sleep prevention consumes more power, so it is off by default.
+
+### Detecting when an agent has finished
+
+The presence of an application is not a reliable signal: an IDE can be open without an agent, and an agent can run in a shell, remote environment, or child process. Global window/command-line scanning would be brittle and could require unnecessary permissions or produce false positives.
+
+The current implementation includes a minimal **opt-in local URL bridge**: `sweetnosleep://agent/start|heartbeat|done|failed?session=<id>`. `Scripts/agent-event.sh` sends a single event; `Scripts/agent-session.sh <id> -- <command> ...` wraps a command with start/end events and a heartbeat every minute. A heartbeat renews a 180-second lease; multiple session IDs can be active. The bridge is off by default, events never cause immediate sleep, and a missing heartbeat expires a stale lease. This is not an authenticated inter-process protocol: any local process can open the registered URL scheme, so enable the bridge only for trusted hooks.
+
+The robust direction is **provider adapters with explicit lifecycle events**:
 
 ```text
 agent.started(sessionID, expectedDuration?)
@@ -145,52 +145,53 @@ agent.completed(sessionID, result)
 agent.failed(sessionID, reason)
 ```
 
-Сессия должна иметь TTL/heartbeat: если адаптер пропал, пользователь видит stale-state и может остановить удержание. Завершение одного агента не должно усыплять Mac, если другой агент всё ещё работает. До появления таких адаптеров ручной запуск/таймер — честное и предсказуемое поведение.
+A session should have a TTL/heartbeat. If an adapter disappears, the user should see stale state and be able to stop protection. Completing one agent must not allow sleep while another is working. Until provider adapters exist, manual start and timed sessions are the honest, predictable behavior.
 
 ---
 
-## 6. Рекомендуемый roadmap
+## 6. Recommended roadmap
 
-### Следующим — маленькие, полезные функции
+### Next: small, useful extensions
 
-1. **Provider adapters**: подключить к существующему URL bridge hooks Claude Code и callback-и IDE; CLI уже покрывает общий start/heartbeat/done/failed сценарий.
-2. **Несколько одновременных работ**: реестр lease по `sessionID`; Mac бодрствует, пока активна хотя бы одна lease.
-3. **Ожидание подтверждения**: другой хвост/значок, тихий badge и явное «агент ждёт вас» без чтения чужих окон.
-4. **AC-power policy**: не запускать или автоматически остановить assertion при переходе на батарею, если пользователь выбрал такой режим.
-5. **Остаточный grace period**: после `done` выдержать выбранные 1–10 минут, затем разрешить обычный сон; немедленный сон оставлять редкой opt-in опцией.
-6. **Расширить формат паков**: добавить лицензируемые внешние ассеты, дополнительные силуэты и независимые clips; текущий JSON покрывает палитру, базовый motion-профиль и встроенный эффект для одного персонажа.
-7. **Новые реакции**: визуально различать ожидание разрешения, завершение тестов и перерыв, сохраняя редкие и отключаемые эффекты.
-8. **Управление рабочим слоем**: выбор дисплея, исключение полноэкранных приложений, горячая клавиша паузы/скрытия.
-9. **Диагностика**: статус последнего assertion, причина его завершения и копируемый отчёт для troubleshooting.
+1. **Provider adapters:** connect Claude Code hooks and Codex/IDE callbacks to the existing URL bridge; the CLI already covers the general start/heartbeat/done/failed flow.
+2. **Multiple concurrent jobs:** keep a lease registry by `sessionID`; the Mac stays awake while any lease remains active.
+3. **Waiting for approval:** use a different tail/badge, a quiet status, and an explicit “agent is waiting for you” state without reading other windows.
+4. **AC-power policy:** optionally prevent or stop assertions when switching to battery.
+5. **Grace period:** after `done`, optionally wait 1–10 minutes before returning to normal sleep; keep immediate sleep as a rare opt-in.
+6. **Richer skin packs:** add licensed art, additional silhouettes, and independent clips; the current JSON covers palette, basic motion profile, and one built-in effect for a single character.
+7. **New reactions:** distinguish approval requests, completed tests, and breaks while keeping effects rare and switchable.
+8. **Desktop-layer controls:** select a display, avoid fullscreen apps, and add a hotkey for pausing/hiding.
+9. **Diagnostics:** expose the last assertion state, why it ended, and a copyable troubleshooting report.
 
-### Пока не рекомендую
+### Not recommended yet
 
-- читать содержимое экрана или захватывать окна ради определения активности агента;
-- «держать Mac awake всегда» по умолчанию;
-- немедленно усыплять ноутбук после любой завершившейся задачи без подтверждённого источника завершения;
-- добавлять яркие частицы, звук и быстрые движения без переключателей;
-- включать прогулку, которая случайно перекрывает рабочую область.
-
----
-
-## 7. Источники
-
-1. Apple, **Prioritize Work at the App Level** — классификация пользовательской работы, `NSProcessInfo` activity и проверка sleep assertions: [developer.apple.com](https://developer.apple.com/library/archive/documentation/Performance/Conceptual/power_efficiency_guidelines_osx/PrioritizeWorkAtTheAppLevel.html).
-2. Apple, **IOPMAssertionTypes** — `PreventUserIdleSystemSleep` / `NoDisplaySleep` и поведение системных assertions: [каталог типов](https://developer.apple.com/documentation/iokit/iopmlib_h/iopmassertiontypes), [idle-sleep assertion](https://developer.apple.com/documentation/iokit/kiopmassertiontypepreventuseridlesystemsleep).
-3. Apple, **IOPMLib** — API управления питанием, включая assertions и запрос system sleep: [developer.apple.com](https://developer.apple.com/documentation/iokit/iopmlib_h).
-4. Apple, **NSWorkspace willSleep / didWake notifications** — жизненный цикл перед сном и после пробуждения: [willSleep](https://developer.apple.com/documentation/appkit/nsworkspace/willsleepnotification), [didWake](https://developer.apple.com/documentation/appkit/nsworkspace/didwakenotification).
-5. Apple, **macOS Human Interface Guidelines — Panels** — роль плавающих вспомогательных панелей: [developer.apple.com](https://developer.apple.com/design/human-interface-guidelines/macos/windows-and-views/panels).
-6. Apple, **SwiftUI TimelineSchedule.animation** — pausable timeline с заданным минимальным интервалом обновления: [developer.apple.com](https://developer.apple.com/documentation/swiftui/timelineschedule/animation(minimuminterval:paused:)).
-7. Apple, **SMAppService** — регистрация приложения как login item и запрос пользовательского approval: [mainApp](https://developer.apple.com/documentation/servicemanagement/smappservice/mainapp?language=objc), [register](https://developer.apple.com/documentation/servicemanagement/smappservice/register()).
-8. Cindori, **Make a floating panel in SwiftUI for macOS** — практический пример сочетания `NSPanel` + `NSHostingView`: [cindori.com](https://cindori.com/developer/floating-panel).
+- capturing the screen or reading window content to infer agent activity;
+- keeping the Mac awake indefinitely by default;
+- immediate sleep after any task without a trusted completion signal;
+- bright particles, sounds, or fast motion without controls;
+- default-on roaming that can cover work.
 
 ---
 
-## 8. Проверка перед релизом
+## 7. References
 
-- Проверить assertions включёнными/выключенными в `pmset -g assertions`.
-- Дождаться конца короткой тестовой сессии и убедиться, что assertion отпущен.
-- Проверить обычный сон и действие «сразу в сон» отдельно; сначала на тестовой машине/без критичных задач.
-- Проверить закрытие крышки, пробуждение, подключение/отключение питания и несколько Spaces вручную.
-- Проверить режим Reduce Motion, VoiceOver, маленький/большой размер и скрытие окна.
-- Проверить прогулку при одном и нескольких мониторах; убедиться, что персонаж не теряется за Dock или вне visible frame.
+1. Apple, **Prioritize Work at the App Level** — user-initiated work, `NSProcessInfo` activities, and sleep assertions: [developer.apple.com](https://developer.apple.com/library/archive/documentation/Performance/Conceptual/Power_efficiency_guidelines_osx/PrioritizeWorkAtTheAppLevel.html).
+2. Apple, **IOPMAssertionTypes** — `PreventUserIdleSystemSleep` and `NoDisplaySleep`: [assertion types](https://developer.apple.com/documentation/iokit/iopmlib_h/iopmassertiontypes), [idle-sleep assertion](https://developer.apple.com/documentation/iokit/kiopmassertiontypepreventuseridlesystemsleep).
+3. Apple, **IOPMLib** — power-management APIs including assertions and system sleep requests: [developer.apple.com](https://developer.apple.com/documentation/iokit/iopmlib_h).
+4. Apple, **NSWorkspace willSleep / didWake notifications** — sleep and wake lifecycle: [willSleep](https://developer.apple.com/documentation/appkit/nsworkspace/willsleepnotification), [didWake](https://developer.apple.com/documentation/appkit/nsworkspace/didwakenotification).
+5. Apple, **macOS Human Interface Guidelines — Panels** — floating auxiliary panels: [developer.apple.com](https://developer.apple.com/design/human-interface-guidelines/macos/windows-and-views/panels).
+6. Apple, **SwiftUI TimelineSchedule.animation** — a pausable timeline with a configurable minimum interval: [developer.apple.com](https://developer.apple.com/documentation/swiftui/timelineschedule/animation(minimuminterval:paused:)).
+7. Apple, **SMAppService** — login-item registration and user approval: [mainApp](https://developer.apple.com/documentation/servicemanagement/smappservice/mainapp?language=objc), [register](https://developer.apple.com/documentation/servicemanagement/smappservice/register()).
+8. Apple, **NSWorkspace accessibilityDisplayShouldReduceMotion** — macOS Reduce Motion state: [developer.apple.com](https://developer.apple.com/documentation/appkit/nsworkspace/accessibilitydisplayshouldreducemotion).
+9. Cindori, **Make a floating panel in SwiftUI for macOS** — practical `NSPanel` + `NSHostingView` example: [cindori.com](https://cindori.com/developer/floating-panel).
+
+---
+
+## 8. Pre-release verification
+
+- Inspect assertions in `pmset -g assertions` with awake mode on and off.
+- Wait for a short timed session to end and confirm the assertion is released.
+- Test normal sleep and immediate sleep separately, first on a test setup without critical work.
+- Manually check lid closure, wake, power-source changes, and multiple Spaces.
+- Check Reduce Motion, VoiceOver, small/large pet size, and hiding the panel.
+- Test roaming on one and multiple displays; confirm the pet stays within the visible frame and is not hidden behind the Dock.

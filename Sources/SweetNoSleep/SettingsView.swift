@@ -8,11 +8,11 @@ struct SettingsView: View {
     var body: some View {
         TabView {
             FocusSettingsPane(model: model)
-                .tabItem { Label("Фокус", systemImage: "bolt.fill") }
+                .tabItem { Label(L10n.text("Focus"), systemImage: "bolt.fill") }
             CompanionSettingsPane(model: model)
-                .tabItem { Label("Питомец", systemImage: "pawprint.fill") }
+                .tabItem { Label(L10n.text("Pet"), systemImage: "pawprint.fill") }
             PowerSettingsPane(model: model)
-                .tabItem { Label("Питание", systemImage: "battery.100percent") }
+                .tabItem { Label(L10n.text("Power"), systemImage: "battery.100percent") }
         }
         .frame(width: 660, height: 535)
         .background(Color(nsColor: .windowBackgroundColor))
@@ -35,25 +35,25 @@ private struct FocusSettingsPane: View {
         SettingsScrollPane {
             SettingsHero(
                 symbol: "bolt.fill",
-                title: "Фокус без внезапного сна",
-                subtitle: "Запускайте сессию вручную и выбирайте, что Киви сделает по её завершении."
+                title: L10n.text("Focus without unexpected sleep"),
+                subtitle: L10n.text("Start a session manually and choose what Kiwi should do when it ends.")
             )
 
-            SettingsCard(title: "Длительность", subtitle: "Сейчас выбрано: \(model.selectedMinutes) минут") {
+            SettingsCard(title: L10n.text("Duration"), subtitle: L10n.format("Selected: %d minutes", model.selectedMinutes)) {
                 Slider(value: durationBinding, in: 15...240, step: 5)
                     .tint(Color(hex: 0x74C987))
-                    .accessibilityLabel("Длительность сессии в минутах")
+                    .accessibilityLabel(L10n.text("Session duration in minutes"))
                 HStack {
-                    Text("15 мин")
+                    Text(L10n.text("15 min"))
                     Spacer()
-                    Text("4 часа")
+                    Text(L10n.text("4 hours"))
                 }
                 .font(.system(size: 10, design: .rounded))
                 .foregroundStyle(.secondary)
             }
 
-            SettingsCard(title: "Когда цель достигнута", subtitle: "Для начала рекомендуем безопасный вариант — обычный сон по настройкам macOS.") {
-                Picker("Действие после сессии", selection: $model.completionAction) {
+            SettingsCard(title: L10n.text("When the goal is reached"), subtitle: L10n.text("We recommend the safer option: let macOS follow its normal sleep settings.")) {
+                Picker(L10n.text("After-session action"), selection: $model.completionAction) {
                     ForEach(SessionCompletionAction.allCases) { action in
                         Text(action.title).tag(action)
                     }
@@ -63,7 +63,7 @@ private struct FocusSettingsPane: View {
 
                 if model.completionAction == .sleepImmediately {
                     Label(
-                        "Перед каждой такой сессией появится подтверждение. Немедленный сон может прервать другие приложения и агентов.",
+                        L10n.text("You will be asked to confirm each session. Immediate sleep can interrupt other apps and agents."),
                         systemImage: "exclamationmark.triangle.fill"
                     )
                     .font(.system(size: 11, weight: .medium, design: .rounded))
@@ -77,15 +77,15 @@ private struct FocusSettingsPane: View {
                 }
             }
 
-            SettingsCard(title: "Быстрый переключатель", subtitle: "Переключатель показывает фактическое состояние и завершает любую текущую сессию.") {
+            SettingsCard(title: L10n.text("Quick switch"), subtitle: L10n.text("This switch shows the actual state and ends any current session.")) {
                 Toggle(isOn: Binding(
                     get: { model.isKeepingAwake },
                     set: { model.setKeepAwake($0) }
                 )) {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("Не давать Mac заснуть")
+                        Text(L10n.text("Keep Mac awake"))
                             .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        Text("Удерживать систему бодрствующей до выключения вручную")
+                        Text(L10n.text("Keep the system awake until you turn this off"))
                             .font(.system(size: 11, design: .rounded))
                             .foregroundStyle(.secondary)
                     }
@@ -109,11 +109,11 @@ private struct CompanionSettingsPane: View {
         SettingsScrollPane {
             SettingsHero(
                 symbol: "pawprint.fill",
-                title: "Характер Киви",
-                subtitle: "Выберите образ и то, насколько заметно питомец будет жить рядом с вашей работой."
+                title: L10n.text("Kiwi's personality"),
+                subtitle: L10n.text("Choose Kiwi's look and how visibly the pet joins your workday.")
             )
 
-            SettingsCard(title: "Библиотека скинов", subtitle: "Выберите образ. Новые скины устанавливаются отдельно и не требуют изменения исходников приложения.") {
+            SettingsCard(title: L10n.text("Skin library"), subtitle: L10n.text("Choose a look. New skins install separately and do not require source-code changes.")) {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: 10)], spacing: 10) {
                     ForEach(model.availableSkins) { skin in
                         skinChoice(skin)
@@ -126,57 +126,60 @@ private struct CompanionSettingsPane: View {
                         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
                         NSWorkspace.shared.open(directory)
                     } label: {
-                        Label("Открыть папку скинов", systemImage: "folder")
+                        Label(L10n.text("Open skins folder"), systemImage: "folder")
                     }
                     .buttonStyle(.link)
 
                     Button {
                         model.reloadSkinLibrary()
                     } label: {
-                        Label("Обновить список", systemImage: "arrow.clockwise")
+                        Label(L10n.text("Refresh list"), systemImage: "arrow.clockwise")
                     }
                     .buttonStyle(.link)
                 }
 
-                Text("Папка пользователя: ~/Library/Application Support/SweetNoSleep/PetSkins · по одному skin.json в папке каждого скина.")
+                Text(L10n.text("User folder: ~/Library/Application Support/SweetNoSleep/PetSkins - place one skin.json in each skin folder."))
                     .font(.system(size: 10, design: .rounded))
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            SettingsCard(title: "Размер питомца", subtitle: "Сейчас: \(Int(model.petSize)) pt · изменение сразу применяется на рабочем столе.") {
+            SettingsCard(title: L10n.text("Pet size"), subtitle: L10n.format("Current size: %d pt - changes apply immediately on the desktop.", Int(model.petSize))) {
                 Slider(value: sizeBinding, in: 90...170, step: 2)
                     .tint(Color(hex: 0x74C987))
-                    .accessibilityLabel("Размер питомца")
+                    .accessibilityLabel(L10n.text("Pet size"))
                 HStack {
-                    Text("90 pt · компактный")
+                    Text(L10n.text("90 pt - compact"))
                     Spacer()
-                    Text("170 pt · крупный")
+                    Text(L10n.text("170 pt - large"))
                 }
                 .font(.system(size: 10, design: .rounded))
                 .foregroundStyle(.secondary)
-                Label("Перетащите питомца мышью, чтобы выбрать удобное место.", systemImage: "hand.draw")
+                Label(L10n.text("Drag the pet to place it wherever it feels comfortable."), systemImage: "hand.draw")
                     .font(.system(size: 10, design: .rounded))
                     .foregroundStyle(.secondary)
             }
 
-            SettingsCard(title: "Поведение", subtitle: "Играет только во время бодрствующей сессии; всё можно отключить.") {
-                Toggle("Плавно гулять по экрану", isOn: $model.roamingEnabled)
-                Toggle("Показывать поверх окон", isOn: $model.alwaysOnTop)
-                Toggle("Дыхание, моргание и движение", isOn: $model.animationsEnabled)
-                Toggle("Редкие танцы, потягивания и любопытные взгляды", isOn: $model.playfulMomentsEnabled)
+            SettingsCard(title: L10n.text("Behavior"), subtitle: L10n.text("Playful moments happen only during an awake session; everything can be turned off.")) {
+                Toggle(L10n.text("Roam gently across the screen"), isOn: $model.roamingEnabled)
+                Label(L10n.text("The first stroll starts about 3 seconds after enabling; later strolls begin about every 28 seconds."), systemImage: "figure.walk")
+                    .font(.system(size: 10, design: .rounded))
+                    .foregroundStyle(.secondary)
+                Toggle(L10n.text("Keep above other windows"), isOn: $model.alwaysOnTop)
+                Toggle(L10n.text("Breathing, blinking, and movement"), isOn: $model.animationsEnabled)
+                Toggle(L10n.text("Occasional dances, stretches, and curious looks"), isOn: $model.playfulMomentsEnabled)
                     .disabled(!model.animationsEnabled)
-                Label("Взгляд автоматически следит за курсором.", systemImage: "eye")
+                Label(L10n.text("Kiwi's eyes follow the pointer automatically."), systemImage: "eye")
                     .font(.system(size: 10, design: .rounded))
                     .foregroundStyle(.secondary)
             }
 
-            SettingsCard(title: "Паузы для глаз и внимания", subtitle: "Во время бодрствующей сессии Киви мягко предложит отвести взгляд от кода и посмотреть вдаль около 20 секунд.") {
-                Toggle("Напоминать о короткой паузе", isOn: $model.breakRemindersEnabled)
+            SettingsCard(title: L10n.text("Eye and attention breaks"), subtitle: L10n.text("During an awake session, Kiwi gently suggests looking away from code and into the distance for about 20 seconds.")) {
+                Toggle(L10n.text("Remind me to take a short break"), isOn: $model.breakRemindersEnabled)
                 if model.breakRemindersEnabled {
                     HStack(spacing: 10) {
-                        Text("Каждые \(model.breakIntervalMinutes) мин")
+                        Text(L10n.format("Every %d min", model.breakIntervalMinutes))
                             .font(.system(size: 11, weight: .medium, design: .rounded))
                             .frame(width: 112, alignment: .leading)
                         Slider(value: Binding(
@@ -184,10 +187,10 @@ private struct CompanionSettingsPane: View {
                             set: { model.breakIntervalMinutes = Int($0) }
                         ), in: 10...60, step: 5)
                         .tint(Color(hex: 0x74C987))
-                        .accessibilityLabel("Интервал между напоминаниями о паузе")
+                        .accessibilityLabel(L10n.text("Interval between break reminders"))
                     }
                     if model.isBreakDue {
-                        Label("Пауза уже ждёт вас. Это предложение, а не блокировка работы.", systemImage: "eye")
+                        Label(L10n.text("Your break reminder is ready. It is a suggestion, not a work blocker."), systemImage: "eye")
                             .font(.system(size: 10, design: .rounded))
                             .foregroundStyle(Color(hex: 0x5EAC70))
                             .fixedSize(horizontal: false, vertical: true)
@@ -195,8 +198,8 @@ private struct CompanionSettingsPane: View {
                 }
             }
 
-            SettingsCard(title: "Рабочий слой", subtitle: "Окно питомца прозрачное и не перехватывает фокус у редактора кода.") {
-                Toggle("Показывать Киви на рабочем столе", isOn: $model.isPetVisible)
+            SettingsCard(title: L10n.text("Desktop layer"), subtitle: L10n.text("The pet window is transparent and does not take focus away from your code editor.")) {
+                Toggle(L10n.text("Show Kiwi on the desktop"), isOn: $model.isPetVisible)
             }
         }
     }
@@ -237,7 +240,7 @@ private struct CompanionSettingsPane: View {
             }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Скин: \(skin.name)")
+        .accessibilityLabel(L10n.format("Skin: %@", skin.name))
         .accessibilityAddTraits(isSelected ? .isSelected : .isButton)
     }
 }
@@ -254,44 +257,44 @@ private struct PowerSettingsPane: View {
         SettingsScrollPane {
             SettingsHero(
                 symbol: "battery.100percent",
-                title: "Питание и запуск",
-                subtitle: "Защита от сна действует только пока включён режим бодрствования или идёт таймер."
+                title: L10n.text("Power and startup"),
+                subtitle: L10n.text("Sleep protection is active only while awake mode or a timer is running.")
             )
 
-            SettingsCard(title: "Экран и система", subtitle: "Киви использует временные системные power assertions и освобождает их по завершении.") {
-                Toggle("Не выключать дисплей во время сессии", isOn: $model.keepDisplayAwake)
-                Text("Если переключатель выключен, экран может погаснуть, но Mac и выполняемая работа не должны уснуть из-за бездействия. Это экономит батарею.")
+            SettingsCard(title: L10n.text("Display and system"), subtitle: L10n.text("Kiwi uses temporary system power assertions and releases them when work ends.")) {
+                Toggle(L10n.text("Keep the display on during a session"), isOn: $model.keepDisplayAwake)
+                Text(L10n.text("When this is off, the display may turn off while the Mac stays awake for work. This saves battery."))
                     .font(.system(size: 11, design: .rounded))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            SettingsCard(title: "Связь с AI-агентами", subtitle: "Локальные hooks могут сообщать Киви о начале, heartbeat и завершении работы.") {
-                Toggle("Разрешить события от локальных hooks", isOn: $model.agentBridgeEnabled)
-                Text("Bridge выключен по умолчанию. Доверяйте установленным hooks: любой локальный процесс с доступом к URL scheme может послать событие. Без heartbeat сессия завершится через 3 минуты; agent-событие не запускает немедленный сон.")
+            SettingsCard(title: L10n.text("AI agent connection"), subtitle: L10n.text("Local hooks can tell Kiwi when work starts, send heartbeats, and report completion.")) {
+                Toggle(L10n.text("Allow events from local hooks"), isOn: $model.agentBridgeEnabled)
+                Text(L10n.text("The bridge is off by default. Only trust installed hooks: any local process that can open the URL scheme can send an event. Without a heartbeat, a session expires after 3 minutes. Agent events never trigger immediate sleep."))
                     .font(.system(size: 11, design: .rounded))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("Из корня репозитория: ./Scripts/agent-session.sh my-agent-1 -- ./run-agent.sh\nДля IDE-hooks: agent-event.sh start → heartbeat (примерно раз в минуту) → done или failed; используйте один ID на сессию.")
+                Text(L10n.text("From the repository root: ./Scripts/agent-session.sh my-agent-1 -- ./run-agent.sh\nFor IDE hooks: agent-event.sh start > heartbeat (about once a minute) > done or failed; use one ID per session."))
                     .font(.system(size: 10, design: .monospaced))
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
                     .fixedSize(horizontal: false, vertical: true)
                 if model.activeAgentCount > 0 {
-                    Label("Сейчас активно: \(model.activeAgentCount)", systemImage: "cpu")
+                    Label(L10n.format("Active now: %d", model.activeAgentCount), systemImage: "cpu")
                         .font(.system(size: 11, weight: .medium, design: .rounded))
                         .foregroundStyle(Color(hex: 0x5EAC70))
                 }
             }
 
-            SettingsCard(title: "Автозапуск", subtitle: "Удобно, если Киви — часть ежедневной рабочей среды.") {
-                Toggle("Запускать Sweet No Sleep при входе в систему", isOn: $launchAtLogin)
+            SettingsCard(title: L10n.text("Launch at login"), subtitle: L10n.text("Useful if Kiwi is part of your everyday work setup.")) {
+                Toggle(L10n.text("Launch Sweet No Sleep at login"), isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { _, enabled in
                         updateLoginItem(enabled: enabled)
                     }
 
-                Toggle("Сразу включать ручную защиту от сна", isOn: $model.resumeKeepAwakeOnLaunch)
-                Text("Оставьте автозащиту выключенной, если не хотите расходовать батарею после перезагрузки.")
+                Toggle(L10n.text("Enable manual sleep protection at launch"), isOn: $model.resumeKeepAwakeOnLaunch)
+                Text(L10n.text("Leave this off if you do not want to use battery after a restart."))
                     .font(.system(size: 11, design: .rounded))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -303,7 +306,7 @@ private struct PowerSettingsPane: View {
                             .foregroundStyle(loginNeedsApproval ? Color(hex: 0xD99142) : Color.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                         if loginNeedsApproval {
-                            Button("Открыть «Объекты входа»") {
+                            Button(L10n.text("Open Login Items")) {
                                 SMAppService.openSystemSettingsLoginItems()
                             }
                             .buttonStyle(.link)
@@ -313,7 +316,7 @@ private struct PowerSettingsPane: View {
             }
 
             if let warning = model.powerWarning {
-                SettingsCard(title: "Состояние питания") {
+                SettingsCard(title: L10n.text("Power status")) {
                     Label(warning, systemImage: "exclamationmark.triangle.fill")
                         .font(.system(size: 11, design: .rounded))
                         .foregroundStyle(Color(hex: 0xD99142))
@@ -333,7 +336,7 @@ private struct PowerSettingsPane: View {
         launchAtLogin = status == .enabled || status == .requiresApproval
         if status == .requiresApproval {
             loginNeedsApproval = true
-            loginMessage = "macOS ожидает подтверждения в Системных настройках → Основные → Объекты входа."
+            loginMessage = L10n.text("macOS is waiting for approval in System Settings > General > Login Items.")
         } else {
             loginNeedsApproval = false
             loginMessage = nil
@@ -342,7 +345,7 @@ private struct PowerSettingsPane: View {
 
     private func updateLoginItem(enabled: Bool) {
         guard #available(macOS 13.0, *) else {
-            loginMessage = "Для автозапуска требуется macOS 13 или новее."
+            loginMessage = L10n.text("Launch at login requires macOS 13 or later.")
             launchAtLogin = false
             return
         }
@@ -352,7 +355,7 @@ private struct PowerSettingsPane: View {
             if enabled {
                 if service.status == .requiresApproval {
                     loginNeedsApproval = true
-                    loginMessage = "Разрешите Sweet No Sleep в Системных настройках → Основные → Объекты входа."
+                    loginMessage = L10n.text("Allow Sweet No Sleep in System Settings > General > Login Items.")
                 } else if service.status != .enabled {
                     try service.register()
                 }
@@ -361,7 +364,7 @@ private struct PowerSettingsPane: View {
             }
             refreshLoginItemState()
         } catch {
-            loginMessage = "Не удалось изменить автозапуск: \(error.localizedDescription)"
+            loginMessage = L10n.format("Could not update launch at login: %@", error.localizedDescription)
             loginNeedsApproval = false
             launchAtLogin = false
         }

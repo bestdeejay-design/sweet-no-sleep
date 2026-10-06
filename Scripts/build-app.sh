@@ -16,6 +16,13 @@ fi
 rm -rf "$APP_DIR"
 mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources"
 cp "$BINARY" "$APP_DIR/Contents/MacOS/SweetNoSleep"
+shopt -s nullglob
+RESOURCE_BUNDLES=("$BIN_DIR"/*.bundle)
+if [[ ${#RESOURCE_BUNDLES[@]} -eq 0 ]]; then
+  echo "Build succeeded, but SwiftPM localization resource bundle was not found in: $BIN_DIR" >&2
+  exit 1
+fi
+cp -R "${RESOURCE_BUNDLES[@]}" "$APP_DIR/Contents/Resources/"
 if [[ -d "$ROOT_DIR/Resources/PetSkins" ]]; then
   mkdir -p "$APP_DIR/Contents/Resources/PetSkins"
   cp -R "$ROOT_DIR/Resources/PetSkins/." "$APP_DIR/Contents/Resources/PetSkins/"
@@ -27,7 +34,7 @@ cat > "$APP_DIR/Contents/Info.plist" <<'PLIST'
 <plist version="1.0">
 <dict>
     <key>CFBundleDevelopmentRegion</key>
-    <string>ru</string>
+    <string>en</string>
     <key>CFBundleExecutable</key>
     <string>SweetNoSleep</string>
     <key>CFBundleIdentifier</key>

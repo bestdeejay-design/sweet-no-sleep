@@ -1,86 +1,96 @@
-# Аудит кода Sweet No Sleep
+# Sweet No Sleep code audit
 
-Дата аудита: 6 октября 2026 года. Проверены исходники приложения, сохранение настроек, библиотека скинов, рендерер питомца, плавающее окно, управление питанием, локальный bridge и shell-hooks, скрипт сборки, манифесты JSON и пользовательская документация.
+Audit date: October 6, 2026. Reviewed the application source, settings persistence, skin library, pet renderer, floating panel, power lifecycle, local bridge and shell hooks, app packaging, JSON manifests, and project documentation.
 
-## Краткий итог
+## Summary
 
-Найдены и исправлены несколько проблем взаимодействия функций. Основные потоки сохранены: ручное удержание Mac бодрствующим, фокус-сессии, agent leases с heartbeat/TTL, пользовательские скины, прозрачная панель питомца и настройки. Добавлены повторяемые проверки, не требующие Xcode.
+Several cross-feature defects were found and fixed. The core flows remain: manual awake mode, timed focus sessions, agent leases with heartbeat/TTL, user skin packs, the transparent pet panel, and configurable behavior.
 
-Нативную сборку и поведение AppKit/SwiftUI на Mac в этой среде подтвердить нельзя: рабочая среда — Linux, Swift/Xcode и macOS SDK отсутствуют. Поэтому ниже отдельно перечислены статически проверенные части и обязательный приёмочный прогон на Mac.
+The current environment is Linux and does not provide Swift/Xcode or the macOS SDK. A native build and AppKit/SwiftUI runtime behavior therefore cannot be confirmed here. The Mac verification checklist below is still required.
 
-## Найденные проблемы и исправления
+## Findings and fixes
 
-1. **Напоминание о паузе не всегда расширяло окно питомца.** `@Published` отправляет новое значение из `willSet`; подписчик панели повторно читал ещё старое `isBreakDue`. В результате пузырёк уже появлялся в SwiftUI, а размер окна и hit-test могли оставаться прежними. Подписчик теперь использует переданное Combine значение для размеров и интерактивной области.
-2. **Скины из checkout могли не находиться при `swift run --package-path`, запущенном из другой папки.** Поиск рассчитывал на фиксированное расположение исходного файла относительно текущего каталога. Поиск теперь проверяет ресурсы app bundle, checkout относительно `#filePath` и исполняемого файла, затем пользовательскую папку; пользовательский пак по-прежнему может намеренно переопределить встроенный ID. Каталоги обходятся в стабильном порядке.
-3. **Мини-питомец в меню отслеживал курсор относительно окна меню, а не рабочего стола.** Для этого экземпляра отключено отслеживание окна и взгляда; основной питомец сохраняет слежение за курсором.
-4. **Reduce Motion не ограничивал все частицы радости.** Пульсация звёзд/сердец и движение листьев теперь статичны при включённом системном Reduce Motion или выключенной анимации. Автопрогулка по экрану также не стартует при системном Reduce Motion.
-5. **Состояние паузы могло теряться из-за других взаимодействий.** Клик, отпускание после drag, запуск новой сессии, heartbeat и прогулка могли заменить выражение напоминания на обычное рабочее. Пауза теперь имеет приоритет после краткой реакции; новые прогулки не начинаются во время паузы или временного настроения, а heartbeat не сбрасывает игровое настроение.
-6. **Agent heartbeat стирал предупреждение о неудачном удержании дисплея.** Heartbeat больше не обнуляет предупреждение. Если после пробуждения Mac не удаётся восстановить именно display assertion, пользователь получает отдельное предупреждение, при этом действующая защита от системного сна сохраняется.
-7. **Отложенный немедленный сон мог опередить новую работу.** Между завершением подтверждённой сессии и системным запросом сна есть короткая задержка для освобождения power assertion. Ранее новая ручная/фокус-сессия или событие старта агента в это окно не отменяли запрос. Добавлен token отмены и повторная проверка всех активных источников перед вызовом сна.
-8. **Не было переносимой проверки пака скина и smoke-теста hooks.** Добавлены `Scripts/validate-skins.py`, `Scripts/test-agent-hooks.sh` и единая команда `Scripts/check-project.sh`.
+1. **The break reminder could appear without resizing the pet window.** Combine's `@Published` emits from `willSet`; the panel subscriber re-read the old `isBreakDue` value. It now uses the emitted value when updating panel dimensions and hit testing.
+2. **Skin discovery depended on the process working directory.** Running `swift run --package-path` from a different directory could miss checkout packs. The loader now searches app-bundle resources, source and executable ancestors, and the user pack folder. User packs can still intentionally override a bundled ID.
+3. **The menu preview tracked the pointer relative to the menu window.** Cursor tracking is disabled for the menu preview; the desktop pet retains pointer-following eyes.
+4. **Reduce Motion did not suppress every celebration effect.** Particle twinkle and leaf drift are static under system Reduce Motion or when animation is disabled. Automatic screen roaming also respects system Reduce Motion.
+5. **Pet moods could conflict.** A click, drag release, heartbeat, or stroll could replace a due break expression. Break state now takes priority after temporary reactions; roaming does not start during breaks or transient moods.
+6. **Agent heartbeats could clear a display-assertion warning.** Heartbeats no longer clear that warning. If macOS cannot restore the optional display assertion after wake, the app reports it while keeping system-sleep protection active.
+7. **A delayed immediate-sleep request could race with new work.** A short delay lets macOS observe the released assertion. Starting another manual, focus, or agent session in that interval now cancels the request, and the callback checks active sources again.
+8. **Portable validation was missing.** Added skin-manifest validation, mocked agent-hook smoke tests, and a single project check script.
+9. **PowerKeeper cleanup conflicted with MainActor isolation in `deinit`.** Removed the actor-isolated deinitializer and added explicit `shutdown()` cleanup, called from the app termination lifecycle. Process termination also releases any OS-owned IOKit assertions if the app is forcibly stopped.
+10. **Settings did not open reliably from the menu-bar dashboard.** Replaced `SettingsLink` with the SwiftUI `openSettings` environment action and explicit app activation.
+11. **User-visible text was embedded directly in Russian source strings.** The UI now uses an English-source `Localizable.xcstrings` catalog through `NSLocalizedString`; the Swift source tree is English-only. A localization validator checks source/catalog key parity. Other translations must be generated through the localization workflow, not hand-edited.
+12. **Screen roaming was difficult to discover.** Settings and README document **Settings → Pet → Behavior**; the first stroll now starts after about 3 seconds, then repeats about every 28 seconds.
 
-## Что проверено автоматически в этой среде
+## Checks run in the repository environment
 
-Запуск `./Scripts/check-project.sh` завершился успешно:
+`./Scripts/check-project.sh` completed successfully in the current Linux checkout:
 
-- синтаксис всех `Scripts/*.sh` проверен через `bash -n`;
-- проверены все 3 встроенных манифеста: валидные поля, диапазоны, эффекты и уникальные ID;
-- hooks протестированы с подменённой командой `open`: `start / heartbeat / done`, успешная и ошибочная команды обёртки, коды завершения и отклонение некорректного action/ID; всего 7 ожидаемых URL-событий;
-- **Swift build пропущен**, поскольку здесь Linux, нет Swift/Xcode и macOS 14 SDK.
+- `bash -n` passed for all `Scripts/*.sh`;
+- the 149 English `L10n` source keys match `Localizable.xcstrings`;
+- all three bundled manifests passed schema, range, effect, and unique-ID validation;
+- hook smoke tests passed with a mocked `open` command, checking start/heartbeat/done, successful and failing wrapped commands, return codes, and rejection of invalid actions/IDs (7 expected URL events);
+- `grep -rn '[А-Яа-я]' Sources/` returned no matches;
+- **Swift build was skipped** because this environment is Linux without Swift/Xcode and the macOS 14 SDK.
 
-Валидатор также принимает пользовательский каталог или конкретный `skin.json`, например:
+A macOS GitHub Actions workflow is configured to run the project check, release app packaging, bundle/resource assertions, and ad-hoc signature verification. Its result, native build, and GUI acceptance remain pending a macOS runner.
+
+The validator also accepts a user pack directory or one manifest:
 
 ```bash
-python3 Scripts/validate-skins.py /путь/к/ocean
+python3 Scripts/validate-skins.py /path/to/ocean
 ```
 
-## Приёмочный прогон на реальном Mac
+## Mac acceptance checklist
 
-После `./Scripts/check-project.sh` запустите `./Scripts/build-app.sh`, откройте собранный `.app` и проверьте следующие сценарии:
+On a Mac, run `./Scripts/check-project.sh`, then `./Scripts/build-app.sh`, open the generated `.app`, and test:
 
-### Настройки и скины
+### Settings and skins
 
-- Из меню открыть **Настройки**, пройти вкладки «Фокус», «Питомец», «Питание»; проверить сохранение длительности, размера, видимости, режима поверх окон, Reduce Motion/анимаций, интервала напоминаний, display toggle и автозапуска после перезапуска.
-- Выбрать каждый встроенный скин и убедиться, что карточка, питомец на рабочем столе и меню показывают один образ; перезапустить приложение и проверить сохранение.
-- Положить валидный пользовательский пак в `~/Library/Application Support/SweetNoSleep/PetSkins/<pack>/skin.json`, нажать «Обновить список», выбрать его, перезапустить приложение. Отдельно проверить пользовательский пак с ID встроенного скина и возврат к встроенному варианту после удаления override.
-- Проверить, что повреждённый/неподдерживаемый манифест не ломает остальные карточки и не завершает приложение.
+- Open **Settings** from the menu-bar footer and visit Focus, Pet, and Power.
+- Change duration, size, visibility, always-on-top, animation/Reduce Motion, break interval, display behavior, and launch-at-login settings. Confirm persistence after relaunch.
+- Select each bundled skin. Confirm the Settings card, desktop pet, and menu preview agree; relaunch and confirm the choice persisted.
+- Install a valid user pack under `~/Library/Application Support/SweetNoSleep/PetSkins/<pack>/skin.json`, refresh, select, and relaunch. Test a user pack that overrides a bundled ID, then remove it and restore the bundled look.
+- Confirm a malformed manifest is skipped without hiding other packs or crashing the app.
 
-### Панель и поведение питомца
+### Pet panel and behavior
 
-- Изменять размер от 90 до 170 pt, перетаскивать питомца, проверять сохранение позиции, прозрачные углы окна, клики по питомцу и кнопки пузырька паузы.
-- Дождаться или временно сократить интервал до паузы; проверить изменение размера панели, «Позже», «Пауза сделана», отключение напоминаний и возобновление таймера.
-- Проверить взгляд за курсором на рабочем столе и отсутствие привязки к окну меню; включить/выключить анимации; включить системный Reduce Motion и проверить, что нет дрейфа частиц и прогулки.
-- Проверить несколько циклов прогулки, drag во время активности, скрытие/показ питомца, обычный/плавающий уровни окна, Spaces и несколько дисплеев.
+- Adjust size from 90 to 170 pt, drag the pet, and check saved position, transparent hit testing, clicks, and break-bubble buttons.
+- Trigger a break reminder; check panel resizing, snooze, dismiss, disabling reminders, and timer restart.
+- Check pointer tracking on the desktop and ensure the menu preview does not track the menu window. Toggle animation and system Reduce Motion.
+- Enable roaming under **Settings → Pet → Behavior**; check the initial stroll after about 3 seconds and later strolls at about 28-second intervals. Also check drag, hide/show, normal/floating level, Spaces, and multiple displays.
 
-### Питание и agent hooks
+### Power and agent hooks
 
-- Вручную включить/выключить защиту и выполнить `pmset -g assertions`; проверить появление и освобождение `PreventUserIdleSystemSleep`. Отдельно проверить экран с включённой и выключенной настройкой.
-- Провести безопасную фокус-сессию с обычным сном по окончании; немедленный сон проверять только в контролируемой обстановке без важной работы. Убедиться, что новое событие агента в короткую задержку не отправляет Mac спать.
-- Проверить `./Scripts/agent-session.sh smoke-1 -- <короткая-команда>`, terminal-событие `failed`, ручное завершение сессий, отключение bridge и истечение lease без heartbeat. Первую проверку провести с обычным сном, не выбирая немедленный.
-- Проверить пробуждение Mac во время активной сессии и предупреждение, если система не восстановит дополнительную display assertion.
+- Enable and disable manual protection and inspect `pmset -g assertions` for `PreventUserIdleSystemSleep`. Test the optional display assertion separately.
+- Run a safe timed session with normal sleep on completion. Test immediate sleep only in a controlled environment without important work. Confirm a new agent event in the short delay cancels the sleep request.
+- Test `./Scripts/agent-session.sh smoke-1 -- <short-command>`, a failed command, manual agent-session stop, bridge disable, and lease expiry without heartbeat. Start with normal sleep, not immediate sleep.
+- Test Mac sleep/wake during an active session and confirm a warning appears if macOS cannot restore the optional display assertion.
+- Click the menu-bar **Settings** button and confirm the Settings scene opens while the app uses accessory activation policy.
 
-## План дальнейшего развития
+## Further development plan
 
-### Приоритет 0 — подтверждение на Mac
+### Priority 0 — Mac validation
 
-- Выполнить сборку `.app` и полный приёмочный прогон выше на целевой версии macOS.
-- Зафиксировать результаты на Intel/Apple Silicon, с одним/несколькими мониторами и при переключении Spaces.
-- После успешной сборки добавить Swift unit-тесты для чистых компонентов состояния/валидации там, где это не требует IOKit или UI.
+- Run Swift build, app bundle assembly, and the acceptance scenarios above on macOS 14+.
+- Record results on Apple Silicon/Intel, single/multiple displays, and across Spaces.
+- Add Swift unit tests for pure model/validation components once a macOS test environment is available.
 
-### Приоритет 1 — надёжность рабочего цикла агентов
+### Priority 1 — Agent workflow reliability
 
-- Подключить реальные provider-specific адаптеры Claude Code/Codex/IDE с отдельными событиями «работает», «ждёт подтверждения», «завершён», «ошибка»; оставить heartbeat/TTL как страховку.
-- Добавить видимое состояние ошибки power assertion рядом с числом активных lease и тестировать сценарий, когда агент жив, но система не приняла assertion.
-- Решить, нужна ли дополнительная защита URL bridge помимо текущего явного opt-in; custom URL scheme доступна локальным процессам и сама по себе не является аутентификацией.
+- Add provider-specific Claude Code, Codex, and IDE hooks with explicit running, waiting-for-approval, completed, and failed events; keep heartbeat/TTL as a safety net.
+- Keep assertion failures visible alongside active lease state.
+- Decide whether the local URL bridge needs additional controls beyond opt-in; a custom URL scheme is not authentication.
 
-### Приоритет 2 — расширяемость питомца и удобство
+### Priority 2 — Pet and workflow extensibility
 
-- Развить schema паков до отдельных клипов/поз и дополнительных силуэтов, сохраняя безопасные data-only манифесты и каталог пользовательских паков.
-- Добавить превью выбранного скина в настройках, понятную диагностику пропущенных паков и кнопку сброса к встроенному образу.
-- После стабилизации рассмотреть выбор дисплея, горячую клавишу и адаптивные режимы питания; новые функции держать отдельными от основного цикла защиты Mac от сна.
+- Extend skin packs with independent clips/poses and additional silhouettes while keeping manifests data-only.
+- Add selected-skin preview, skipped-pack diagnostics, and a reset-to-bundled action.
+- Consider monitor selection, a hotkey, and adaptive power modes after the core loop is stable.
 
-## Ограничения аудита
+## Audit limits
 
-- Ни UI, ни AppKit-панель, ни IOKit assertions здесь фактически не запускались; автоматические тесты hooks используют mock `open` и не доказывают регистрацию URL scheme в установленном `.app`.
-- Локальный URL bridge намеренно opt-in, но любой локальный процесс, способный открыть URL scheme, может посылать событие. Это указано в интерфейсе и документации.
-- Защита действует против сна по бездействию; она не отменяет закрытие крышки, принудительный сон, критическое отключение питания или системные политики.
+- AppKit panels, IOKit assertions, and the menu-bar UI were not run in this Linux environment. Hook smoke tests use a mocked `open` command and do not prove URL-scheme registration in an installed `.app`.
+- The local URL bridge is opt-in but not authenticated; any local process that can open the registered scheme can send events.
+- The assertion protects against idle sleep; it cannot override lid closure, user-initiated sleep, critical power conditions, or system policy.

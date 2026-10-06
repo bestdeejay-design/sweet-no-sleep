@@ -25,17 +25,17 @@ enum SessionCompletionAction: String, CaseIterable, Identifiable, Hashable {
 
     var title: String {
         switch self {
-        case .allowNormalSleep: "Разрешить обычный сон"
-        case .sleepImmediately: "Сразу отправить Mac в сон"
+        case .allowNormalSleep: L10n.text("Allow normal sleep")
+        case .sleepImmediately: L10n.text("Put the Mac to sleep immediately")
         }
     }
 
     var detail: String {
         switch self {
         case .allowNormalSleep:
-            "Снять защиту от сна. macOS уснёт по своим настройкам энергосбережения."
+            L10n.text("Release the sleep assertion and let macOS use its normal energy settings.")
         case .sleepImmediately:
-            "После подтверждённой сессии Киви отправит запрос на немедленный сон."
+            L10n.text("After a confirmed session, Kiwi will request immediate system sleep.")
         }
     }
 }
@@ -68,7 +68,7 @@ final class SweetNoSleepModel: ObservableObject {
     @Published private(set) var activeAgentCount = 0
     @Published private(set) var remainingSeconds: Int?
     @Published private(set) var powerWarning: String?
-    @Published var statusMessage = "Киви готов составить компанию"
+    @Published var statusMessage = L10n.text("Kiwi is ready to keep you company")
     @Published private(set) var mood: KiwiMood = .idle
 
     @Published var selectedMinutes: Int {
@@ -243,21 +243,21 @@ final class SweetNoSleepModel: ObservableObject {
         sessionCompletionAction = nil
         remainingSeconds = nil
         isFocusSession = false
-        startPowerAssertions(reason: "Sweet No Sleep — ручной режим")
+        startPowerAssertions(reason: "Sweet No Sleep - manual mode")
         guard isKeepingAwake else { return }
-        statusMessage = "Киви следит, чтобы Mac не уснул"
+        statusMessage = L10n.text("Kiwi is keeping your Mac awake")
         setMood(isBreakDue ? .breakReminder : .working)
     }
 
     func startFocusSession(confirmedImmediateSleep: Bool = false) {
         if completionAction == .sleepImmediately && !confirmedImmediateSleep {
-            statusMessage = "Подтвердите немедленный сон перед запуском сессии"
+            statusMessage = L10n.text("Confirm immediate sleep before starting this session.")
             return
         }
 
         cancelPendingImmediateSleepRequest()
         let minutes = min(max(selectedMinutes, 15), 240)
-        startPowerAssertions(reason: "Sweet No Sleep — фокус-сессия, \(minutes) мин")
+        startPowerAssertions(reason: "Sweet No Sleep - focus session, \(minutes) min")
         guard isKeepingAwake else { return }
 
         manualAwake = false
@@ -265,7 +265,7 @@ final class SweetNoSleepModel: ObservableObject {
         sessionEndDate = Date().addingTimeInterval(TimeInterval(minutes * 60))
         sessionCompletionAction = completionAction
         isFocusSession = true
-        statusMessage = "Фокус-сессия началась · \(minutes) мин"
+        statusMessage = L10n.format("Focus session started - %d min", minutes)
         setMood(isBreakDue ? .breakReminder : .working)
         updateCountdown()
         sessionTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
@@ -295,8 +295,13 @@ final class SweetNoSleepModel: ObservableObject {
         powerWarning = nil
 
         guard wasRunning else { return }
-        statusMessage = "Киви закончил смену · Mac снова следует настройкам сна"
+        statusMessage = L10n.text("Kiwi's shift is over - your Mac is back to its normal sleep settings")
         setTemporaryMood(.resting, duration: 1.8, then: .idle)
+    }
+
+    func shutdown() {
+        stopKeepingAwake()
+        powerKeeper.shutdown()
     }
 
     // MARK: Local agent bridge
@@ -319,7 +324,7 @@ final class SweetNoSleepModel: ObservableObject {
         switch action.lowercased() {
         case "start":
             renewAgentLease(sessionID: sessionID)
-            statusMessage = "AI-агент сообщил о начале работы"
+            statusMessage = L10n.text("An AI agent reported that work has started.")
         case "heartbeat":
             guard agentLeases[sessionID] != nil else { return }
             renewAgentLease(sessionID: sessionID)
@@ -339,7 +344,7 @@ final class SweetNoSleepModel: ObservableObject {
         agentLeaseTimer?.invalidate()
         agentLeaseTimer = nil
         activeAgentCount = 0
-        finishAwakeIfNoOtherSource(message: "Связь с агентами снята вручную")
+        finishAwakeIfNoOtherSource(message: L10n.text("Agent sessions were stopped manually."))
     }
 
     private func renewAgentLease(sessionID: String) {
@@ -356,7 +361,7 @@ final class SweetNoSleepModel: ObservableObject {
         }
 
         if !isKeepingAwake {
-            startPowerAssertions(reason: "Sweet No Sleep — работа AI-агента")
+            startPowerAssertions(reason: "Sweet No Sleep - AI agent work")
         }
         if isKeepingAwake,
            !isFocusSession,
@@ -373,7 +378,9 @@ final class SweetNoSleepModel: ObservableObject {
             agentLeaseTimer?.invalidate()
             agentLeaseTimer = nil
         }
-        let message = failed ? "AI-агент завершился с ошибкой" : "AI-агент сообщил о завершении"
+        let message = failed
+            ? L10n.text("The AI agent failed.")
+            : L10n.text("The AI agent reported completion.")
         finishAwakeIfNoOtherSource(message: message)
     }
 
@@ -390,14 +397,14 @@ final class SweetNoSleepModel: ObservableObject {
         }
 
         let message = agentLeases.isEmpty
-            ? "Связь с AI-агентом потеряна · защита снята по таймауту"
-            : "Один heartbeat агента истёк · другие сессии продолжаются"
+            ? L10n.text("The AI agent connection was lost - sleep protection ended after timeout")
+            : L10n.text("One agent heartbeat expired - other sessions are still active")
         finishAwakeIfNoOtherSource(message: message)
     }
 
     private func finishAwakeIfNoOtherSource(message: String) {
         guard !manualAwake, !isFocusSession, agentLeases.isEmpty else {
-            statusMessage = message + " · другие сессии всё ещё защищены"
+            statusMessage = L10n.format("%@ - other sessions are still protected", message)
             return
         }
 
@@ -412,7 +419,7 @@ final class SweetNoSleepModel: ObservableObject {
         powerKeeper.end()
         isKeepingAwake = false
         powerWarning = nil
-        statusMessage = message + " · Mac вернулся к обычным настройкам сна"
+        statusMessage = L10n.format("%@ - your Mac is back to its normal sleep settings", message)
         setTemporaryMood(.celebrating, duration: 1.6, then: .idle)
     }
 
@@ -420,7 +427,9 @@ final class SweetNoSleepModel: ObservableObject {
 
     func poke() {
         guard mood != .dragging else { return }
-        statusMessage = isKeepingAwake ? "Киви на связи и бережёт сессию" : "Киви тоже за работу — или на отдых?"
+        statusMessage = isKeepingAwake
+            ? L10n.text("Kiwi is on duty and protecting this session.")
+            : L10n.text("Should Kiwi get to work too - or take a break?")
         setTemporaryMood(.celebrating, duration: 1.25, then: isKeepingAwake ? .working : .idle)
     }
 
@@ -457,8 +466,8 @@ final class SweetNoSleepModel: ObservableObject {
 
         let delayMinutes = max(snoozeMinutes ?? breakIntervalMinutes, 1)
         statusMessage = snoozeMinutes == nil
-            ? "Хорошая пауза · следующий мягкий сигнал через \(delayMinutes) мин"
-            : "Хорошо · напомню ещё раз через \(delayMinutes) мин"
+            ? L10n.format("Nice break - I'll gently remind you again in %d min", delayMinutes)
+            : L10n.format("Okay - I'll remind you again in %d min", delayMinutes)
         scheduleBreakReminder(after: TimeInterval(delayMinutes * 60))
         schedulePlayfulMoment()
     }
@@ -486,7 +495,7 @@ final class SweetNoSleepModel: ObservableObject {
             sessionCompletionAction = nil
             remainingSeconds = nil
             powerWarning = result.message
-            statusMessage = result.message ?? "Не удалось включить защиту от сна"
+            statusMessage = result.message ?? L10n.text("Could not enable sleep protection.")
             setTemporaryMood(.resting, duration: 1.8, then: .idle)
             return
         }
@@ -498,7 +507,7 @@ final class SweetNoSleepModel: ObservableObject {
 
     private func refreshPowerAssertions() {
         let result = powerKeeper.begin(
-            reason: isFocusSession ? "Sweet No Sleep — фокус-сессия" : "Sweet No Sleep — ручной режим",
+            reason: isFocusSession ? "Sweet No Sleep - focus session" : "Sweet No Sleep - manual mode",
             keepDisplayOn: keepDisplayAwake
         )
         guard result.success else {
@@ -514,7 +523,7 @@ final class SweetNoSleepModel: ObservableObject {
             manualAwake = false
             isKeepingAwake = false
             powerWarning = result.message
-            statusMessage = result.message ?? "Защиту от сна не удалось обновить"
+            statusMessage = result.message ?? L10n.text("Could not refresh sleep protection.")
             setTemporaryMood(.resting, duration: 1.8, then: .idle)
             return
         }
@@ -543,8 +552,8 @@ final class SweetNoSleepModel: ObservableObject {
         if otherWorkRemains {
             isKeepingAwake = true
             statusMessage = activeAgentCount > 0
-                ? "Таймер завершён · агент всё ещё работает"
-                : "Таймер завершён · ручная защита остаётся включённой"
+                ? L10n.text("Timer finished - an AI agent is still working")
+                : L10n.text("Timer finished - manual sleep protection is still on")
         } else {
             powerKeeper.end()
             breakTimer?.invalidate()
@@ -552,7 +561,7 @@ final class SweetNoSleepModel: ObservableObject {
             isBreakDue = false
             isKeepingAwake = false
             powerWarning = nil
-            statusMessage = "Цель достигнута · сессия завершена"
+            statusMessage = L10n.text("Goal reached - the session is complete")
         }
 
         setTemporaryMood(.celebrating, duration: 2.2, then: .idle)
@@ -572,7 +581,7 @@ final class SweetNoSleepModel: ObservableObject {
                   self.agentLeases.isEmpty
             else { return }
             guard let error = self.powerKeeper.requestImmediateSleep() else { return }
-            self.statusMessage = "Сессия завершена, но сон не запущен: \(error)"
+            self.statusMessage = L10n.format("Session ended, but sleep did not start: %@", error)
             self.powerWarning = error
         }
     }
@@ -618,7 +627,7 @@ final class SweetNoSleepModel: ObservableObject {
             self.isBreakDue = true
             self.playfulTimer?.invalidate()
             self.playfulTimer = nil
-            self.statusMessage = "Пора ненадолго отвести взгляд от кода"
+            self.statusMessage = L10n.text("Time to look away from the code for a moment.")
             self.setMood(.breakReminder)
         }
     }

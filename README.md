@@ -1,119 +1,136 @@
 # Sweet No Sleep — Kiwi Cat
 
-Нативный питомец macOS, который живёт поверх рабочего стола, реагирует на прикосновения и помогает удерживать Mac бодрствующим во время долгих тестов и работы AI-агентов.
+A native macOS desktop companion that reacts to interaction and helps keep a Mac awake during long-running work by users or AI agents.
 
-## Что уже есть
+## Features
 
-- **Киви — нарисованный персонаж без внешних ассетов:** дышит, моргает, виляет хвостом, реагирует на клик, перетаскивание и следит глазами за курсором.
-- **Три сменных JSON-скина:** Kiwi, Moonlight и Strawberry — собственные палитры, профиль движения и эффект радости. Можно добавлять пользовательские паки без правок исходников.
-- **Редкие игровые моменты во время сессии:** танец, потягивание или любопытный взгляд примерно раз в 3,5–6,5 минут; реакции можно отключить отдельным переключателем.
-- **Мягкие напоминания о паузе:** по умолчанию каждые 25 минут бодрствующей сессии Киви предлагает на 20 секунд посмотреть вдаль. Можно отложить, подтвердить паузу или отключить напоминания.
-- **Прозрачное плавающее окно:** не активирует питомца вместо редактора, умеет оставаться поверх окон и на других Spaces; позиция сохраняется.
-- **Плавная прогулка по экрану:** опциональна и выключена по умолчанию, чтобы Киви не перекрывал код.
-- **Ручной режим без таймера** и **фокус-сессии на 15 минут — 4 часа**.
-- **Настраиваемое завершение:** снять запрет и разрешить macOS уснуть по обычным настройкам или, по явному выбору и с подтверждением каждой сессии, сразу отправить Mac в сон.
-- **Отдельная настройка дисплея:** можно оставить экрану право гаснуть, пока система и агенты продолжают работу.
-- **Настройки размера, видимости, анимации, автозапуска, скинов и agent hooks.** Учитывается системный Reduce Motion.
+- **Kiwi is drawn without external artwork:** breathing, blinking, a swaying tail, pointer-following eyes, click reactions, and drag-to-move.
+- **Three JSON skin packs:** Kiwi, Moonlight, and Strawberry have separate palettes, motion profiles, and celebration effects. Add user packs without changing application source.
+- **Occasional playful moments during an awake session:** a dance, stretch, or curious look roughly every 3.5–6.5 minutes; can be disabled independently.
+- **Gentle break reminders:** by default, every 25 minutes of an awake session Kiwi suggests looking into the distance for about 20 seconds. Snooze, dismiss, or disable reminders.
+- **Transparent floating panel:** does not activate the pet instead of the editor, can stay above windows and across Spaces, and remembers its position.
+- **Optional screen roaming:** enable **Settings → Pet → Behavior**. The first stroll starts about 3 seconds after enabling; later strolls begin about every 28 seconds. Off by default.
+- **Manual awake mode** without a timer and **focus sessions** from 15 minutes to 4 hours.
+- **Configurable session completion:** release the assertion and let macOS use its normal sleep settings, or explicitly choose immediate sleep with confirmation for each session.
+- **Separate display setting:** allow the display to turn off while the Mac and work remain awake.
+- **Settings for size, visibility, animation, launch at login, skins, and agent hooks.** System Reduce Motion is respected.
 
-## Сборка на Mac
+## Build on Mac
 
-Требуются macOS 14+, Xcode Command Line Tools и Swift 5.9+.
+Requirements: macOS 14+, Xcode Command Line Tools, and Swift 5.9+.
 
 ```bash
-# Быстрый запуск из Swift Package
-swift run --package-path /путь/к/sweet-no-sleep
+# Run the Swift package
+swift run --package-path /path/to/sweet-no-sleep
 
-# Собрать локальное приложение .app
-cd /путь/к/sweet-no-sleep
+# Build a local .app bundle
+cd /path/to/sweet-no-sleep
 ./Scripts/build-app.sh
 open "dist/Sweet No Sleep — Kiwi Cat.app"
 ```
 
-Скрипт собирает release-бинарник, помещает его в минимальный `.app` bundle и подписывает ad-hoc для локального запуска. Держите приложение по стабильному пути: это важно для автозапуска. Для распространения другим людям понадобятся Developer ID-подпись, notarization и app icon.
+The build script produces a release binary, assembles a minimal `.app` bundle, copies skin and localization resources, and ad-hoc signs it for local use. Keep the app at a stable path if you enable launch at login. Distribution requires Developer ID signing, notarization, and an app icon.
 
-Перед сборкой можно прогнать переносимые проверки (shell hooks и JSON-паки); на Mac команда также собирает Swift Package:
+Run the portable checks before building; on macOS the check script also builds the Swift package:
 
 ```bash
 ./Scripts/check-project.sh
 ```
 
-## Где что настроить
+## Settings
 
-Нажмите значок Sweet No Sleep в строке меню и выберите **Настройки** — это не настройка macOS, а окно параметров самого приложения. В нём три раздела:
+Open the menu-bar item and choose **Settings**. This is the app's settings window, not a macOS Settings pane. It contains three sections:
 
-- **Фокус** — длительность таймера, поведение по завершении и ручной переключатель «Не давать Mac заснуть».
-- **Питомец** — выбор карточки-скина, размер (90–170 pt, применяется сразу), видимость, положение поверх окон, прогулка, анимации, игровые реакции и напоминания о паузе. Перетащите Киви мышью, чтобы переставить его.
-- **Питание** — экран, opt-in bridge для hooks и автозапуск.
+- **Focus** — session duration, completion behavior, and manual awake mode.
+- **Pet** — skin, size (90–170 pt), visibility, window level, roaming, animation, playful moments, and break reminders. Drag Kiwi on the desktop to reposition it.
+- **Power** — display sleep, opt-in agent hooks, and launch at login.
 
-Чтобы добавить скин, откройте **Настройки → Питомец → Открыть папку скинов**, скопируйте туда каталог с `skin.json`, нажмите **Обновить список** и выберите новую карточку. Подробные поля JSON и пример — в [руководстве по созданию скинов](docs/SKIN_AUTHORING.md).
+To add a skin, open **Settings → Pet → Open skins folder**, copy a pack directory containing `skin.json`, choose **Refresh list**, and select its card. See [the skin authoring guide](docs/SKIN_AUTHORING.md) for the schema and a template.
 
-### Проверка защиты от сна
+## Check sleep protection
 
-Включите ручной режим или фокус-сессию, затем выполните:
+Enable manual awake mode or start a focus session, then run:
 
 ```bash
 pmset -g assertions | grep -A4 -B2 -i "Sweet No Sleep"
 ```
 
-В выводе должна появиться assertion `PreventUserIdleSystemSleep` с причиной Sweet No Sleep. Если включена опция «Не выключать дисплей», появится и display assertion. Завершите режим и убедитесь, что assertions приложения исчезли.
+The output should show the app's `PreventUserIdleSystemSleep` assertion. If **Keep the display on during a session** is enabled, a display assertion should also appear. Stop the mode and confirm that the app's assertions disappear.
 
-## Важно о сне и AI-агентах
+## AI agents and sleep
 
-Защита macOS предназначена для **сна по бездействию**. Она не может отменить принудительный сон пользователя, закрытие крышки MacBook, критическое выключение из-за батареи или действия macOS. Если выбран «Обычный сон», Киви только освобождает собственную защиту — дальше действуют таймеры энергосбережения macOS. «Сразу отправить Mac в сон» — отдельная опасная опция; перед запуском Киви спрашивает подтверждение, потому что такой сон может прервать другие приложения.
+Sleep protection is intended for **idle system sleep**. It cannot override a sleep command initiated by the user, closing a MacBook lid, critical battery shutdown, or other macOS policies. With **Allow normal sleep**, Kiwi releases its own protection and macOS resumes its normal energy settings. **Put the Mac to sleep immediately** is a separate, potentially disruptive option that requires confirmation for each focus session.
 
-Текущая версия **не угадывает состояние агента по открытому Cursor, Claude Code, Codex, Terminal или IDE**: открытый редактор не равен работающей задаче. Вместо сканирования процессов есть opt-in **локальный URL bridge** для hooks. Сначала соберите `.app` и один раз откройте его, затем включите **Настройки → Питание → Разрешить события от локальных hooks**. Bridge выключен по умолчанию.
+The app does **not** infer agent status from an open Cursor, Claude Code, Codex, Terminal, or IDE window. An open editor does not prove that a task is running. Instead, the app offers an opt-in local URL bridge for hooks. First build and open the `.app`, then enable **Settings → Power → Allow events from local hooks**. The bridge is off by default.
 
-Для команды/скрипта агента проще всего использовать обёртку. Она посылает `start`, heartbeat каждые 60 секунд, `done` при коде выхода 0 и `failed` при ошибке или прерывании:
+For an agent command, use the wrapper. It sends `start`, heartbeats every 60 seconds, and sends `done` for a successful exit or `failed` for an error or interruption:
 
 ```bash
 ./Scripts/agent-session.sh my-agent-123 -- ./run-my-agent.sh --your-args
 ```
 
-Для IDE или собственных hook-callbacks вызывайте CLI в соответствующих точках жизненного цикла. Один и тот же уникальный ID нужно использовать для всей сессии:
+For an IDE or custom hook callback, call the CLI at the corresponding lifecycle points and reuse one unique ID for the entire session:
 
 ```bash
-# Callback начала задачи
+# Task started
 ./Scripts/agent-event.sh start "$SESSION_ID"
 
-# Повторять примерно раз в минуту, пока задача работает или ждёт подтверждения
+# Repeat about once a minute while the task is running or waiting for approval
 ./Scripts/agent-event.sh heartbeat "$SESSION_ID"
 
-# Ровно одно из терминальных событий
-./Scripts/agent-event.sh done "$SESSION_ID"    # успешное завершение
-./Scripts/agent-event.sh failed "$SESSION_ID"  # ошибка или отмена
+# Send exactly one terminal event
+./Scripts/agent-event.sh done "$SESSION_ID"    # success
+./Scripts/agent-event.sh failed "$SESSION_ID"  # error or cancellation
 ```
 
-Названия и формат callback-событий зависят от конкретной IDE/агента; это пример мест, куда подключать команды, а не готовый provider-specific hook. Пока задача активна (включая ожидание подтверждения), продолжайте heartbeat и не отправляйте `done` раньше времени. Heartbeat продлевает lease на 3 минуты; пропавший hook не оставит Mac awake бесконечно. Любой локальный процесс может вызвать URL scheme, поэтому включайте bridge только если доверяете своим hooks. Agent-события могут снять assertion, но **никогда не запускают немедленный сон**. Подключение конкретных адаптеров описано в [исследовании](docs/RESEARCH.md).
+Hook callback names and payloads vary by IDE; these commands show where to connect them, not a provider-specific integration. Continue heartbeats while the agent is waiting for approval; do not send `done` early. A heartbeat renews a 3-minute lease, so a lost hook will not keep the Mac awake indefinitely. The local URL bridge is not authenticated: any local process that can open the URL scheme may send an event. Enable it only for trusted hooks. Agent events can release an assertion but **never trigger immediate sleep**. See [the research and design notes](docs/RESEARCH.md) for integration guidance.
 
-Утилита удерживает бодрствующим **сам Mac**, но не управляет очередями, сетью, авторизацией, политикой сна внутри IDE и внутренними механизмами остановки конкретного агента. Проверяйте долгие сессии сначала с действием «Разрешить обычный сон».
+The app can keep the **Mac** awake, but it does not manage agent queues, network access, authentication, an IDE's sleep policies, or an agent's own stop conditions. Start long sessions with **Allow normal sleep** until the workflow has been verified.
 
-## Архитектура
+## Localization
+
+`Sources/SweetNoSleep/Localizable.xcstrings` is the English source catalog. User-visible app text goes through `L10n.text` or `L10n.format`, backed by `NSLocalizedString`. Run `Scripts/validate-localization.py` to check that source keys and catalog entries stay in sync. Additional locales must be generated, never hand-edited, through `Scripts/localize.sh` with the Crowdin CLI installed, `CROWDIN_CONFIG` pointing to the project config, and credentials supplied by CI. This checkout intentionally contains English source strings only and does not store provider credentials or a Crowdin project config.
+
+## Project validation
+
+```bash
+./Scripts/check-project.sh
+python3 Scripts/validate-skins.py /path/to/a-skin-pack
+```
+
+The check script validates shell syntax, English catalog key parity, bundled skin manifests, and hook behavior with a mocked `open` command. On macOS it also runs `swift build`. It cannot test actual power assertions or the menu-bar UI; use the Mac acceptance checklist in [the code audit](docs/CODE_AUDIT.md).
+
+## Architecture
 
 ```text
 Sources/SweetNoSleep/
-├── SweetNoSleepApp.swift    # MenuBarExtra, запуск и жизненный цикл питомца
-├── SweetNoSleepModel.swift  # общее состояние, сессии, напоминания и библиотека скинов
-├── PetSkinDefinition.swift  # JSON-схема, валидация и загрузка паков
-├── PetPanel.swift           # прозрачный NSPanel, позиция и прогулка
-├── KiwiPetView.swift        # Canvas-питомец, взгляд за курсором и реакции
-├── PowerKeeper.swift        # ProcessInfo + IOPM assertions + запрос сна
-└── SettingsView.swift       # вкладки «Фокус», «Питомец», «Питание»
+├── SweetNoSleepApp.swift      # MenuBarExtra, app lifecycle, dashboard
+├── SweetNoSleepModel.swift    # shared state, sessions, reminders, skin library
+├── PetSkinDefinition.swift    # JSON schema and pack loading
+├── KiwiPetView.swift          # Canvas pet, gaze, and reactions
+├── PetPanel.swift             # transparent NSPanel, hit testing, position, roaming
+├── PowerKeeper.swift          # ProcessInfo and IOPM assertions
+├── SettingsView.swift         # Focus, Pet, and Power settings
+├── Localization.swift         # NSLocalizedString catalog access
+└── Localizable.xcstrings      # English source strings
 
-Resources/PetSkins/           # встроенные JSON-паки
-Scripts/build-app.sh          # сборка .app и копирование ресурсов
-Scripts/agent-event.sh        # отдельные start/heartbeat/done/failed события
-Scripts/agent-session.sh      # обёртка команды с heartbeat и итоговым событием
-Scripts/check-project.sh      # переносимые проверки проекта и сборка Swift Package на Mac
-Scripts/validate-skins.py     # проверка встроенных или пользовательских JSON-паков
-Scripts/test-agent-hooks.sh   # smoke-тесты hooks с mock-командой open
-docs/SKIN_AUTHORING.md        # формат и установка новых скинов
-docs/CODE_AUDIT.md            # аудит, найденные исправления и Mac-чеклист
+Resources/PetSkins/            # bundled JSON skin packs
+Scripts/build-app.sh           # app bundle assembly
+Scripts/agent-event.sh         # individual agent lifecycle events
+Scripts/agent-session.sh       # wrapped command with heartbeat
+Scripts/check-project.sh       # portable checks and Swift package build on Mac
+Scripts/validate-skins.py      # bundled and user skin pack validation
+Scripts/test-agent-hooks.sh    # hook smoke tests with mocked open
+Scripts/localize.sh            # localization workflow entry point
+docs/CODE_AUDIT.md             # audit findings and Mac acceptance checklist
+docs/SKIN_AUTHORING.md         # skin pack format and installation
+docs/RESEARCH.md               # design, power-management limits, and roadmap
 ```
 
-## Направления следующего этапа
+## Next development areas
 
-1. **Адаптеры агентов** — Claude Code hooks, Codex/IDE callbacks или локальный протокол `start / heartbeat / waiting-for-approval / done`; heartbeat с TTL, чтобы зависший агент не держал Mac бесконечно.
-2. **Состояния агента** — работает, ждёт подтверждения, тесты завершены, ошибка, цель достигнута. Пусть питомец меняет позу, а не показывает навязчивые уведомления.
-3. **Режимы питания** — «пока агент работает», «только от адаптера питания», короткая отсрочка перед сном и видимая кнопка аварийной остановки.
-4. **Более богатые паки питомцев** — дополнительные силуэты, авторские иллюстрации и независимые анимационные клипы поверх существующего JSON-формата.
-5. **Качество жизни** — горячая клавиша, выбор монитора, расписания, статистика сессий и тихие звуковые сигналы (опционально).
+1. Provider adapters for Claude Code, Codex, and IDE callbacks, retaining heartbeat and TTL as safeguards.
+2. Explicit agent states such as running, waiting for approval, tests complete, and failed.
+3. Optional power policies for AC power, a grace period after completion, and a visible emergency stop.
+4. Richer skin packs with additional silhouettes and independently authored animation clips.
+5. Quality-of-life additions such as a hotkey, monitor selection, schedules, session statistics, and optional quiet sounds.

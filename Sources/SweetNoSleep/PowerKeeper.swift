@@ -15,7 +15,7 @@ final class PowerKeeper {
     private var systemAssertion: IOPMAssertionID = 0
     private var displayAssertion: IOPMAssertionID = 0
     private var wakeObserver: NSObjectProtocol?
-    private var reason = "Sweet No Sleep — focus session"
+    private var reason = "Sweet No Sleep - focus session"
     private var shouldKeepDisplayOn = false
     var onFailure: ((String) -> Void)?
     var onWarning: ((String) -> Void)?
@@ -29,16 +29,6 @@ final class PowerKeeper {
             queue: .main
         ) { [weak self] _ in
             self?.reassertAfterWake()
-        }
-    }
-
-    deinit {
-        if let wakeObserver {
-            NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver)
-        }
-        releaseAssertionIDs()
-        if let activity {
-            ProcessInfo.processInfo.endActivity(activity)
         }
     }
 
@@ -69,7 +59,7 @@ final class PowerKeeper {
                 ProcessInfo.processInfo.endActivity(activity)
                 self.activity = nil
             }
-            return (false, "macOS не разрешила удержать систему от сна (код \(systemResult)).")
+            return (false, L10n.format("macOS could not prevent system sleep (error %d).", systemResult))
         }
 
         isActive = true
@@ -80,11 +70,11 @@ final class PowerKeeper {
 
         let displayResult = createAssertion(
             type: kIOPMAssertionTypeNoDisplaySleep as CFString,
-            name: "\(reason) — экран",
+            name: "\(reason) - display",
             id: &displayAssertion
         )
         if displayResult != kIOReturnSuccess {
-            return (true, "Mac не удалось удержать экран включённым (код \(displayResult)); система всё ещё защищена от сна.")
+            return (true, L10n.format("macOS could not keep the display awake (error %d); the system is still protected from idle sleep.", displayResult))
         }
         return (true, nil)
     }
@@ -99,18 +89,28 @@ final class PowerKeeper {
         isActive = false
     }
 
+    /// Performs explicit app-lifecycle cleanup instead of relying on a deinit
+    /// that cannot safely access this main-actor-owned state.
+    func shutdown() {
+        end()
+        if let wakeObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver)
+            self.wakeObserver = nil
+        }
+    }
+
     /// Requests immediate system sleep. This is only called after the user has
     /// explicitly selected that end-of-session action and confirmed the session.
     func requestImmediateSleep() -> String? {
         let connection = IOPMFindPowerManagement(kIOMainPortDefault)
         guard connection != IO_OBJECT_NULL else {
-            return "Не удалось подключиться к службе управления питанием macOS."
+            return L10n.text("Could not connect to the macOS power management service.")
         }
         defer { IOServiceClose(connection) }
 
         let result = IOPMSleepSystem(connection)
         guard result == kIOReturnSuccess else {
-            return "macOS не приняла запрос на сон (код \(result))."
+            return L10n.format("macOS rejected the sleep request (error %d).", result)
         }
         return nil
     }
@@ -127,7 +127,7 @@ final class PowerKeeper {
             id: &systemAssertion
         )
         guard systemResult == kIOReturnSuccess else {
-            let message = "Не удалось восстановить защиту от сна после пробуждения (код \(systemResult))."
+            let message = L10n.format("Could not restore idle-sleep protection after wake (error %d).", systemResult)
             end()
             onFailure?(message)
             return
@@ -136,11 +136,11 @@ final class PowerKeeper {
         if shouldKeepDisplayOn {
             let displayResult = createAssertion(
                 type: kIOPMAssertionTypeNoDisplaySleep as CFString,
-                name: "\(reason) — экран",
+                name: "\(reason) - display",
                 id: &displayAssertion
             )
             if displayResult != kIOReturnSuccess {
-                onWarning?("После пробуждения не удалось оставить экран включённым (код \(displayResult)); Mac всё ещё защищён от системного сна.")
+                onWarning?(L10n.format("Could not keep the display awake after wake (error %d); the Mac is still protected from system sleep.", displayResult))
             }
         }
     }

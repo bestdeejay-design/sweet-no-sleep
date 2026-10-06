@@ -58,8 +58,8 @@ struct PetSkinDefinition: Codable, Identifiable, Hashable {
 
     static let fallback = PetSkinDefinition(
         id: "kiwi",
-        name: "Киви",
-        subtitle: "Тёплый мех и листья",
+        name: L10n.text("Kiwi"),
+        subtitle: L10n.text("Warm fur and leafy details"),
         colors: PetSkinColors(fur: "#E8C894", furLight: "#FFF0D2", outline: "#5D443B", innerEar: "#E88D85", iris: "#5C9B73", accent: "#75C56A", cheek: "#E99B8E"),
         animation: PetAnimationProfile(breathingFrequency: 2.2, breathingAmplitude: 0.018, tailFrequency: 3.0, tailAmplitude: 0.14, celebrationEffect: .leaves)
     )

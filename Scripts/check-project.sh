@@ -9,6 +9,8 @@ for script in Scripts/*.sh; do
 done
 printf 'Shell syntax checks passed.\n'
 
+python3 -m json.tool Sources/SweetNoSleep/Localizable.xcstrings >/dev/null
+python3 Scripts/validate-localization.py
 python3 Scripts/validate-skins.py
 Scripts/test-agent-hooks.sh
 

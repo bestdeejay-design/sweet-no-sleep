@@ -8,7 +8,7 @@ struct SweetNoSleepApp: App {
     @StateObject private var model = SweetNoSleepModel.shared
 
     var body: some Scene {
-        MenuBarExtra("Kiwi", systemImage: "leaf.fill") {
+        MenuBarExtra(L10n.text("Kiwi"), systemImage: "leaf.fill") {
             MenuBarDashboard(model: model)
         }
         .menuBarExtraStyle(.window)
@@ -64,7 +64,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        SweetNoSleepModel.shared.stopKeepingAwake()
+        SweetNoSleepModel.shared.shutdown()
         petController?.close()
         petController = nil
     }
@@ -74,6 +74,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 private struct MenuBarDashboard: View {
     @ObservedObject var model: SweetNoSleepModel
+    @Environment(\.openSettings) private var openSettings
     @State private var confirmsImmediateSleep = false
 
     private let durations = [25, 50, 90, 120]
@@ -128,27 +129,27 @@ private struct MenuBarDashboard: View {
             .ignoresSafeArea()
         }
         .confirmationDialog(
-            "После этой сессии Mac будет сразу отправлен в сон",
+            L10n.text("After this session, your Mac will go to sleep immediately"),
             isPresented: $confirmsImmediateSleep,
             titleVisibility: .visible
         ) {
-            Button("Понимаю — начать сессию", role: .destructive) {
+            Button(L10n.text("I understand - start session"), role: .destructive) {
                 model.startFocusSession(confirmedImmediateSleep: true)
             }
-            Button("Отмена", role: .cancel) { }
+            Button(L10n.text("Cancel"), role: .cancel) { }
         } message: {
-            Text("Активные приложения и агенты могут быть прерваны. Если нужна только обычная пауза, выберите «Разрешить обычный сон» в настройках.")
+            Text(L10n.text("Open apps and agents may be interrupted. To use the normal idle-sleep behavior, choose 'Allow normal sleep' in Settings."))
         }
     }
 
     private var header: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 5) {
-                Text("SWEET NO SLEEP")
+                Text(L10n.text("SWEET NO SLEEP"))
                     .font(.system(size: 12, weight: .heavy, design: .rounded))
                     .tracking(2.1)
                     .foregroundStyle(Color(hex: 0xA9D8B0))
-                Text("KIWI CAT · рабочий компаньон")
+                Text(L10n.text("KIWI CAT - your work companion"))
                     .font(.system(size: 11, weight: .medium, design: .rounded))
                     .foregroundStyle(.white.opacity(0.56))
             }
@@ -157,7 +158,7 @@ private struct MenuBarDashboard: View {
                 Circle()
                     .fill(model.isKeepingAwake ? Color(hex: 0x7BDB91) : Color(hex: 0x718096))
                     .frame(width: 7, height: 7)
-                Text(model.isKeepingAwake ? "НА СМЕНЕ" : "ОТДЫХАЕТ")
+                Text(model.isKeepingAwake ? L10n.text("ON DUTY") : L10n.text("RESTING"))
                     .font(.system(size: 9, weight: .bold, design: .rounded))
                     .tracking(0.7)
                     .foregroundStyle(.white.opacity(0.78))
@@ -182,7 +183,7 @@ private struct MenuBarDashboard: View {
                 )
 
             VStack(alignment: .leading, spacing: 8) {
-                Text(model.activeAgentCount > 0 ? "Киви рядом с агентом" : (model.isKeepingAwake ? "Киви на дежурстве" : "Киви готов помочь"))
+                Text(model.activeAgentCount > 0 ? L10n.text("Kiwi is with your agent") : (model.isKeepingAwake ? L10n.text("Kiwi is on duty") : L10n.text("Kiwi is ready to help")))
                     .font(.system(size: 17, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                     .fixedSize(horizontal: false, vertical: true)
@@ -220,22 +221,22 @@ private struct MenuBarDashboard: View {
                     .foregroundStyle(model.isKeepingAwake ? Color(hex: 0x99E2A3) : Color(hex: 0xB6C2D5))
             }
             VStack(alignment: .leading, spacing: 3) {
-                Text("Не давать Mac заснуть")
+                Text(L10n.text("Keep Mac awake"))
                     .font(.system(size: 13, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
-                Text(model.isKeepingAwake ? "Системный сон заблокирован" : "Включить вручную без таймера")
+                Text(model.isKeepingAwake ? L10n.text("System idle sleep is prevented") : L10n.text("Turn on manually with no timer"))
                     .font(.system(size: 10, weight: .regular, design: .rounded))
                     .foregroundStyle(.white.opacity(0.55))
             }
             Spacer(minLength: 4)
-            Toggle("Не давать Mac заснуть", isOn: Binding(
+            Toggle(L10n.text("Keep Mac awake"), isOn: Binding(
                 get: { model.isKeepingAwake },
                 set: { model.setKeepAwake($0) }
             ))
             .labelsHidden()
             .toggleStyle(.switch)
             .tint(Color(hex: 0x7BCB86))
-            .accessibilityLabel("Не давать Mac заснуть")
+            .accessibilityLabel(L10n.text("Keep Mac awake"))
         }
         .padding(14)
         .background(Color(hex: 0x151F30, opacity: 0.96), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -248,12 +249,12 @@ private struct MenuBarDashboard: View {
     private var focusCard: some View {
         VStack(alignment: .leading, spacing: 13) {
             HStack {
-                Label("ФОКУС-СЕССИЯ", systemImage: "sparkles")
+                Label(L10n.text("FOCUS SESSION"), systemImage: "sparkles")
                     .font(.system(size: 10, weight: .bold, design: .rounded))
                     .tracking(1.1)
                     .foregroundStyle(Color(hex: 0xA9D8B0))
                 Spacer()
-                Text(model.completionAction == .sleepImmediately ? "СОН ПО ЗАВЕРШЕНИИ" : "ПО ТАЙМЕРУ")
+                Text(model.completionAction == .sleepImmediately ? L10n.text("SLEEP WHEN DONE") : L10n.text("TIMED SESSION"))
                     .font(.system(size: 8, weight: .bold, design: .rounded))
                     .tracking(0.5)
                     .foregroundStyle(.white.opacity(0.48))
@@ -264,7 +265,7 @@ private struct MenuBarDashboard: View {
                     Button {
                         model.selectedMinutes = minutes
                     } label: {
-                        Text("\(minutes) мин")
+                        Text(L10n.format("%d min", minutes))
                             .font(.system(size: 10, weight: .semibold, design: .rounded))
                             .foregroundStyle(model.selectedMinutes == minutes ? Color(hex: 0x101B18) : .white.opacity(0.82))
                             .frame(maxWidth: .infinity)
@@ -275,7 +276,7 @@ private struct MenuBarDashboard: View {
                             }
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Сессия на \(minutes) минут")
+                    .accessibilityLabel(L10n.format("A %d-minute session", minutes))
                 }
             }
 
@@ -283,10 +284,10 @@ private struct MenuBarDashboard: View {
                 HStack(spacing: 9) {
                     Image(systemName: "play.fill")
                         .font(.system(size: 11, weight: .bold))
-                    Text("Начать фокус")
+                    Text(L10n.text("Start focus"))
                         .font(.system(size: 13, weight: .bold, design: .rounded))
                     Spacer()
-                    Text("\(model.selectedMinutes) мин")
+                    Text(L10n.format("%d min", model.selectedMinutes))
                         .font(.system(size: 10, weight: .semibold, design: .rounded))
                         .opacity(0.76)
                 }
@@ -310,14 +311,14 @@ private struct MenuBarDashboard: View {
 
     private var agentSessionCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label("АГЕНТ РАБОТАЕТ", systemImage: "cpu")
+            Label(L10n.text("AGENT AT WORK"), systemImage: "cpu")
                 .font(.system(size: 10, weight: .bold, design: .rounded))
                 .tracking(1.0)
                 .foregroundStyle(Color(hex: 0xA9D8B0))
-            Text("\(model.activeAgentCount) активных подключений")
+            Text(L10n.format("%d active connections", model.activeAgentCount))
                 .font(.system(size: 17, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
-            Text("Защита действует, пока приходят heartbeat-события. Без сигнала 3 минуты Киви снимет assertion, чтобы не держать Mac awake бесконечно.")
+            Text(L10n.text("Protection remains active while heartbeats arrive. After 3 minutes without a signal, Kiwi releases the assertion so the Mac is not kept awake indefinitely."))
                 .font(.system(size: 10, design: .rounded))
                 .foregroundStyle(.white.opacity(0.58))
                 .fixedSize(horizontal: false, vertical: true)
@@ -326,7 +327,7 @@ private struct MenuBarDashboard: View {
             } label: {
                 HStack {
                     Image(systemName: "stop.fill")
-                    Text("Завершить agent-сессии")
+                    Text(L10n.text("End agent sessions"))
                     Spacer()
                     Image(systemName: "arrow.right")
                 }
@@ -349,12 +350,12 @@ private struct MenuBarDashboard: View {
     private var runningSessionCard: some View {
         VStack(spacing: 9) {
             HStack(alignment: .firstTextBaseline) {
-                Label("ФОКУС ИДЁТ", systemImage: "timer")
+                Label(L10n.text("FOCUS IN PROGRESS"), systemImage: "timer")
                     .font(.system(size: 10, weight: .bold, design: .rounded))
                     .tracking(1.0)
                     .foregroundStyle(Color(hex: 0xA9D8B0))
                 Spacer()
-                Text("Mac защищён от сна")
+                Text(L10n.text("Mac is protected from idle sleep"))
                     .font(.system(size: 9, weight: .medium, design: .rounded))
                     .foregroundStyle(.white.opacity(0.50))
             }
@@ -364,7 +365,7 @@ private struct MenuBarDashboard: View {
                 .contentTransition(.numericText())
                 .frame(maxWidth: .infinity, alignment: .leading)
             if model.activeAgentCount > 0 {
-                Text("Агентских подключений: \(model.activeAgentCount)")
+                Text(L10n.format("Agent connections: %d", model.activeAgentCount))
                     .font(.system(size: 10, design: .rounded))
                     .foregroundStyle(Color(hex: 0xA9D8B0))
             }
@@ -373,7 +374,7 @@ private struct MenuBarDashboard: View {
             } label: {
                 HStack {
                     Image(systemName: "stop.fill")
-                    Text("Завершить сессию")
+                    Text(L10n.text("End session"))
                     Spacer()
                     Image(systemName: "arrow.right")
                 }
@@ -398,23 +399,26 @@ private struct MenuBarDashboard: View {
             Button {
                 model.isPetVisible.toggle()
             } label: {
-                Label(model.isPetVisible ? "Спрятать Киви" : "Показать Киви", systemImage: model.isPetVisible ? "eye.slash" : "eye")
+                Label(model.isPetVisible ? L10n.text("Hide Kiwi") : L10n.text("Show Kiwi"), systemImage: model.isPetVisible ? "eye.slash" : "eye")
             }
-            .help(model.isPetVisible ? "Спрятать питомца с рабочего стола" : "Показать питомца на рабочем столе")
+            .help(model.isPetVisible ? L10n.text("Hide the pet from the desktop") : L10n.text("Show the pet on the desktop"))
 
             Spacer(minLength: 6)
-            SettingsLink {
-                Label("Настройки", systemImage: "slider.horizontal.3")
+            Button {
+                NSApplication.shared.activate(ignoringOtherApps: true)
+                openSettings()
+            } label: {
+                Label(L10n.text("Settings"), systemImage: "slider.horizontal.3")
             }
-            .help("Здесь настраиваются таймер, скин и размер питомца, анимации, паузы, agent hooks и питание.")
+            .help(L10n.text("Configure the timer, skin, pet size, animations, breaks, agent hooks, and power settings."))
             Spacer(minLength: 6)
             Button {
                 NSApplication.shared.terminate(nil)
             } label: {
                 Image(systemName: "power")
-                    .accessibilityLabel("Выйти")
+                    .accessibilityLabel(L10n.text("Quit"))
             }
-            .help("Выйти из Sweet No Sleep")
+            .help(L10n.text("Quit Sweet No Sleep"))
         }
         .font(.system(size: 10, weight: .medium, design: .rounded))
         .foregroundStyle(.white.opacity(0.67))

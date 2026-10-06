@@ -10,7 +10,8 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "SweetNoSleep",
-            path: "Sources/SweetNoSleep"
+            path: "Sources/SweetNoSleep",
+            resources: [.process("Localizable.xcstrings")]
         )
     ]
 )

@@ -1,0 +1,1496 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "%@ - other sessions are still protected": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ - other sessions are still protected"
+          }
+        }
+      }
+    },
+    "%@ - your Mac is back to its normal sleep settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ - your Mac is back to its normal sleep settings"
+          }
+        }
+      }
+    },
+    "%d active connections": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d active connections"
+          }
+        }
+      }
+    },
+    "%d min": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d min"
+          }
+        }
+      }
+    },
+    "15 min": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "15 min"
+          }
+        }
+      }
+    },
+    "170 pt - large": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "170 pt - large"
+          }
+        }
+      }
+    },
+    "4 hours": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "4 hours"
+          }
+        }
+      }
+    },
+    "90 pt - compact": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "90 pt - compact"
+          }
+        }
+      }
+    },
+    "A %d-minute session": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A %d-minute session"
+          }
+        }
+      }
+    },
+    "AGENT AT WORK": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AGENT AT WORK"
+          }
+        }
+      }
+    },
+    "AI agent connection": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI agent connection"
+          }
+        }
+      }
+    },
+    "Active now: %d": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active now: %d"
+          }
+        }
+      }
+    },
+    "After a confirmed session, Kiwi will request immediate system sleep.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After a confirmed session, Kiwi will request immediate system sleep."
+          }
+        }
+      }
+    },
+    "After this session, your Mac will go to sleep immediately": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After this session, your Mac will go to sleep immediately"
+          }
+        }
+      }
+    },
+    "After-session action": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After-session action"
+          }
+        }
+      }
+    },
+    "Agent connections: %d": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent connections: %d"
+          }
+        }
+      }
+    },
+    "Agent sessions were stopped manually.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent sessions were stopped manually."
+          }
+        }
+      }
+    },
+    "Allow Sweet No Sleep in System Settings > General > Login Items.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow Sweet No Sleep in System Settings > General > Login Items."
+          }
+        }
+      }
+    },
+    "Allow events from local hooks": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow events from local hooks"
+          }
+        }
+      }
+    },
+    "Allow normal sleep": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow normal sleep"
+          }
+        }
+      }
+    },
+    "An AI agent reported that work has started.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An AI agent reported that work has started."
+          }
+        }
+      }
+    },
+    "Behavior": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Behavior"
+          }
+        }
+      }
+    },
+    "Break taken": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Break taken"
+          }
+        }
+      }
+    },
+    "Breathing, blinking, and movement": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Breathing, blinking, and movement"
+          }
+        }
+      }
+    },
+    "Cancel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        }
+      }
+    },
+    "Choose Kiwi's look and how visibly the pet joins your workday.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose Kiwi's look and how visibly the pet joins your workday."
+          }
+        }
+      }
+    },
+    "Choose a look. New skins install separately and do not require source-code changes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a look. New skins install separately and do not require source-code changes."
+          }
+        }
+      }
+    },
+    "Click to say hello, or drag the pet to move it.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click to say hello, or drag the pet to move it."
+          }
+        }
+      }
+    },
+    "Click to say hello.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click to say hello."
+          }
+        }
+      }
+    },
+    "Configure the timer, skin, pet size, animations, breaks, agent hooks, and power settings.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configure the timer, skin, pet size, animations, breaks, agent hooks, and power settings."
+          }
+        }
+      }
+    },
+    "Confirm immediate sleep before starting this session.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm immediate sleep before starting this session."
+          }
+        }
+      }
+    },
+    "Could not connect to the macOS power management service.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not connect to the macOS power management service."
+          }
+        }
+      }
+    },
+    "Could not enable sleep protection.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not enable sleep protection."
+          }
+        }
+      }
+    },
+    "Could not keep the display awake after wake (error %d); the Mac is still protected from system sleep.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not keep the display awake after wake (error %d); the Mac is still protected from system sleep."
+          }
+        }
+      }
+    },
+    "Could not refresh sleep protection.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not refresh sleep protection."
+          }
+        }
+      }
+    },
+    "Could not restore idle-sleep protection after wake (error %d).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not restore idle-sleep protection after wake (error %d)."
+          }
+        }
+      }
+    },
+    "Could not update launch at login: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not update launch at login: %@"
+          }
+        }
+      }
+    },
+    "Current size: %d pt - changes apply immediately on the desktop.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current size: %d pt - changes apply immediately on the desktop."
+          }
+        }
+      }
+    },
+    "Desktop layer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desktop layer"
+          }
+        }
+      }
+    },
+    "Display and system": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Display and system"
+          }
+        }
+      }
+    },
+    "Drag the pet to place it wherever it feels comfortable.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag the pet to place it wherever it feels comfortable."
+          }
+        }
+      }
+    },
+    "Duration": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duration"
+          }
+        }
+      }
+    },
+    "During an awake session, Kiwi gently suggests looking away from code and into the distance for about 20 seconds.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "During an awake session, Kiwi gently suggests looking away from code and into the distance for about 20 seconds."
+          }
+        }
+      }
+    },
+    "Enable manual sleep protection at launch": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable manual sleep protection at launch"
+          }
+        }
+      }
+    },
+    "End agent sessions": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "End agent sessions"
+          }
+        }
+      }
+    },
+    "End session": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "End session"
+          }
+        }
+      }
+    },
+    "Every %d min": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every %d min"
+          }
+        }
+      }
+    },
+    "Eye and attention breaks": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eye and attention breaks"
+          }
+        }
+      }
+    },
+    "FOCUS IN PROGRESS": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FOCUS IN PROGRESS"
+          }
+        }
+      }
+    },
+    "FOCUS SESSION": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FOCUS SESSION"
+          }
+        }
+      }
+    },
+    "Focus": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Focus"
+          }
+        }
+      }
+    },
+    "Focus session started - %d min": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Focus session started - %d min"
+          }
+        }
+      }
+    },
+    "Focus without unexpected sleep": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Focus without unexpected sleep"
+          }
+        }
+      }
+    },
+    "From the repository root: ./Scripts/agent-session.sh my-agent-1 -- ./run-agent.sh\nFor IDE hooks: agent-event.sh start > heartbeat (about once a minute) > done or failed; use one ID per session.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From the repository root: ./Scripts/agent-session.sh my-agent-1 -- ./run-agent.sh\nFor IDE hooks: agent-event.sh start > heartbeat (about once a minute) > done or failed; use one ID per session."
+          }
+        }
+      }
+    },
+    "Goal reached - the session is complete": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Goal reached - the session is complete"
+          }
+        }
+      }
+    },
+    "Hide Kiwi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide Kiwi"
+          }
+        }
+      }
+    },
+    "Hide the pet from the desktop": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide the pet from the desktop"
+          }
+        }
+      }
+    },
+    "I understand - start session": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I understand - start session"
+          }
+        }
+      }
+    },
+    "Interval between break reminders": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interval between break reminders"
+          }
+        }
+      }
+    },
+    "KIWI CAT - your work companion": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KIWI CAT - your work companion"
+          }
+        }
+      }
+    },
+    "Keep Mac awake": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep Mac awake"
+          }
+        }
+      }
+    },
+    "Keep above other windows": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep above other windows"
+          }
+        }
+      }
+    },
+    "Keep the display on during a session": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the display on during a session"
+          }
+        }
+      }
+    },
+    "Keep the system awake until you turn this off": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the system awake until you turn this off"
+          }
+        }
+      }
+    },
+    "Kiwi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiwi"
+          }
+        }
+      }
+    },
+    "Kiwi is keeping your Mac awake": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiwi is keeping your Mac awake"
+          }
+        }
+      }
+    },
+    "Kiwi is on duty": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiwi is on duty"
+          }
+        }
+      }
+    },
+    "Kiwi is on duty and protecting this session.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiwi is on duty and protecting this session."
+          }
+        }
+      }
+    },
+    "Kiwi is ready to help": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiwi is ready to help"
+          }
+        }
+      }
+    },
+    "Kiwi is ready to keep you company": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiwi is ready to keep you company"
+          }
+        }
+      }
+    },
+    "Kiwi is with your agent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiwi is with your agent"
+          }
+        }
+      }
+    },
+    "Kiwi uses temporary system power assertions and releases them when work ends.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiwi uses temporary system power assertions and releases them when work ends."
+          }
+        }
+      }
+    },
+    "Kiwi's shift is over - your Mac is back to its normal sleep settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiwi's shift is over - your Mac is back to its normal sleep settings"
+          }
+        }
+      }
+    },
+    "Kiwi, the Sweet No Sleep pet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiwi, the Sweet No Sleep pet"
+          }
+        }
+      }
+    },
+    "Kiwi's eyes follow the pointer automatically.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiwi's eyes follow the pointer automatically."
+          }
+        }
+      }
+    },
+    "Kiwi's personality": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiwi's personality"
+          }
+        }
+      }
+    },
+    "Launch Sweet No Sleep at login": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Launch Sweet No Sleep at login"
+          }
+        }
+      }
+    },
+    "Launch at login": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Launch at login"
+          }
+        }
+      }
+    },
+    "Launch at login requires macOS 13 or later.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Launch at login requires macOS 13 or later."
+          }
+        }
+      }
+    },
+    "Leave this off if you do not want to use battery after a restart.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave this off if you do not want to use battery after a restart."
+          }
+        }
+      }
+    },
+    "Local hooks can tell Kiwi when work starts, send heartbeats, and report completion.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local hooks can tell Kiwi when work starts, send heartbeats, and report completion."
+          }
+        }
+      }
+    },
+    "Look away from your code and focus on something in the distance for about 20 seconds.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Look away from your code and focus on something in the distance for about 20 seconds."
+          }
+        }
+      }
+    },
+    "Mac is protected from idle sleep": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac is protected from idle sleep"
+          }
+        }
+      }
+    },
+    "Nice break - I'll gently remind you again in %d min": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nice break - I'll gently remind you again in %d min"
+          }
+        }
+      }
+    },
+    "ON DUTY": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ON DUTY"
+          }
+        }
+      }
+    },
+    "Occasional dances, stretches, and curious looks": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Occasional dances, stretches, and curious looks"
+          }
+        }
+      }
+    },
+    "Okay - I'll remind you again in %d min": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Okay - I'll remind you again in %d min"
+          }
+        }
+      }
+    },
+    "One agent heartbeat expired - other sessions are still active": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One agent heartbeat expired - other sessions are still active"
+          }
+        }
+      }
+    },
+    "Open Login Items": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Login Items"
+          }
+        }
+      }
+    },
+    "Open apps and agents may be interrupted. To use the normal idle-sleep behavior, choose 'Allow normal sleep' in Settings.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open apps and agents may be interrupted. To use the normal idle-sleep behavior, choose 'Allow normal sleep' in Settings."
+          }
+        }
+      }
+    },
+    "Open skins folder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open skins folder"
+          }
+        }
+      }
+    },
+    "Pet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pet"
+          }
+        }
+      }
+    },
+    "Pet size": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pet size"
+          }
+        }
+      }
+    },
+    "Playful moments happen only during an awake session; everything can be turned off.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Playful moments happen only during an awake session; everything can be turned off."
+          }
+        }
+      }
+    },
+    "Power": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Power"
+          }
+        }
+      }
+    },
+    "Power and startup": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Power and startup"
+          }
+        }
+      }
+    },
+    "Power status": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Power status"
+          }
+        }
+      }
+    },
+    "Protection remains active while heartbeats arrive. After 3 minutes without a signal, Kiwi releases the assertion so the Mac is not kept awake indefinitely.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Protection remains active while heartbeats arrive. After 3 minutes without a signal, Kiwi releases the assertion so the Mac is not kept awake indefinitely."
+          }
+        }
+      }
+    },
+    "Put the Mac to sleep immediately": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Put the Mac to sleep immediately"
+          }
+        }
+      }
+    },
+    "Quick switch": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick switch"
+          }
+        }
+      }
+    },
+    "Quit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit"
+          }
+        }
+      }
+    },
+    "Quit Sweet No Sleep": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit Sweet No Sleep"
+          }
+        }
+      }
+    },
+    "RESTING": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RESTING"
+          }
+        }
+      }
+    },
+    "Refresh list": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh list"
+          }
+        }
+      }
+    },
+    "Release the sleep assertion and let macOS use its normal energy settings.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release the sleep assertion and let macOS use its normal energy settings."
+          }
+        }
+      }
+    },
+    "Remind me to take a short break": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remind me to take a short break"
+          }
+        }
+      }
+    },
+    "Roam gently across the screen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Roam gently across the screen"
+          }
+        }
+      }
+    },
+    "SLEEP WHEN DONE": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SLEEP WHEN DONE"
+          }
+        }
+      }
+    },
+    "SWEET NO SLEEP": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SWEET NO SLEEP"
+          }
+        }
+      }
+    },
+    "Selected: %d minutes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected: %d minutes"
+          }
+        }
+      }
+    },
+    "Session duration in minutes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Session duration in minutes"
+          }
+        }
+      }
+    },
+    "Session ended, but sleep did not start: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Session ended, but sleep did not start: %@"
+          }
+        }
+      }
+    },
+    "Settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
+          }
+        }
+      }
+    },
+    "Short break": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Short break"
+          }
+        }
+      }
+    },
+    "Should Kiwi get to work too - or take a break?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Should Kiwi get to work too - or take a break?"
+          }
+        }
+      }
+    },
+    "Show Kiwi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Kiwi"
+          }
+        }
+      }
+    },
+    "Show Kiwi on the desktop": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Kiwi on the desktop"
+          }
+        }
+      }
+    },
+    "Show the pet on the desktop": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show the pet on the desktop"
+          }
+        }
+      }
+    },
+    "Skin library": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skin library"
+          }
+        }
+      }
+    },
+    "Skin: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skin: %@"
+          }
+        }
+      }
+    },
+    "Sleep protection is active only while awake mode or a timer is running.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sleep protection is active only while awake mode or a timer is running."
+          }
+        }
+      }
+    },
+    "Snooze - 5 min": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snooze - 5 min"
+          }
+        }
+      }
+    },
+    "Start a session manually and choose what Kiwi should do when it ends.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start a session manually and choose what Kiwi should do when it ends."
+          }
+        }
+      }
+    },
+    "Start focus": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start focus"
+          }
+        }
+      }
+    },
+    "System idle sleep is prevented": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System idle sleep is prevented"
+          }
+        }
+      }
+    },
+    "TIMED SESSION": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TIMED SESSION"
+          }
+        }
+      }
+    },
+    "The AI agent connection was lost - sleep protection ended after timeout": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The AI agent connection was lost - sleep protection ended after timeout"
+          }
+        }
+      }
+    },
+    "The AI agent failed.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The AI agent failed."
+          }
+        }
+      }
+    },
+    "The AI agent reported completion.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The AI agent reported completion."
+          }
+        }
+      }
+    },
+    "The bridge is off by default. Only trust installed hooks: any local process that can open the URL scheme can send an event. Without a heartbeat, a session expires after 3 minutes. Agent events never trigger immediate sleep.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The bridge is off by default. Only trust installed hooks: any local process that can open the URL scheme can send an event. Without a heartbeat, a session expires after 3 minutes. Agent events never trigger immediate sleep."
+          }
+        }
+      }
+    },
+    "The first stroll starts about 3 seconds after enabling; later strolls begin about every 28 seconds.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The first stroll starts about 3 seconds after enabling; later strolls begin about every 28 seconds."
+          }
+        }
+      }
+    },
+    "The pet window is transparent and does not take focus away from your code editor.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The pet window is transparent and does not take focus away from your code editor."
+          }
+        }
+      }
+    },
+    "This switch shows the actual state and ends any current session.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This switch shows the actual state and ends any current session."
+          }
+        }
+      }
+    },
+    "Time to look away from the code for a moment.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time to look away from the code for a moment."
+          }
+        }
+      }
+    },
+    "Timer finished - an AI agent is still working": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timer finished - an AI agent is still working"
+          }
+        }
+      }
+    },
+    "Timer finished - manual sleep protection is still on": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timer finished - manual sleep protection is still on"
+          }
+        }
+      }
+    },
+    "Turn on manually with no timer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on manually with no timer"
+          }
+        }
+      }
+    },
+    "Useful if Kiwi is part of your everyday work setup.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Useful if Kiwi is part of your everyday work setup."
+          }
+        }
+      }
+    },
+    "User folder: ~/Library/Application Support/SweetNoSleep/PetSkins - place one skin.json in each skin folder.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User folder: ~/Library/Application Support/SweetNoSleep/PetSkins - place one skin.json in each skin folder."
+          }
+        }
+      }
+    },
+    "Warm fur and leafy details": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warm fur and leafy details"
+          }
+        }
+      }
+    },
+    "We recommend the safer option: let macOS follow its normal sleep settings.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We recommend the safer option: let macOS follow its normal sleep settings."
+          }
+        }
+      }
+    },
+    "When the goal is reached": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When the goal is reached"
+          }
+        }
+      }
+    },
+    "When this is off, the display may turn off while the Mac stays awake for work. This saves battery.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When this is off, the display may turn off while the Mac stays awake for work. This saves battery."
+          }
+        }
+      }
+    },
+    "You will be asked to confirm each session. Immediate sleep can interrupt other apps and agents.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You will be asked to confirm each session. Immediate sleep can interrupt other apps and agents."
+          }
+        }
+      }
+    },
+    "Your break reminder is ready. It is a suggestion, not a work blocker.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your break reminder is ready. It is a suggestion, not a work blocker."
+          }
+        }
+      }
+    },
+    "macOS could not keep the display awake (error %d); the system is still protected from idle sleep.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS could not keep the display awake (error %d); the system is still protected from idle sleep."
+          }
+        }
+      }
+    },
+    "macOS could not prevent system sleep (error %d).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS could not prevent system sleep (error %d)."
+          }
+        }
+      }
+    },
+    "macOS is waiting for approval in System Settings > General > Login Items.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS is waiting for approval in System Settings > General > Login Items."
+          }
+        }
+      }
+    },
+    "macOS rejected the sleep request (error %d).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS rejected the sleep request (error %d)."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

@@ -1,0 +1,38 @@
+name: macOS build
+
+on:
+  push:
+    branches:
+      - main
+      - 'arena/**'
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-package:
+    runs-on: macos-14
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Show Apple toolchain
+        run: |
+          sw_vers
+          swift --version
+          xcodebuild -version
+
+      - name: Run project checks and Swift build
+        run: ./Scripts/check-project.sh
+
+      - name: Assemble app bundle
+        run: ./Scripts/build-app.sh release
+
+      - name: Verify app bundle structure and signature
+        run: |
+          APP="dist/Sweet No Sleep — Kiwi Cat.app"
+          test -x "$APP/Contents/MacOS/SweetNoSleep"
+          test -d "$APP/Contents/Resources/PetSkins"
+          find "$APP/Contents/Resources" -maxdepth 1 -name '*.bundle' -print -quit | grep -q .
+          codesign --verify --deep --strict "$APP"

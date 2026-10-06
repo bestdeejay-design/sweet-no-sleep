@@ -1,37 +1,37 @@
-# Создание скина для Sweet No Sleep
+# Creating a Sweet No Sleep skin
 
-Скин — отдельный каталог с JSON-манифестом. Для новых цветовых образов, параметров дыхания/хвоста и одного из встроенных эффектов менять Swift-код не нужно. Сейчас все паки используют один и тот же нарисованный кото-персонаж: собственные спрайты, новая геометрия и отдельные виды питомцев текущим форматом пока не поддерживаются.
+A skin is a standalone directory containing a JSON manifest. New color palettes, breathing/tail profiles, and one of the built-in celebration effects do not require changes to app source. All current packs share one procedurally drawn cat character: custom sprites, new geometry, and different pet species are not supported by this format yet.
 
-## Установка
+## Install a skin
 
-1. В Sweet No Sleep откройте **Настройки → Питомец → Открыть папку скинов**.
-2. Создайте внутри папки каталог с именем пака, например `ocean`.
-3. Положите в него файл `skin.json`.
-4. Нажмите **Обновить список** и выберите карточку скина.
+1. In Sweet No Sleep, open **Settings → Pet → Open skins folder**.
+2. Create a directory for the pack, for example `ocean`.
+3. Put a file named `skin.json` inside it.
+4. Click **Refresh list** and select the new skin card.
 
-Папка пользователя:
+User packs are stored at:
 
 ```text
-~/Library/Application Support/SweetNoSleep/PetSkins/<папка-пака>/skin.json
+~/Library/Application Support/SweetNoSleep/PetSkins/<pack-folder>/skin.json
 ```
 
-Например, полный путь нового пака будет таким:
+For example:
 
 ```text
 ~/Library/Application Support/SweetNoSleep/PetSkins/ocean/skin.json
 ```
 
-Манифест читается при запуске и по кнопке **Обновить список** — перезапуск приложения не требуется. Встроенные паки находятся в `Resources/PetSkins/` и копируются в `.app` скриптом `Scripts/build-app.sh`.
+The app reads manifests at launch and when **Refresh list** is clicked; a restart is not required. Bundled packs are in `Resources/PetSkins/` and are copied into the `.app` by `Scripts/build-app.sh`.
 
-## Формат `skin.json`
+## `skin.json` format
 
-Скопируйте этот шаблон и замените значения:
+Copy this template and change the values:
 
 ```json
 {
   "id": "ocean",
-  "name": "Океанский",
-  "subtitle": "Спокойные морские оттенки",
+  "name": "Ocean",
+  "subtitle": "Calm shades of the sea",
   "colors": {
     "fur": "#80B8C9",
     "furLight": "#DDF4F2",
@@ -51,50 +51,50 @@
 }
 ```
 
-### Поля
+### Fields
 
-| Поле | Назначение | Ограничения |
+| Field | Purpose | Constraints |
 | --- | --- | --- |
-| `id` | Стабильный ID пака | 1–48 символов: латиница, цифры, `-`, `_` |
-| `name` | Имя в настройках | Не пустое |
-| `subtitle` | Короткое описание образа | Любая строка |
-| `colors.fur` | Основной цвет шерсти | Hex `#RRGGBB` |
-| `colors.furLight` | Светлый участок шерсти | Hex `#RRGGBB` |
-| `colors.outline` | Контур и линии лица | Hex `#RRGGBB` |
-| `colors.innerEar` | Внутренняя часть ушей и нос | Hex `#RRGGBB` |
-| `colors.iris` | Радужка глаз | Hex `#RRGGBB` |
-| `colors.accent` | Листья, значок и сияние | Hex `#RRGGBB` |
-| `colors.cheek` | Щёки и сердечки | Hex `#RRGGBB` |
-| `animation.breathingFrequency` | Темп дыхания, радиан в секунду | Число `0.2…8` |
-| `animation.breathingAmplitude` | Сила дыхания относительно размера персонажа | Число `0…0.08` |
-| `animation.tailFrequency` | Темп движения хвоста, радиан в секунду | Число `0.2…10` |
-| `animation.tailAmplitude` | Размах хвоста относительно размера персонажа | Число `0…0.35` |
-| `animation.celebrationEffect` | Частицы при радости/танце | `leaves`, `moonDust`, `berryHearts` или `starburst` |
+| `id` | Stable pack identifier | 1–48 ASCII letters, digits, `-`, or `_` |
+| `name` | Name shown in Settings | Must not be empty |
+| `subtitle` | Short description | Any string |
+| `colors.fur` | Main fur color | Hex `#RRGGBB` |
+| `colors.furLight` | Light fur area | Hex `#RRGGBB` |
+| `colors.outline` | Outline and face details | Hex `#RRGGBB` |
+| `colors.innerEar` | Inner ears and nose | Hex `#RRGGBB` |
+| `colors.iris` | Iris color | Hex `#RRGGBB` |
+| `colors.accent` | Leaves, badge, and glow | Hex `#RRGGBB` |
+| `colors.cheek` | Cheeks and hearts | Hex `#RRGGBB` |
+| `animation.breathingFrequency` | Breathing speed, radians per second | Number `0.2…8` |
+| `animation.breathingAmplitude` | Breathing strength relative to pet size | Number `0…0.08` |
+| `animation.tailFrequency` | Tail speed, radians per second | Number `0.2…10` |
+| `animation.tailAmplitude` | Tail range relative to pet size | Number `0…0.35` |
+| `animation.celebrationEffect` | Particles during happy moments | `leaves`, `moonDust`, `berryHearts`, or `starburst` |
 
-Десятичные числа в JSON записываются через точку. Не добавляйте комментарии или завершающие запятые. Hex-цвета можно писать с `#` или без него, обязательно шесть шестнадцатеричных цифр.
+JSON decimals use a period. Do not add comments or trailing commas. Hex colors may include `#` or omit it; they must contain exactly six hexadecimal digits.
 
-## Проверка пака
+## Validate a pack
 
-Из корня репозитория можно проверить JSON и все поля/диапазоны тем же валидатором, который проверяет встроенные паки:
+From the repository root, validate a pack directory or a specific manifest with the same field/range checker used for bundled packs:
 
 ```bash
-python3 Scripts/validate-skins.py /путь/к/ocean
-# или укажите конкретный файл:
-python3 Scripts/validate-skins.py /путь/к/ocean/skin.json
+python3 Scripts/validate-skins.py /path/to/ocean
+# Or validate one file:
+python3 Scripts/validate-skins.py /path/to/ocean/skin.json
 ```
 
-Если карточка не появилась после обновления, проверьте:
+If a skin does not appear after refresh, check that:
 
-- файл называется точно `skin.json` и лежит внутри отдельной папки;
-- JSON корректен и содержит все обязательные поля;
-- `id` безопасный и уникальный;
-- значения цветов и анимации находятся в заданных диапазонах;
-- `celebrationEffect` написан точно как одно из поддерживаемых значений.
+- the file is named exactly `skin.json` and is inside a pack directory;
+- the JSON is valid and contains all required fields;
+- the ID is safe and unique;
+- colors and animation values are in range;
+- `celebrationEffect` exactly matches a supported value.
 
-Некорректный манифест пропускается, остальные паки продолжают загружаться. Новый уникальный ID рекомендуется для каждого пакета. Если пользовательский пак намеренно использует ID встроенного скина, он заменит его в библиотеке пользователя.
+An invalid manifest is skipped without preventing other packs from loading. Use a unique ID for each pack. A user pack with the same ID as a bundled skin intentionally overrides that skin.
 
-## Разработка отдельно от приложения
+## Develop packs separately from the app
 
-Пак достаточно хранить в собственном репозитории или передавать ZIP-архивом с папкой скина. Основное приложение загружает директории из `~/Library/Application Support/SweetNoSleep/PetSkins` и не требует исходников автора. При распространении пака приложите его автора, сведения об использованных материалах и лицензию на внешние иллюстрации, если они появятся в будущей версии формата.
+A pack can live in its own repository or be distributed as a ZIP containing the skin directory. The app loads packs from `~/Library/Application Support/SweetNoSleep/PetSkins` and does not need the author's source code. Include attribution and licensing details for any external artwork added by future formats.
 
-В текущем формате манифест управляет палитрой, базовым темпом движений и встроенным эффектом. Скин не запускает скрипты, не загружает код и не может задавать произвольную анимацию — это намеренное ограничение для безопасности и предсказуемой производительности.
+The current manifest controls palette, basic motion parameters, and one built-in effect. It cannot execute scripts, load code, or define arbitrary animations; this is intentional for safety and predictable performance.

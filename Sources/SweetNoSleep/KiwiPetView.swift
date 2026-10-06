@@ -78,17 +78,17 @@ struct PetBreakReminderBubble: View {
             HStack(spacing: 6) {
                 Image(systemName: "eye.circle.fill")
                     .foregroundStyle(Color(hex: 0x5EAC70))
-                Text("Короткая пауза")
+                Text(L10n.text("Short break"))
                     .font(.system(size: 11, weight: .semibold, design: .rounded))
                 Spacer(minLength: 0)
             }
-            Text("Отведите взгляд от кода и посмотрите вдаль около 20 секунд.")
+            Text(L10n.text("Look away from your code and focus on something in the distance for about 20 seconds."))
                 .font(.system(size: 9, design: .rounded))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
             HStack(spacing: 6) {
-                Button("Позже · 5 мин") {
+                Button(L10n.text("Snooze - 5 min")) {
                     model.dismissBreakReminder(snoozeMinutes: 5)
                 }
                 .buttonStyle(.borderless)
@@ -96,7 +96,7 @@ struct PetBreakReminderBubble: View {
 
                 Spacer(minLength: 0)
 
-                Button("Пауза сделана") {
+                Button(L10n.text("Break taken")) {
                     model.dismissBreakReminder()
                 }
                 .buttonStyle(.borderedProminent)
@@ -200,8 +200,10 @@ struct KiwiPetView: View {
         .gesture(dragGesture)
         .onTapGesture { model.poke() }
         .accessibilityElement()
-        .accessibilityLabel("Киви, питомец Sweet No Sleep")
-        .accessibilityHint(allowsDragging ? "Нажмите, чтобы поздороваться, или перетащите питомца." : "Нажмите, чтобы поздороваться.")
+        .accessibilityLabel(L10n.text("Kiwi, the Sweet No Sleep pet"))
+        .accessibilityHint(allowsDragging
+            ? L10n.text("Click to say hello, or drag the pet to move it.")
+            : L10n.text("Click to say hello."))
     }
 
     private func cursorGaze(canvasSize: CGFloat, topInset: CGFloat) -> CGPoint {
