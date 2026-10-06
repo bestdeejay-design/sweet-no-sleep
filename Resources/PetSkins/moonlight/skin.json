@@ -1,0 +1,21 @@
+{
+  "id": "moonlight",
+  "name": "Лунный",
+  "subtitle": "Тихий ночной кот",
+  "colors": {
+    "fur": "#B9B9E9",
+    "furLight": "#E8E8FF",
+    "outline": "#414268",
+    "innerEar": "#D99FCB",
+    "iris": "#6C73B5",
+    "accent": "#A5A3FF",
+    "cheek": "#D99FCB"
+  },
+  "animation": {
+    "breathingFrequency": 1.8,
+    "breathingAmplitude": 0.012,
+    "tailFrequency": 1.6,
+    "tailAmplitude": 0.06,
+    "celebrationEffect": "moonDust"
+  }
+}

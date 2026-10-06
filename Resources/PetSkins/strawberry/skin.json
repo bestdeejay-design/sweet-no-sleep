@@ -1,0 +1,21 @@
+{
+  "id": "strawberry",
+  "name": "Клубничный",
+  "subtitle": "Розовый с ягодными сердцами",
+  "colors": {
+    "fur": "#F0A6A6",
+    "furLight": "#FFE1DA",
+    "outline": "#693E4B",
+    "innerEar": "#BB6986",
+    "iris": "#659276",
+    "accent": "#83C66C",
+    "cheek": "#E77F86"
+  },
+  "animation": {
+    "breathingFrequency": 2.7,
+    "breathingAmplitude": 0.022,
+    "tailFrequency": 4.0,
+    "tailAmplitude": 0.17,
+    "celebrationEffect": "berryHearts"
+  }
+}

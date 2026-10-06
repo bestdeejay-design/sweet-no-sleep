@@ -1,0 +1,21 @@
+{
+  "id": "kiwi",
+  "name": "Киви",
+  "subtitle": "Тёплый мех и листья",
+  "colors": {
+    "fur": "#E8C894",
+    "furLight": "#FFF0D2",
+    "outline": "#5D443B",
+    "innerEar": "#E88D85",
+    "iris": "#5C9B73",
+    "accent": "#75C56A",
+    "cheek": "#E99B8E"
+  },
+  "animation": {
+    "breathingFrequency": 2.2,
+    "breathingAmplitude": 0.018,
+    "tailFrequency": 3.0,
+    "tailAmplitude": 0.14,
+    "celebrationEffect": "leaves"
+  }
+}

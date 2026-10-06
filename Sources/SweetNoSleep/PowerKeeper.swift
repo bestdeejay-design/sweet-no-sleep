@@ -1,111 +1,167 @@
-import Foundation
-import IOKit.pwr_mgt
 import AppKit
+import Foundation
+import IOKit
+import IOKit.pwr_mgt
 
-// Keeps the Mac awake (display + idle sleep) while the pet is on duty.
-final class PowerKeeper: ObservableObject {
-    // True while an assertion is currently held.
-    @Published private(set) var isAwake: Bool = false
-
-    // ProcessInfo activity handle (idle + display sleep).
+/// Owns the temporary macOS power assertions used by focus sessions.
+///
+/// The app takes an assertion only after an explicit user action and releases it
+/// as soon as the session ends. System sleep prevention and display sleep
+/// prevention are deliberately separate: the display is allowed to turn off by
+/// default, which saves battery while keeping long-running work alive.
+@MainActor
+final class PowerKeeper {
     private var activity: NSObjectProtocol?
-    // IOKit display-sleep assertion handle.
-    private var displayID: IOPMAssertionID = 0
-    // Last reason string, reused after system wake.
-    private var lastReason: String = ""
-    // Wake-notification observer token.
+    private var systemAssertion: IOPMAssertionID = 0
+    private var displayAssertion: IOPMAssertionID = 0
     private var wakeObserver: NSObjectProtocol?
+    private var reason = "Sweet No Sleep — focus session"
+    private var shouldKeepDisplayOn = false
+    var onFailure: ((String) -> Void)?
+
+    private(set) var isActive = false
 
     init() {
-        // Re-assert the display assertion after sleep/wake cycles.
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification,
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.handleDidWake()
+            self?.reassertAfterWake()
         }
     }
 
     deinit {
-        if let observer = wakeObserver {
-            NSWorkspace.shared.notificationCenter.removeObserver(observer)
+        if let wakeObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver)
         }
-        releaseAssertion()
+        releaseAssertionIDs()
+        if let activity {
+            ProcessInfo.processInfo.endActivity(activity)
+        }
     }
 
-    // Acquire both assertions. Safe to call repeatedly.
-    func keepAwake(reason: String) {
-        lastReason = reason
-        if isAwake {
+    /// Starts an idle-system-sleep assertion and, optionally, a display assertion.
+    /// Returns a user-readable error if macOS rejects the system assertion; a
+    /// display-only failure is returned as a non-fatal warning.
+    func begin(reason: String, keepDisplayOn: Bool) -> (success: Bool, message: String?) {
+        end()
+        self.reason = reason
+        shouldKeepDisplayOn = keepDisplayOn
+
+        // This tells macOS the app is performing work explicitly requested by
+        // the user, which also protects this process from App Nap.
+        activity = ProcessInfo.processInfo.beginActivity(
+            options: [.userInitiated],
+            reason: reason
+        )
+
+        let systemResult = createAssertion(
+            type: kIOPMAssertionTypePreventUserIdleSystemSleep as CFString,
+            name: reason,
+            id: &systemAssertion
+        )
+
+        guard systemResult == kIOReturnSuccess else {
+            releaseAssertionIDs()
+            if let activity {
+                ProcessInfo.processInfo.endActivity(activity)
+                self.activity = nil
+            }
+            return (false, "macOS не разрешила удержать систему от сна (код \(systemResult)).")
+        }
+
+        isActive = true
+
+        guard keepDisplayOn else {
+            return (true, nil)
+        }
+
+        let displayResult = createAssertion(
+            type: kIOPMAssertionTypeNoDisplaySleep as CFString,
+            name: "\(reason) — экран",
+            id: &displayAssertion
+        )
+        if displayResult != kIOReturnSuccess {
+            return (true, "Mac не удалось удержать экран включённым (код \(displayResult)); система всё ещё защищена от сна.")
+        }
+        return (true, nil)
+    }
+
+    /// Releases every assertion. Safe to call more than once.
+    func end() {
+        releaseAssertionIDs()
+        if let activity {
+            ProcessInfo.processInfo.endActivity(activity)
+            self.activity = nil
+        }
+        isActive = false
+    }
+
+    /// Requests immediate system sleep. This is only called after the user has
+    /// explicitly selected that end-of-session action and confirmed the session.
+    func requestImmediateSleep() -> String? {
+        let connection = IOPMFindPowerManagement(kIOMainPortDefault)
+        guard connection != IO_OBJECT_NULL else {
+            return "Не удалось подключиться к службе управления питанием macOS."
+        }
+        defer { IOServiceClose(connection) }
+
+        let result = IOPMSleepSystem(connection)
+        guard result == kIOReturnSuccess else {
+            return "macOS не приняла запрос на сон (код \(result))."
+        }
+        return nil
+    }
+
+    private func reassertAfterWake() {
+        guard isActive else { return }
+
+        // Sleep/wake can invalidate IOKit assertion IDs. Keep the user-facing
+        // state, but replace the old IDs with fresh assertions after wake.
+        releaseAssertionIDs()
+        let systemResult = createAssertion(
+            type: kIOPMAssertionTypePreventUserIdleSystemSleep as CFString,
+            name: reason,
+            id: &systemAssertion
+        )
+        guard systemResult == kIOReturnSuccess else {
+            let message = "Не удалось восстановить защиту от сна после пробуждения (код \(systemResult))."
+            end()
+            onFailure?(message)
             return
         }
-        let options: ProcessInfo.ActivityOptions = [.idleDisplaySleepDisabled, .idleSystemSleepDisabled]
-        activity = ProcessInfo.processInfo.beginActivity(options: options, reason: reason)
-        let name = kIOPMAssertionTypeNoDisplaySleep as CFString
-        let cfReason = reason as CFString
-        var newID: IOPMAssertionID = 0
-        let result = IOPMAssertionCreateWithName(
-            name,
+
+        if shouldKeepDisplayOn {
+            _ = createAssertion(
+                type: kIOPMAssertionTypeNoDisplaySleep as CFString,
+                name: "\(reason) — экран",
+                id: &displayAssertion
+            )
+        }
+    }
+
+    private func createAssertion(
+        type: CFString,
+        name: String,
+        id: inout IOPMAssertionID
+    ) -> IOReturn {
+        IOPMAssertionCreateWithName(
+            type,
             IOPMAssertionLevel(kIOPMAssertionLevelOn),
-            cfReason,
-            &newID
+            name as CFString,
+            &id
         )
-        if result == kIOReturnSuccess {
-            displayID = newID
-        } else {
-            displayID = 0
-        }
-        isAwake = true
     }
 
-    // Adapter used by SweetNoSleepApp / KiwiBrain.awakeHandler.
-    func setAwake(_ awake: Bool) {
-        if awake {
-            keepAwake(reason: lastReason.isEmpty ? "SweetNoSleep" : lastReason)
-        } else {
-            letSleep()
+    private func releaseAssertionIDs() {
+        if displayAssertion != 0 {
+            IOPMAssertionRelease(displayAssertion)
+            displayAssertion = 0
         }
-    }
-
-    // Release both assertions. Safe to call when idle.
-    func letSleep() {
-        lastReason = ""
-        releaseAssertion()
-        isAwake = false
-    }
-
-    // Re-acquire the IOKit assertion after wake if we were awake.
-    private func handleDidWake() {
-        guard isAwake else {
-            return
-        }
-        if displayID != 0 {
-            IOPMAssertionRelease(displayID)
-            displayID = 0
-        }
-        let reason = lastReason.isEmpty ? "SweetNoSleep" : lastReason
-        var newID: IOPMAssertionID = 0
-        let result = IOPMAssertionCreateWithName(
-            kIOPMAssertionTypeNoDisplaySleep as CFString,
-            IOPMAssertionLevel(kIOPMAssertionLevelOn),
-            reason as CFString,
-            &newID
-        )
-        if result == kIOReturnSuccess {
-            displayID = newID
-        }
-    }
-
-    // Release handles without touching published state (deinit safe).
-    private func releaseAssertion() {
-        if let token = activity {
-            ProcessInfo.processInfo.endActivity(token)
-            activity = nil
-        }
-        if displayID != 0 {
-            IOPMAssertionRelease(displayID)
-            displayID = 0
+        if systemAssertion != 0 {
+            IOPMAssertionRelease(systemAssertion)
+            systemAssertion = 0
         }
     }
 }
