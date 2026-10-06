@@ -115,8 +115,8 @@ final class PetPanelController {
     private var panel: PetPanel?
     private var dragOrigin: NSPoint?
     private var wanderTimer: Timer?
+    private var wanderAnimator: PanelOriginAnimator?
     private var cancellables = Set<AnyCancellable>()
-    private let positionKey = "pet.panelOrigin"
 
     init(model: SweetNoSleepModel) {
         self.model = model
@@ -173,6 +173,7 @@ final class PetPanelController {
     func hide() {
         wanderTimer?.invalidate()
         wanderTimer = nil
+        cancelWanderAnimation()
         model.endWandering()
         panel?.orderOut(nil)
     }
@@ -180,6 +181,8 @@ final class PetPanelController {
     func close() {
         wanderTimer?.invalidate()
         wanderTimer = nil
+        cancelWanderAnimation()
+        model.endWandering()
         panel?.orderOut(nil)
         panel = nil
         cancellables.removeAll()
@@ -187,7 +190,10 @@ final class PetPanelController {
 
     private func movePanel(by translation: CGSize) {
         guard let panel else { return }
-        if dragOrigin == nil { dragOrigin = panel.frame.origin }
+        if dragOrigin == nil {
+            cancelWanderAnimation()
+            dragOrigin = panel.frame.origin
+        }
         guard let dragOrigin else { return }
         panel.setFrameOrigin(NSPoint(
             x: dragOrigin.x + translation.width,
@@ -198,10 +204,7 @@ final class PetPanelController {
     private func finishDragging() {
         guard let panel else { return }
         dragOrigin = nil
-        UserDefaults.standard.set(
-            [Double(panel.frame.origin.x), Double(panel.frame.origin.y)],
-            forKey: positionKey
-        )
+        PetPanelPosition.store(panel.frame.origin)
     }
 
     private func updateSize(_ petSize: CGFloat, showsBreakReminder override: Bool? = nil) {
@@ -240,8 +243,7 @@ final class PetPanelController {
     }
 
     private func restoredOrigin(for size: NSSize) -> NSPoint {
-        if let saved = UserDefaults.standard.array(forKey: positionKey) as? [Double], saved.count == 2 {
-            let origin = NSPoint(x: CGFloat(saved[0]), y: CGFloat(saved[1]))
+        if let origin = PetPanelPosition.restore() {
             let savedFrame = NSRect(origin: origin, size: size)
             if let screen = NSScreen.screens.first(where: { $0.frame.intersects(savedFrame) }) {
                 let visible = screen.visibleFrame.insetBy(dx: 8, dy: 8)
@@ -262,6 +264,7 @@ final class PetPanelController {
     private func setRoamingEnabled(_ enabled: Bool) {
         wanderTimer?.invalidate()
         wanderTimer = nil
+        cancelWanderAnimation()
         model.endWandering()
         guard enabled, model.isPetVisible, panel?.isVisible == true else { return }
         scheduleInitialWander()
@@ -307,16 +310,26 @@ final class PetPanelController {
         )
 
         guard model.beginWandering() else { return }
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = 4.8
-            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-            panel.animator().setFrameOrigin(target)
-        } completionHandler: { [weak self] in
-            DispatchQueue.main.async {
+        cancelWanderAnimation()
+        let animator = PanelOriginAnimator()
+        wanderAnimator = animator
+        animator.animate(
+            panel: panel,
+            to: target,
+            onStep: { origin in
+                PetPanelPosition.store(origin)
+            },
+            completion: { [weak self] in
                 guard let self else { return }
+                self.wanderAnimator = nil
                 self.model.endWandering()
                 self.finishDragging()
             }
-        }
+        )
+    }
+
+    private func cancelWanderAnimation() {
+        wanderAnimator?.cancel()
+        wanderAnimator = nil
     }
 }

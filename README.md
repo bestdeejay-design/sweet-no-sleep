@@ -98,7 +98,7 @@ The app can keep the **Mac** awake, but it does not manage agent queues, network
 python3 Scripts/validate-skins.py /path/to/a-skin-pack
 ```
 
-The check script validates shell syntax, English catalog key parity, bundled skin manifests, and hook behavior with a mocked `open` command. On macOS it also runs `swift build`. It cannot test actual power assertions or the menu-bar UI; use the Mac acceptance checklist in [the code audit](docs/CODE_AUDIT.md).
+The check script validates shell syntax, English catalog key parity, bundled skin manifests, and hook behavior with a mocked `open` command. On macOS it also runs `swift build` and a borderless-panel roaming smoke test that verifies the frame moves and `pet.panelOrigin` is persisted. It cannot test actual power assertions or the menu-bar Settings flow; use the Mac acceptance checklist in [the code audit](docs/CODE_AUDIT.md).
 
 ## Architecture
 
@@ -109,7 +109,8 @@ Sources/SweetNoSleep/
 ├── PetSkinDefinition.swift    # JSON schema and pack loading
 ├── KiwiPetView.swift          # Canvas pet, gaze, and reactions
 ├── PetPanel.swift             # transparent NSPanel, hit testing, position, roaming
-├── PowerKeeper.swift          # ProcessInfo and IOPM assertions
+├── PanelOriginAnimator.swift  # eased, stepped movement and persisted panel origin
+├── PowerKeeper.swift          # App Nap activity and IOPM assertions
 ├── SettingsView.swift         # Focus, Pet, and Power settings
 ├── Localization.swift         # NSLocalizedString catalog access
 └── Localizable.xcstrings      # English source strings
@@ -118,9 +119,10 @@ Resources/PetSkins/            # bundled JSON skin packs
 Scripts/build-app.sh           # app bundle assembly
 Scripts/agent-event.sh         # individual agent lifecycle events
 Scripts/agent-session.sh       # wrapped command with heartbeat
-Scripts/check-project.sh       # portable checks and Swift package build on Mac
+Scripts/check-project.sh       # portable checks, Swift build, and panel-motion smoke on Mac
 Scripts/validate-skins.py      # bundled and user skin pack validation
 Scripts/test-agent-hooks.sh    # hook smoke tests with mocked open
+Scripts/test-panel-wander.sh   # macOS panel-origin movement smoke test
 Scripts/localize.sh            # localization workflow entry point
 docs/CODE_AUDIT.md             # audit findings and Mac acceptance checklist
 docs/SKIN_AUTHORING.md         # skin pack format and installation

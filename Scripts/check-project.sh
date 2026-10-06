@@ -18,6 +18,7 @@ if [[ "${SWEET_NO_SLEEP_SKIP_SWIFT_BUILD:-0}" == "1" ]]; then
   printf 'SKIP Swift build: explicitly skipped for split CI diagnostics.\n'
 elif [[ "$(uname -s)" == "Darwin" ]] && command -v swift >/dev/null 2>&1; then
   swift build --package-path "$ROOT_DIR" --configuration debug
+  Scripts/test-panel-wander.sh
 else
   printf 'SKIP Swift build: it requires macOS with Swift 5.9+ and the macOS 14 SDK.\n'
 fi

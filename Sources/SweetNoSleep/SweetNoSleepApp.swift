@@ -405,8 +405,7 @@ private struct MenuBarDashboard: View {
 
             Spacer(minLength: 6)
             Button {
-                NSApplication.shared.activate(ignoringOtherApps: true)
-                openSettings()
+                presentSettings()
             } label: {
                 Label(L10n.text("Settings"), systemImage: "slider.horizontal.3")
             }
@@ -423,6 +422,16 @@ private struct MenuBarDashboard: View {
         .font(.system(size: 10, weight: .medium, design: .rounded))
         .foregroundStyle(.white.opacity(0.67))
         .buttonStyle(.plain)
+    }
+
+    private func presentSettings() {
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        let settingsAction = openSettings
+        Task { @MainActor [settingsAction] in
+            await Task.yield()
+            NSApplication.shared.activate(ignoringOtherApps: true)
+            settingsAction()
+        }
     }
 
     private func beginFocusSession() {

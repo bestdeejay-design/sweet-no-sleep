@@ -28,7 +28,9 @@ final class PowerKeeper {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.reassertAfterWake()
+            Task { @MainActor [weak self] in
+                self?.reassertAfterWake()
+            }
         }
     }
 
@@ -36,14 +38,20 @@ final class PowerKeeper {
     /// Returns a user-readable error if macOS rejects the system assertion; a
     /// display-only failure is returned as a non-fatal warning.
     func begin(reason: String, keepDisplayOn: Bool) -> (success: Bool, message: String?) {
+        if isActive, systemAssertion != 0 {
+            // Repeated requests coalesce into the existing system assertion.
+            // Only reconcile the optional display assertion on a settings change.
+            self.reason = reason
+            return (true, updateDisplayAssertion(keepDisplayOn: keepDisplayOn))
+        }
+
         end()
         self.reason = reason
-        shouldKeepDisplayOn = keepDisplayOn
 
-        // This tells macOS the app is performing work explicitly requested by
-        // the user, which also protects this process from App Nap.
+        // Keep the app out of App Nap without asking ProcessInfo to create a
+        // second PreventUserIdleSystemSleep assertion. IOKit owns that assertion.
         activity = ProcessInfo.processInfo.beginActivity(
-            options: [.userInitiated],
+            options: [.userInitiatedAllowingIdleSystemSleep],
             reason: reason
         )
 
@@ -63,20 +71,7 @@ final class PowerKeeper {
         }
 
         isActive = true
-
-        guard keepDisplayOn else {
-            return (true, nil)
-        }
-
-        let displayResult = createAssertion(
-            type: kIOPMAssertionTypeNoDisplaySleep as CFString,
-            name: "\(reason) - display",
-            id: &displayAssertion
-        )
-        if displayResult != kIOReturnSuccess {
-            return (true, L10n.format("macOS could not keep the display awake (error %d); the system is still protected from idle sleep.", displayResult))
-        }
-        return (true, nil)
+        return (true, updateDisplayAssertion(keepDisplayOn: keepDisplayOn))
     }
 
     /// Releases every assertion. Safe to call more than once.
@@ -97,6 +92,33 @@ final class PowerKeeper {
             NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver)
             self.wakeObserver = nil
         }
+    }
+
+    private func updateDisplayAssertion(keepDisplayOn: Bool) -> String? {
+        shouldKeepDisplayOn = keepDisplayOn
+
+        guard keepDisplayOn else {
+            if displayAssertion != 0 {
+                IOPMAssertionRelease(displayAssertion)
+                displayAssertion = 0
+            }
+            return nil
+        }
+
+        guard displayAssertion == 0 else { return nil }
+        let displayResult = createAssertion(
+            type: kIOPMAssertionTypeNoDisplaySleep as CFString,
+            name: "\(reason) - display",
+            id: &displayAssertion
+        )
+        guard displayResult == kIOReturnSuccess else {
+            if displayAssertion != 0 {
+                IOPMAssertionRelease(displayAssertion)
+                displayAssertion = 0
+            }
+            return L10n.format("macOS could not keep the display awake (error %d); the system is still protected from idle sleep.", displayResult)
+        }
+        return nil
     }
 
     /// Requests immediate system sleep. This is only called after the user has

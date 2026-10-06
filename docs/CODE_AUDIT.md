@@ -23,6 +23,9 @@ The current workspace is Linux and does not provide Swift/Xcode or the macOS SDK
 11. **User-visible text was embedded directly in Russian source strings.** The UI now uses an English-source `Localizable.xcstrings` catalog through `NSLocalizedString`; the Swift source tree is English-only. A localization validator checks source/catalog key parity. Other translations must be generated through the localization workflow, not hand-edited.
 12. **Screen roaming was difficult to discover.** Settings and README document **Settings → Pet → Behavior**; the first stroll now starts after about 3 seconds, then repeats about every 28 seconds.
 13. **Timer callbacks crossed into main-actor state from sendable closures.** Timer work now hops explicitly onto `MainActor`, including roaming, countdown, break, lease, and mood updates, to keep the callbacks safe under Swift's stricter concurrency checking.
+14. **Roaming's animation completion was a false positive.** `NSAnimationContext` reported completion for `panel.animator().setFrameOrigin` without moving a borderless panel. Roaming now uses a 48-step eased animator that calls `setFrameOrigin` directly and persists `pet.panelOrigin` at every step. A macOS smoke test checks intermediate movement and the saved final origin.
+15. **Sleep protection could show duplicate system assertions.** `ProcessInfo.userInitiated` also prevents idle system sleep, duplicating the explicit IOPM assertion. The activity now uses `userInitiatedAllowingIdleSystemSleep` to avoid App Nap while allowing the single IOPM system assertion to own sleep prevention. Repeated `begin()` calls coalesce and only reconcile the optional display assertion.
+16. **Reopening Settings from the accessory menu could be flaky.** The settings action is now scheduled for the next main-actor turn after activation, then the app is activated again before invoking `openSettings()`.
 
 ## Checks run locally and on GitHub
 
@@ -49,7 +52,7 @@ On a Mac, run `./Scripts/check-project.sh`, then `./Scripts/build-app.sh release
 
 ### Settings and skins
 
-- Open **Settings** from the menu-bar footer and visit Focus, Pet, and Power.
+- Open **Settings** from the menu-bar footer, close it with the red close button, then open it again from the footer. Repeat to verify the second and later opens work reliably; visit Focus, Pet, and Power.
 - Change duration, size, visibility, always-on-top, animation/Reduce Motion, break interval, display behavior, and launch-at-login settings. Confirm persistence after relaunch.
 - Select each bundled skin. Confirm the Settings card, desktop pet, and menu preview agree; relaunch and confirm the choice persisted.
 - Install a valid user pack under `~/Library/Application Support/SweetNoSleep/PetSkins/<pack>/skin.json`, refresh, select, and relaunch. Test a user pack that overrides a bundled ID, then remove it and restore the bundled look.
@@ -60,11 +63,11 @@ On a Mac, run `./Scripts/check-project.sh`, then `./Scripts/build-app.sh release
 - Adjust size from 90 to 170 pt, drag the pet, and check saved position, transparent hit testing, clicks, and break-bubble buttons.
 - Trigger a break reminder; check panel resizing, snooze, dismiss, disabling reminders, and timer restart.
 - Check pointer tracking on the desktop and ensure the menu preview does not track the menu window. Toggle animation and system Reduce Motion.
-- Enable roaming under **Settings → Pet → Behavior**; check the initial stroll after about 3 seconds and later strolls at about 28-second intervals. Also check drag, hide/show, normal/floating level, Spaces, and multiple displays.
+- Enable roaming under **Settings → Pet → Behavior**; check the initial stroll after about 3 seconds and later strolls at about 28-second intervals. Confirm `pet.panelOrigin` changes during movement and after the stroll; do not use log messages alone as proof. Also check drag, hide/show, normal/floating level, Spaces, and multiple displays.
 
 ### Power and agent hooks
 
-- Enable and disable manual protection and inspect `pmset -g assertions` for `PreventUserIdleSystemSleep`. Test the optional display assertion separately.
+- Enable and disable manual protection and inspect `pmset -g assertions`: Sweet No Sleep should own exactly one `PreventUserIdleSystemSleep` assertion, plus one display assertion only when enabled. Test the optional display assertion separately.
 - Run a safe timed session with normal sleep on completion. Test immediate sleep only in a controlled environment without important work. Confirm a new agent event in the short delay cancels the sleep request.
 - Test `./Scripts/agent-session.sh smoke-1 -- <short-command>`, a failed command, manual agent-session stop, bridge disable, and lease expiry without heartbeat. Start with normal sleep, not immediate sleep.
 - Test Mac sleep/wake during an active session and confirm a warning appears if macOS cannot restore the optional display assertion.
