@@ -478,7 +478,7 @@ final class SweetNoSleepModel: ObservableObject {
         statusMessage = isKeepingAwake
             ? L10n.text("Kiwi is on duty and protecting this session.")
             : L10n.text("Should Kiwi get to work too - or take a break?")
-        setTemporaryMood(.celebrating, duration: 1.25, then: isKeepingAwake ? .working : .idle)
+        setTemporaryMood(.celebrating, duration: 2.0, then: isKeepingAwake ? .working : .idle)
     }
 
     func beginDragging() {
