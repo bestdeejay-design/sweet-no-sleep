@@ -6,7 +6,7 @@ Audit date: October 6, 2026. Reviewed the application source, settings persisten
 
 Several cross-feature defects were found and fixed. The core flows remain: manual awake mode, timed focus sessions, agent leases with heartbeat/TTL, user skin packs, the transparent pet panel, and configurable behavior.
 
-The current workspace is Linux and does not provide Swift/Xcode or the macOS SDK. A GitHub Actions macOS runner has since completed the native package build and app packaging checks successfully. Interactive AppKit/SwiftUI behavior, including opening Settings from the menu bar, still requires the manual acceptance checklist below.
+The current workspace is Linux and does not provide Swift/Xcode or the macOS SDK. GitHub Actions has verified the native build, release app packaging, and a real borderless-panel movement smoke test on macOS. Full app interaction, assertion counting on the user's Mac, and repeated Settings-window opening still require the manual acceptance checklist below.
 
 ## Findings and fixes
 
@@ -38,7 +38,7 @@ The current workspace is Linux and does not provide Swift/Xcode or the macOS SDK
 - `grep -rn '[А-Яа-я]' Sources/` returned no matches;
 - **local Swift build was skipped** because this workspace is Linux without Swift/Xcode and the macOS 14 SDK.
 
-GitHub Actions run [37512821190](https://github.com/bestdeejay-design/sweet-no-sleep/actions/runs/37512821190) passed on a macOS 15 runner: portable checks, debug `swift build`, the full `Scripts/check-project.sh`, `Scripts/build-app.sh release`, app/resource-bundle assertions, and ad-hoc signature verification. The runner did not launch the app or interact with its Settings UI; those runtime checks remain manual.
+GitHub Actions run [37518870521](https://github.com/bestdeejay-design/sweet-no-sleep/actions/runs/37518870521) passed on a macOS 15 runner: portable checks, debug `swift build`, the full `Scripts/check-project.sh` including the 48-step `pet.panelOrigin` movement smoke test, `Scripts/build-app.sh release`, app/resource-bundle assertions, and ad-hoc signature verification. The runner did not launch the full app or interact with its Settings UI; those acceptance checks remain manual.
 
 The validator also accepts a user pack directory or one manifest:
 
