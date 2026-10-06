@@ -74,7 +74,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 private struct MenuBarDashboard: View {
     @ObservedObject var model: SweetNoSleepModel
-    @Environment(\.openSettings) private var openSettings
+    @Environment(\.openSettings) private var openSettings: OpenSettingsAction
     @State private var confirmsImmediateSleep = false
 
     private let durations = [25, 50, 90, 120]
