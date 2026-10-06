@@ -17,7 +17,7 @@ A native macOS desktop companion that reacts to interaction and helps keep a Mac
 
 ## Build on Mac
 
-Requirements: macOS 14+, Xcode Command Line Tools, and Swift 5.9+.
+Requirements: macOS 14+ and Xcode 16+ with the Swift 5.9+ toolchain.
 
 ```bash
 # Run the Swift package

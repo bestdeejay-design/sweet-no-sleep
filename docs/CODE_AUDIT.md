@@ -6,7 +6,7 @@ Audit date: October 6, 2026. Reviewed the application source, settings persisten
 
 Several cross-feature defects were found and fixed. The core flows remain: manual awake mode, timed focus sessions, agent leases with heartbeat/TTL, user skin packs, the transparent pet panel, and configurable behavior.
 
-The current environment is Linux and does not provide Swift/Xcode or the macOS SDK. A native build and AppKit/SwiftUI runtime behavior therefore cannot be confirmed here. The Mac verification checklist below is still required.
+The current workspace is Linux and does not provide Swift/Xcode or the macOS SDK. A GitHub Actions macOS runner has since completed the native package build and app packaging checks successfully. Interactive AppKit/SwiftUI behavior, including opening Settings from the menu bar, still requires the manual acceptance checklist below.
 
 ## Findings and fixes
 
@@ -24,7 +24,7 @@ The current environment is Linux and does not provide Swift/Xcode or the macOS S
 12. **Screen roaming was difficult to discover.** Settings and README document **Settings → Pet → Behavior**; the first stroll now starts after about 3 seconds, then repeats about every 28 seconds.
 13. **Timer callbacks crossed into main-actor state from sendable closures.** Timer work now hops explicitly onto `MainActor`, including roaming, countdown, break, lease, and mood updates, to keep the callbacks safe under Swift's stricter concurrency checking.
 
-## Checks run in the repository environment
+## Checks run locally and on GitHub
 
 `./Scripts/check-project.sh` completed successfully in the current Linux checkout:
 
@@ -33,9 +33,9 @@ The current environment is Linux and does not provide Swift/Xcode or the macOS S
 - all three bundled manifests passed schema, range, effect, and unique-ID validation;
 - hook smoke tests passed with a mocked `open` command, checking start/heartbeat/done, successful and failing wrapped commands, return codes, and rejection of invalid actions/IDs (7 expected URL events);
 - `grep -rn '[А-Яа-я]' Sources/` returned no matches;
-- **Swift build was skipped** because this environment is Linux without Swift/Xcode and the macOS 14 SDK.
+- **local Swift build was skipped** because this workspace is Linux without Swift/Xcode and the macOS 14 SDK.
 
-A macOS GitHub Actions workflow is configured to run the project check, release app packaging, bundle/resource assertions, and ad-hoc signature verification. Its result, native build, and GUI acceptance remain pending a macOS runner.
+GitHub Actions run [37512821190](https://github.com/bestdeejay-design/sweet-no-sleep/actions/runs/37512821190) passed on a macOS 15 runner: portable checks, debug `swift build`, the full `Scripts/check-project.sh`, `Scripts/build-app.sh release`, app/resource-bundle assertions, and ad-hoc signature verification. The runner did not launch the app or interact with its Settings UI; those runtime checks remain manual.
 
 The validator also accepts a user pack directory or one manifest:
 
@@ -45,7 +45,7 @@ python3 Scripts/validate-skins.py /path/to/ocean
 
 ## Mac acceptance checklist
 
-On a Mac, run `./Scripts/check-project.sh`, then `./Scripts/build-app.sh`, open the generated `.app`, and test:
+On a Mac, run `./Scripts/check-project.sh`, then `./Scripts/build-app.sh release`, open the generated `.app`, and test:
 
 ### Settings and skins
 
@@ -74,7 +74,7 @@ On a Mac, run `./Scripts/check-project.sh`, then `./Scripts/build-app.sh`, open 
 
 ### Priority 0 — Mac validation
 
-- Run Swift build, app bundle assembly, and the acceptance scenarios above on macOS 14+.
+- Manually launch the CI-built `.app`, confirm the menu-bar Settings action opens the Settings scene, and run the power, skin, and roaming scenarios above on macOS 14+.
 - Record results on Apple Silicon/Intel, single/multiple displays, and across Spaces.
 - Add Swift unit tests for pure model/validation components once a macOS test environment is available.
 
@@ -92,6 +92,6 @@ On a Mac, run `./Scripts/check-project.sh`, then `./Scripts/build-app.sh`, open 
 
 ## Audit limits
 
-- AppKit panels, IOKit assertions, and the menu-bar UI were not run in this Linux environment. Hook smoke tests use a mocked `open` command and do not prove URL-scheme registration in an installed `.app`.
+- AppKit panels, IOKit assertions, and the menu-bar UI were not interactively exercised. The macOS runner built and signed the `.app` but did not launch it. Hook smoke tests use a mocked `open` command and do not prove URL-scheme registration in an installed `.app`.
 - The local URL bridge is opt-in but not authenticated; any local process that can open the registered scheme can send events.
 - The assertion protects against idle sleep; it cannot override lid closure, user-initiated sleep, critical power conditions, or system policy.
