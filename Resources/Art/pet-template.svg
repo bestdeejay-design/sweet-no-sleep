@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <title>My Pet — draw inside the named layers, do not rename them</title>
+  <!-- LAYER RULES (also see docs/PET_DRAWING_GUIDE.md):
+       - Draw your own shapes INSIDE each group with id="...".
+       - Never rename, delete or merge these groups. Extra decorative groups are OK.
+       - Keep everything inside the 400x400 canvas. Simple shapes work best. -->
+  <g id="tail">
+    <path d="M298 250 C 340 240, 350 190, 335 150 C 330 138, 342 132, 348 142 C 366 184, 356 244, 310 258 Z" fill="#E8C894" stroke="#5D443B" stroke-width="6" stroke-linejoin="round"/>
+  </g>
+  <g id="body">
+    <ellipse cx="200" cy="235" rx="105" ry="100" fill="#E8C894" stroke="#5D443B" stroke-width="6"/>
+  </g>
+  <g id="belly-mark">
+    <path d="M200 285 c -18 -14 -34 -22 -34 -36 c 0 -10 8 -16 17 -16 c 7 0 13 4 17 10 c 4 -6 10 -10 17 -10 c 9 0 17 6 17 16 c 0 14 -16 22 -34 36 Z" fill="#8BC34A" stroke="#5D443B" stroke-width="5" stroke-linejoin="round"/>
+  </g>
+  <g id="ear-left">
+    <path d="M118 155 L108 92 L168 128 Z" fill="#E8C894" stroke="#5D443B" stroke-width="6" stroke-linejoin="round"/>
+  </g>
+  <g id="ear-right">
+    <path d="M282 155 L292 92 L232 128 Z" fill="#E8C894" stroke="#5D443B" stroke-width="6" stroke-linejoin="round"/>
+  </g>
+  <g id="eye-left">
+    <ellipse cx="160" cy="210" rx="17" ry="20" fill="#FFFFFF" stroke="#5D443B" stroke-width="5"/>
+  </g>
+  <g id="eye-right">
+    <ellipse cx="240" cy="210" rx="17" ry="20" fill="#FFFFFF" stroke="#5D443B" stroke-width="5"/>
+  </g>
+  <g id="pupil-left">
+    <circle cx="162" cy="213" r="8" fill="#333333"/>
+  </g>
+  <g id="pupil-right">
+    <circle cx="238" cy="213" r="8" fill="#333333"/>
+  </g>
+  <g id="cheek-left">
+    <ellipse cx="128" cy="248" rx="12" ry="8" fill="#E99B8E" opacity="0.8"/>
+  </g>
+  <g id="cheek-right">
+    <ellipse cx="272" cy="248" rx="12" ry="8" fill="#E99B8E" opacity="0.8"/>
+  </g>
+  <g id="accessory">
+    <path d="M200 118 c -8 -12 -24 -14 -30 -4 c -5 8 0 18 10 20 l -12 6 c -3 2 -2 7 2 7 l 30 -2 c 12 -1 14 -18 0 -27 Z" fill="#75C56A" stroke="#5D443B" stroke-width="4" stroke-linejoin="round"/>
+  </g>
+</svg>
