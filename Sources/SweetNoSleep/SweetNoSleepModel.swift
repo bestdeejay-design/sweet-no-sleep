@@ -189,7 +189,7 @@ final class SweetNoSleepModel: ObservableObject {
         animationsEnabled = defaults.object(forKey: Key.animationsEnabled) as? Bool ?? true
         playfulMomentsEnabled = defaults.object(forKey: Key.playfulMomentsEnabled) as? Bool ?? true
         breakRemindersEnabled = defaults.object(forKey: Key.breakRemindersEnabled) as? Bool ?? true
-        breakIntervalMinutes = min(max(defaults.object(forKey: Key.breakIntervalMinutes) as? Int ?? 25, 10), 90)
+        breakIntervalMinutes = min(max(defaults.object(forKey: Key.breakIntervalMinutes) as? Int ?? 25, 10), 60)
 
         powerKeeper.onFailure = { [weak self] message in
             guard let self else { return }
