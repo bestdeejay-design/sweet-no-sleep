@@ -1,0 +1,63 @@
+name: macOS build
+
+on:
+  push:
+    branches:
+      - main
+      - 'arena/**'
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-package:
+    runs-on: macos-15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Show Apple toolchain
+        run: |
+          sw_vers
+          swift --version
+          xcodebuild -version
+
+      - name: Run portable project checks
+        run: SWEET_NO_SLEEP_SKIP_SWIFT_BUILD=1 ./Scripts/check-project.sh
+
+      - name: Build Swift package with diagnostics
+        run: |
+          LOG_FILE="$(mktemp)"
+          if swift build --package-path . --configuration debug >"$LOG_FILE" 2>&1; then
+            cat "$LOG_FILE"
+          else
+            cat "$LOG_FILE"
+            python3 - "$LOG_FILE" <<'PY'
+          import pathlib
+          import sys
+          log = pathlib.Path(sys.argv[1]).read_text(errors="replace")
+          lines = log.splitlines()
+          diagnostics = [line for line in lines if "error:" in line or "fatal error:" in line]
+          if not diagnostics:
+              diagnostics = [line for line in lines if "warning:" in line]
+          summary = " | ".join(diagnostics[-20:] or lines[-25:]) or "Swift build failed; inspect the step log."
+          summary = summary.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+          print(f"::error title=Swift build diagnostics::{summary}")
+          PY
+            exit 1
+          fi
+
+      - name: Run full project check on macOS
+        run: ./Scripts/check-project.sh
+
+      - name: Assemble app bundle
+        run: ./Scripts/build-app.sh release
+
+      - name: Verify app bundle structure and signature
+        run: |
+          APP="dist/Sweet No Sleep — Kiwi Cat.app"
+          test -x "$APP/Contents/MacOS/SweetNoSleep"
+          test -d "$APP/Contents/Resources/PetSkins"
+          find "$APP/Contents/Resources" -maxdepth 1 -name '*.bundle' -print -quit | grep -q .
+          codesign --verify --deep --strict "$APP"

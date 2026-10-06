@@ -7,14 +7,11 @@ let package = Package(
     products: [
         .executable(name: "SweetNoSleep", targets: ["SweetNoSleep"])
     ],
-    dependencies: [],
     targets: [
         .executableTarget(
             name: "SweetNoSleep",
             path: "Sources/SweetNoSleep",
-            resources: [
-                .copy("../../Resources")
-            ]
+            resources: [.process("Localizable.xcstrings")]
         )
     ]
 )
