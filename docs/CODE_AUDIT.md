@@ -22,6 +22,7 @@ The current environment is Linux and does not provide Swift/Xcode or the macOS S
 10. **Settings did not open reliably from the menu-bar dashboard.** Replaced `SettingsLink` with the SwiftUI `openSettings` environment action and explicit app activation.
 11. **User-visible text was embedded directly in Russian source strings.** The UI now uses an English-source `Localizable.xcstrings` catalog through `NSLocalizedString`; the Swift source tree is English-only. A localization validator checks source/catalog key parity. Other translations must be generated through the localization workflow, not hand-edited.
 12. **Screen roaming was difficult to discover.** Settings and README document **Settings → Pet → Behavior**; the first stroll now starts after about 3 seconds, then repeats about every 28 seconds.
+13. **Timer callbacks crossed into main-actor state from sendable closures.** Timer work now hops explicitly onto `MainActor`, including roaming, countdown, break, lease, and mood updates, to keep the callbacks safe under Swift's stricter concurrency checking.
 
 ## Checks run in the repository environment
 

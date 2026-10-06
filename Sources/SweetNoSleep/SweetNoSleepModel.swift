@@ -4,7 +4,7 @@ import SwiftUI
 
 // MARK: - Companion and session models
 
-enum KiwiMood: Equatable {
+enum KiwiMood: Equatable, Sendable {
     case idle
     case working
     case celebrating
@@ -269,7 +269,9 @@ final class SweetNoSleepModel: ObservableObject {
         setMood(isBreakDue ? .breakReminder : .working)
         updateCountdown()
         sessionTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            self?.updateCountdown()
+            Task { @MainActor [weak self] in
+                self?.updateCountdown()
+            }
         }
     }
 
@@ -356,7 +358,9 @@ final class SweetNoSleepModel: ObservableObject {
 
         if agentLeaseTimer == nil {
             agentLeaseTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
-                self?.pruneExpiredAgentLeases()
+                Task { @MainActor [weak self] in
+                    self?.pruneExpiredAgentLeases()
+                }
             }
         }
 
@@ -593,24 +597,26 @@ final class SweetNoSleepModel: ObservableObject {
 
         let delay = TimeInterval.random(in: 210...390)
         playfulTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
-            guard let self else { return }
-            self.playfulTimer = nil
-            guard self.isKeepingAwake,
-                  self.isPetVisible,
-                  self.animationsEnabled,
-                  self.playfulMomentsEnabled,
-                  !self.isBreakDue,
-                  (self.mood == .working || self.mood == .idle)
-            else {
-                self.schedulePlayfulMoment()
-                return
-            }
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.playfulTimer = nil
+                guard self.isKeepingAwake,
+                      self.isPetVisible,
+                      self.animationsEnabled,
+                      self.playfulMomentsEnabled,
+                      !self.isBreakDue,
+                      (self.mood == .working || self.mood == .idle)
+                else {
+                    self.schedulePlayfulMoment()
+                    return
+                }
 
-            let moments: [KiwiMood] = [.dancing, .stretching, .curious]
-            let moment = moments.randomElement() ?? .stretching
-            let duration = TimeInterval.random(in: 3.4...5.2)
-            self.setTemporaryMood(moment, duration: duration, then: .working)
-            self.schedulePlayfulMoment()
+                let moments: [KiwiMood] = [.dancing, .stretching, .curious]
+                let moment = moments.randomElement() ?? .stretching
+                let duration = TimeInterval.random(in: 3.4...5.2)
+                self.setTemporaryMood(moment, duration: duration, then: .working)
+                self.schedulePlayfulMoment()
+            }
         }
     }
 
@@ -621,14 +627,16 @@ final class SweetNoSleepModel: ObservableObject {
 
         let interval = delay ?? TimeInterval(breakIntervalMinutes * 60)
         breakTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
-            guard let self else { return }
-            self.breakTimer = nil
-            guard self.isKeepingAwake, self.breakRemindersEnabled else { return }
-            self.isBreakDue = true
-            self.playfulTimer?.invalidate()
-            self.playfulTimer = nil
-            self.statusMessage = L10n.text("Time to look away from the code for a moment.")
-            self.setMood(.breakReminder)
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.breakTimer = nil
+                guard self.isKeepingAwake, self.breakRemindersEnabled else { return }
+                self.isBreakDue = true
+                self.playfulTimer?.invalidate()
+                self.playfulTimer = nil
+                self.statusMessage = L10n.text("Time to look away from the code for a moment.")
+                self.setMood(.breakReminder)
+            }
         }
     }
 
@@ -642,9 +650,11 @@ final class SweetNoSleepModel: ObservableObject {
         moodTimer?.invalidate()
         mood = newMood
         moodTimer = Timer.scheduledTimer(withTimeInterval: duration, repeats: false) { [weak self] _ in
-            guard let self else { return }
-            let fallback = self.isKeepingAwake && finalMood == .idle ? .working : finalMood
-            self.mood = self.isBreakDue ? .breakReminder : fallback
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                let fallback = self.isKeepingAwake && finalMood == .idle ? .working : finalMood
+                self.mood = self.isBreakDue ? .breakReminder : fallback
+            }
         }
     }
 

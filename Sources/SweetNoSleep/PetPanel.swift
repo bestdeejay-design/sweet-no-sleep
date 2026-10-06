@@ -269,17 +269,21 @@ final class PetPanelController {
 
     private func scheduleInitialWander() {
         wanderTimer = Timer.scheduledTimer(withTimeInterval: 3, repeats: false) { [weak self] _ in
-            guard let self else { return }
-            self.wanderTimer = nil
-            self.wanderOnce()
-            self.scheduleRepeatingWander()
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.wanderTimer = nil
+                self.wanderOnce()
+                self.scheduleRepeatingWander()
+            }
         }
     }
 
     private func scheduleRepeatingWander() {
         guard model.roamingEnabled, model.isPetVisible, panel?.isVisible == true else { return }
         wanderTimer = Timer.scheduledTimer(withTimeInterval: 28, repeats: true) { [weak self] _ in
-            self?.wanderOnce()
+            Task { @MainActor [weak self] in
+                self?.wanderOnce()
+            }
         }
     }
 

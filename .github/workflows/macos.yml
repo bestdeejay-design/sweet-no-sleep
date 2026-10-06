@@ -37,8 +37,11 @@ jobs:
           import pathlib
           import sys
           log = pathlib.Path(sys.argv[1]).read_text(errors="replace")
-          diagnostics = [line for line in log.splitlines() if "error:" in line or "warning:" in line]
-          summary = " | ".join(diagnostics[-12:]) or "Swift build failed; inspect the step log."
+          lines = log.splitlines()
+          diagnostics = [line for line in lines if "error:" in line or "fatal error:" in line]
+          if not diagnostics:
+              diagnostics = [line for line in lines if "warning:" in line]
+          summary = " | ".join(diagnostics[-20:] or lines[-25:]) or "Swift build failed; inspect the step log."
           summary = summary.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
           print(f"::error title=Swift build diagnostics::{summary}")
           PY
