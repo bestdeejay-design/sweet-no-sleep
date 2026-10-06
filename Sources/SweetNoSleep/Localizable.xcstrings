@@ -1,9 +1,0 @@
-{
-  "sourceLanguage" : "en",
-  "strings" : {
-    "settings.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Settings" } } } },
-    "settings.keepAwake" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Keep Awake" } } } },
-    "settings.showKiwi" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Show Kiwi" } } } }
-  },
-  "version" : "1.0"
-}

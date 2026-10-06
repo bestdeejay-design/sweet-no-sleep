@@ -1,42 +1,80 @@
-# SweetNoSleep
+# Sweet No Sleep — Kiwi Cat
 
-MenuBar desktop pet **Kiwi** that keeps your Mac awake.
+Нативный питомец macOS, который живёт поверх рабочего стола, реагирует на прикосновения и помогает удерживать Mac бодрствующим во время долгих тестов и работы AI-агентов.
 
-Stage 1 (circle): transparent floating `NSPanel`, breathing/blinking Canvas circle, drag support, `PowerKeeper` via `ProcessInfo.beginActivity` + `IOPMAssertion`.
+## Что уже есть
 
-## Run
+- **Киви — нарисованный персонаж без внешних ассетов:** дыхание, редкое моргание, качание хвоста, выражения, мини-киви на груди, реакции на клик и перетаскивание.
+- **Три сменных скина:** Kiwi, Moonlight и Strawberry — у каждого собственные палитра, профиль движения и эффект празднования (листья, лунная пыль или ягодные сердца).
+- **Прозрачное плавающее окно:** не активирует питомца вместо редактора, умеет оставаться поверх окон и на других Spaces; позиция сохраняется.
+- **Плавная прогулка по экрану:** опциональна и выключена по умолчанию, чтобы Киви не перекрывал код.
+- **Ручной режим без таймера** и **фокус-сессии на 15 минут — 4 часа**.
+- **Настраиваемое завершение:** снять запрет и разрешить macOS уснуть по обычным настройкам или, по явному выбору и с подтверждением каждой сессии, сразу отправить Mac в сон.
+- **Отдельная настройка дисплея:** можно оставить экрану право гаснуть, пока система и агенты продолжают работу.
+- **Настройки размера, видимости, анимации, автозапуска и скина.** Учитывается системный Reduce Motion.
+
+## Сборка на Mac
+
+Требуются macOS 14+, Xcode Command Line Tools и Swift 5.9+.
 
 ```bash
-swift run --package-path ~/Projects/sweet-no-sleep
-# or open Package.swift in Xcode and Run
+# Быстрый запуск из Swift Package
+swift run --package-path /путь/к/sweet-no-sleep
+
+# Собрать локальное приложение .app
+cd /путь/к/sweet-no-sleep
+./Scripts/build-app.sh
+open "dist/Sweet No Sleep — Kiwi Cat.app"
 ```
 
-Toggle `Keep Awake` in the MenuBar (`circle.fill` icon). Verify with:
+Скрипт собирает release-бинарник, помещает его в минимальный `.app` bundle и подписывает ad-hoc для локального запуска. Держите приложение по стабильному пути: это важно для автозапуска. Для распространения другим людям понадобятся Developer ID-подпись, notarization и app icon.
+
+### Проверка защиты от сна
+
+Включите ручной режим или фокус-сессию, затем выполните:
 
 ```bash
-pmset -g assertions | grep -i kiwi
+pmset -g assertions | grep -A4 -B2 -i "Sweet No Sleep"
 ```
 
-## Structure
+В выводе должна появиться assertion `PreventUserIdleSystemSleep` с причиной Sweet No Sleep. Если включена опция «Не выключать дисплей», появится и display assertion. Завершите режим и убедитесь, что assertions приложения исчезли.
 
-- `Sources/SweetNoSleep/SweetNoSleepApp.swift` — MenuBarExtra + AppDelegate pet window
-- `Sources/SweetNoSleep/PetPanel.swift` — borderless nonactivating panel
-- `Sources/SweetNoSleep/KiwiCircleView.swift` — Canvas breathing/blink/cursor
-- `Sources/SweetNoSleep/KiwiBrain.swift` — PetState idle/dragged/sleeping
-- `Sources/SweetNoSleep/PowerKeeper.swift` — display + system assertions
-- `Sources/SweetNoSleep/SettingsView.swift` — login item, size S/M/L
-- `Resources/` — reserved for `kiwi-cat` sprites (stage 2)
+## Важно о сне и AI-агентах
 
-All code, docs and settings are English-only. Localization is generated, never hand-edited (see below).
+Защита macOS предназначена для **сна по бездействию**. Она не может отменить принудительный сон пользователя, закрытие крышки MacBook, критическое выключение из-за батареи или действия macOS. Если выбран «Обычный сон», Киви только освобождает собственную защиту — дальше действуют таймеры энергосбережения macOS. «Сразу отправить Mac в сон» — отдельная опасная опция; перед запуском Киви спрашивает подтверждение, потому что такой сон может прервать другие приложения.
 
-## Localization
+Текущая версия **не угадывает состояние агента по открытому Cursor, Claude Code, Codex, Terminal или IDE**: открытый редактор не равен работающей задаче. Вместо хрупкого сканирования процессов есть opt-in **локальный URL bridge** для hooks: агент может прислать `start`, `heartbeat`, `done` или `failed`. Включите «Разрешить события от локальных hooks» в настройках → «Питание», затем вызывайте скрипт с одним и тем же ID сессии:
 
-Source of truth: `Sources/SweetNoSleep/Localizable.xcstrings` (`en` only).
-`Scripts/localize.sh` auto-fills other locales via DeepL/Crowdin on tag. Do not edit translations by hand.
+```bash
+./Scripts/agent-event.sh start my-agent-123
+./Scripts/agent-event.sh heartbeat my-agent-123  # повторять примерно раз в минуту
+./Scripts/agent-event.sh done my-agent-123
+```
 
-## Roadmap
+Сначала соберите `.app` и один раз откройте его, чтобы macOS зарегистрировала URL scheme. Bridge выключен по умолчанию: включайте его только если доверяете локальным hooks — любой локальный процесс может вызвать этот URL scheme. Heartbeat продлевает lease на 3 минуты; пропавший hook не оставит Mac awake бесконечно. Agent-события могут снять assertion, но **никогда не запускают немедленный сон**. Сейчас это общий мост для shell/IDE hooks, не готовая интеграция с конкретным агентом; подключение provider-specific events описано в [исследовании и плане развития](docs/RESEARCH.md).
 
-1. Circle (done) — panel, breathing, PowerKeeper
-2. Kiwi look — ears/tail/kiwi-heart from `ksu/portfolio/stickers/kiwi-cat.jpg`
-3. Reactions — poke/drag states via `KiwiBrain`
-4. Assistant — battery/time/idle events
+Утилита удерживает бодрствующим **сам Mac**, но не управляет очередями, сетью, авторизацией, политикой сна внутри IDE и внутренними механизмами остановки конкретного агента. Проверяйте долгие сессии сначала с действием «Разрешить обычный сон».
+
+## Архитектура
+
+```text
+Sources/SweetNoSleep/
+├── SweetNoSleepApp.swift    # MenuBarExtra, запуск и жизненный цикл питомца
+├── SweetNoSleepModel.swift  # общее состояние, сессии, таймер и скины
+├── PetPanel.swift           # прозрачный NSPanel, позиция и прогулка
+├── KiwiPetView.swift        # векторный Canvas-питомец и анимация
+├── PowerKeeper.swift        # ProcessInfo + IOPM assertions + запрос сна
+└── SettingsView.swift       # вкладки «Фокус», «Питомец», «Питание»
+
+Scripts/build-app.sh          # сборка локального .app bundle
+Scripts/agent-event.sh        # локальный start/heartbeat/done hook bridge
+Resources/                    # место для будущих ресурсов персонажей
+```
+
+## Направления следующего этапа
+
+1. **Адаптеры агентов** — Claude Code hooks, Codex/IDE callbacks или локальный протокол `start / heartbeat / waiting-for-approval / done`; heartbeat с TTL, чтобы зависший агент не держал Mac бесконечно.
+2. **Состояния агента** — работает, ждёт подтверждения, тесты завершены, ошибка, цель достигнута. Пусть питомец меняет позу, а не показывает навязчивые уведомления.
+3. **Режимы питания** — «пока агент работает», «только от адаптера питания», короткая отсрочка перед сном и видимая кнопка аварийной остановки.
+4. **Контент питомцев** — skin-паки с конфигом анимаций/эффектов, палитрами, аксессуарами и собственными реакциями.
+5. **Качество жизни** — горячая клавиша, пауза анимаций при полноэкранной работе, выбор монитора, расписания, статистика сессий и тихие звуковые сигналы (опционально).
