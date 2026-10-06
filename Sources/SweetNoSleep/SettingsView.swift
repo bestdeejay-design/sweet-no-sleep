@@ -161,7 +161,7 @@ private struct CompanionSettingsPane: View {
                     .foregroundStyle(.secondary)
             }
 
-            SettingsCard(title: L10n.text("Behavior"), subtitle: L10n.text("Playful moments happen only during an awake session; everything can be turned off.")) {
+            SettingsCard(title: L10n.text("Behavior"), subtitle: L10n.text("Adjust how Kiwi moves and which playful moments appear during an awake session.")) {
                 Toggle(L10n.text("Roam gently across the screen"), isOn: $model.roamingEnabled)
                 Label(L10n.text("The first stroll starts about 3 seconds after enabling; later strolls begin about every 28 seconds."), systemImage: "figure.walk")
                     .font(.system(size: 10, design: .rounded))
@@ -170,6 +170,42 @@ private struct CompanionSettingsPane: View {
                 Toggle(L10n.text("Breathing, blinking, and movement"), isOn: $model.animationsEnabled)
                 Toggle(L10n.text("Occasional dances, stretches, and curious looks"), isOn: $model.playfulMomentsEnabled)
                     .disabled(!model.animationsEnabled)
+
+                if model.playfulMomentsEnabled && model.animationsEnabled {
+                    HStack(spacing: 10) {
+                        Text(L10n.format("About every %d sec", model.playfulMomentIntervalSeconds))
+                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .frame(width: 120, alignment: .leading)
+                        Slider(value: Binding(
+                            get: { Double(model.playfulMomentIntervalSeconds) },
+                            set: { model.playfulMomentIntervalSeconds = Int($0) }
+                        ), in: 60...120, step: 15)
+                        .tint(Color(hex: 0x74C987))
+                        .accessibilityLabel(L10n.text("Playful moment interval"))
+                    }
+                    Label(L10n.text("The exact delay varies slightly within 60 to 120 seconds."), systemImage: "timer")
+                        .font(.system(size: 10, design: .rounded))
+                        .foregroundStyle(.secondary)
+                    Text(L10n.text("Mood weights - higher values make a mood more likely; 0 turns it off."))
+                        .font(.system(size: 10, design: .rounded))
+                        .foregroundStyle(.secondary)
+                    playfulWeightRow(
+                        title: L10n.text("Dancing"),
+                        accessibilityLabel: L10n.text("Dancing mood weight"),
+                        weight: $model.playfulDancingWeight
+                    )
+                    playfulWeightRow(
+                        title: L10n.text("Stretching"),
+                        accessibilityLabel: L10n.text("Stretching mood weight"),
+                        weight: $model.playfulStretchingWeight
+                    )
+                    playfulWeightRow(
+                        title: L10n.text("Curious"),
+                        accessibilityLabel: L10n.text("Curious mood weight"),
+                        weight: $model.playfulCuriousWeight
+                    )
+                }
+
                 Label(L10n.text("Kiwi's eyes follow the pointer automatically."), systemImage: "eye")
                     .font(.system(size: 10, design: .rounded))
                     .foregroundStyle(.secondary)
@@ -201,6 +237,24 @@ private struct CompanionSettingsPane: View {
             SettingsCard(title: L10n.text("Desktop layer"), subtitle: L10n.text("The pet window is transparent and does not take focus away from your code editor.")) {
                 Toggle(L10n.text("Show Kiwi on the desktop"), isOn: $model.isPetVisible)
             }
+        }
+    }
+
+    private func playfulWeightRow(title: String, accessibilityLabel: String, weight: Binding<Int>) -> some View {
+        HStack(spacing: 10) {
+            Text(title)
+                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .frame(width: 120, alignment: .leading)
+            Slider(value: Binding(
+                get: { Double(weight.wrappedValue) },
+                set: { weight.wrappedValue = Int($0) }
+            ), in: 0...10, step: 1)
+            .tint(Color(hex: 0x74C987))
+            .accessibilityLabel(accessibilityLabel)
+            Text("\(weight.wrappedValue)")
+                .font(.system(size: 10, design: .rounded).monospacedDigit())
+                .foregroundStyle(.secondary)
+                .frame(width: 18, alignment: .trailing)
         }
     }
 

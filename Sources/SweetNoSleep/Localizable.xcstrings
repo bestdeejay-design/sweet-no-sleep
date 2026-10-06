@@ -931,16 +931,6 @@
         }
       }
     },
-    "Playful moments happen only during an awake session; everything can be turned off.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Playful moments happen only during an awake session; everything can be turned off."
-          }
-        }
-      }
-    },
     "Power": {
       "localizations": {
         "en": {
@@ -1487,6 +1477,116 @@
           "stringUnit": {
             "state": "translated",
             "value": "macOS rejected the sleep request (error %d)."
+          }
+        }
+      }
+    },
+    "About every %d sec": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About every %d sec"
+          }
+        }
+      }
+    },
+    "Adjust how Kiwi moves and which playful moments appear during an awake session.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adjust how Kiwi moves and which playful moments appear during an awake session."
+          }
+        }
+      }
+    },
+    "Curious": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Curious"
+          }
+        }
+      }
+    },
+    "Curious mood weight": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Curious mood weight"
+          }
+        }
+      }
+    },
+    "Dancing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dancing"
+          }
+        }
+      }
+    },
+    "Dancing mood weight": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dancing mood weight"
+          }
+        }
+      }
+    },
+    "Mood weights - higher values make a mood more likely; 0 turns it off.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mood weights - higher values make a mood more likely; 0 turns it off."
+          }
+        }
+      }
+    },
+    "Playful moment interval": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Playful moment interval"
+          }
+        }
+      }
+    },
+    "Stretching": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stretching"
+          }
+        }
+      }
+    },
+    "Stretching mood weight": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stretching mood weight"
+          }
+        }
+      }
+    },
+    "The exact delay varies slightly within 60 to 120 seconds.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The exact delay varies slightly within 60 to 120 seconds."
           }
         }
       }

@@ -141,6 +141,34 @@ final class SweetNoSleepModel: ObservableObject {
         }
     }
 
+    @Published var playfulMomentIntervalSeconds: Int {
+        didSet {
+            defaults.set(playfulMomentIntervalSeconds, forKey: Key.playfulMomentIntervalSeconds)
+            schedulePlayfulMoment()
+        }
+    }
+
+    @Published var playfulDancingWeight: Int {
+        didSet {
+            defaults.set(playfulDancingWeight, forKey: Key.playfulDancingWeight)
+            schedulePlayfulMoment()
+        }
+    }
+
+    @Published var playfulStretchingWeight: Int {
+        didSet {
+            defaults.set(playfulStretchingWeight, forKey: Key.playfulStretchingWeight)
+            schedulePlayfulMoment()
+        }
+    }
+
+    @Published var playfulCuriousWeight: Int {
+        didSet {
+            defaults.set(playfulCuriousWeight, forKey: Key.playfulCuriousWeight)
+            schedulePlayfulMoment()
+        }
+    }
+
     @Published var breakRemindersEnabled: Bool {
         didSet {
             defaults.set(breakRemindersEnabled, forKey: Key.breakRemindersEnabled)
@@ -189,6 +217,22 @@ final class SweetNoSleepModel: ObservableObject {
         roamingEnabled = defaults.object(forKey: Key.roamingEnabled) as? Bool ?? false
         animationsEnabled = defaults.object(forKey: Key.animationsEnabled) as? Bool ?? true
         playfulMomentsEnabled = defaults.object(forKey: Key.playfulMomentsEnabled) as? Bool ?? true
+        playfulMomentIntervalSeconds = min(
+            max(defaults.object(forKey: Key.playfulMomentIntervalSeconds) as? Int ?? 90, 60),
+            120
+        )
+        playfulDancingWeight = min(
+            max(defaults.object(forKey: Key.playfulDancingWeight) as? Int ?? 5, 0),
+            10
+        )
+        playfulStretchingWeight = min(
+            max(defaults.object(forKey: Key.playfulStretchingWeight) as? Int ?? 5, 0),
+            10
+        )
+        playfulCuriousWeight = min(
+            max(defaults.object(forKey: Key.playfulCuriousWeight) as? Int ?? 5, 0),
+            10
+        )
         breakRemindersEnabled = defaults.object(forKey: Key.breakRemindersEnabled) as? Bool ?? true
         breakIntervalMinutes = min(max(defaults.object(forKey: Key.breakIntervalMinutes) as? Int ?? 25, 10), 60)
 
@@ -593,9 +637,18 @@ final class SweetNoSleepModel: ObservableObject {
     private func schedulePlayfulMoment() {
         playfulTimer?.invalidate()
         playfulTimer = nil
-        guard isKeepingAwake, isPetVisible, animationsEnabled, playfulMomentsEnabled, !isBreakDue else { return }
+        guard isKeepingAwake,
+              isPetVisible,
+              animationsEnabled,
+              playfulMomentsEnabled,
+              !isBreakDue,
+              playfulDancingWeight + playfulStretchingWeight + playfulCuriousWeight > 0
+        else { return }
 
-        let delay = TimeInterval.random(in: 210...390)
+        let preferredInterval = Double(min(max(playfulMomentIntervalSeconds, 60), 120))
+        let minimumDelay = max(60, preferredInterval * 0.9)
+        let maximumDelay = min(120, preferredInterval * 1.1)
+        let delay = TimeInterval.random(in: minimumDelay...maximumDelay)
         playfulTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self else { return }
@@ -611,13 +664,29 @@ final class SweetNoSleepModel: ObservableObject {
                     return
                 }
 
-                let moments: [KiwiMood] = [.dancing, .stretching, .curious]
-                let moment = moments.randomElement() ?? .stretching
+                guard let moment = self.weightedPlayfulMood() else { return }
                 let duration = TimeInterval.random(in: 3.4...5.2)
                 self.setTemporaryMood(moment, duration: duration, then: .working)
                 self.schedulePlayfulMoment()
             }
         }
+    }
+
+    private func weightedPlayfulMood() -> KiwiMood? {
+        let choices: [(mood: KiwiMood, weight: Int)] = [
+            (.dancing, max(playfulDancingWeight, 0)),
+            (.stretching, max(playfulStretchingWeight, 0)),
+            (.curious, max(playfulCuriousWeight, 0))
+        ]
+        let totalWeight = choices.reduce(0) { $0 + $1.weight }
+        guard totalWeight > 0 else { return nil }
+
+        var selection = Int.random(in: 1...totalWeight)
+        for choice in choices {
+            selection -= choice.weight
+            if selection <= 0 { return choice.mood }
+        }
+        return nil
     }
 
     private func scheduleBreakReminder(after delay: TimeInterval? = nil) {
@@ -671,6 +740,10 @@ final class SweetNoSleepModel: ObservableObject {
         static let roamingEnabled = "pet.roamingEnabled"
         static let animationsEnabled = "pet.animationsEnabled"
         static let playfulMomentsEnabled = "pet.playfulMomentsEnabled"
+        static let playfulMomentIntervalSeconds = "pet.playfulMomentIntervalSeconds"
+        static let playfulDancingWeight = "pet.playfulDancingWeight"
+        static let playfulStretchingWeight = "pet.playfulStretchingWeight"
+        static let playfulCuriousWeight = "pet.playfulCuriousWeight"
         static let breakRemindersEnabled = "breakReminders.enabled"
         static let breakIntervalMinutes = "breakReminders.intervalMinutes"
     }

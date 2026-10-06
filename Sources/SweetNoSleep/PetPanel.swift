@@ -324,6 +324,9 @@ final class PetPanelController {
                 self.wanderAnimator = nil
                 self.model.endWandering()
                 self.finishDragging()
+                if !self.model.isBreakDue {
+                    self.model.poke()
+                }
             }
         )
     }
