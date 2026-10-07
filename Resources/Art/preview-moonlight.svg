@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160" viewBox="0 0 240 160" role="img" aria-labelledby="title description">
+  <title id="title">Moonlight skin preview</title>
+  <desc id="description">A quiet lavender cat with soft violet eyes beside the Moonlight skin palette.</desc>
+  <defs>
+    <linearGradient id="wash" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F8F7FF"/>
+      <stop offset="1" stop-color="#E8E9FA"/>
+    </linearGradient>
+    <linearGradient id="fur" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#E8E8FF"/>
+      <stop offset="1" stop-color="#B9B9E9"/>
+    </linearGradient>
+  </defs>
+  <rect width="240" height="160" rx="22" fill="url(#wash)"/>
+  <circle cx="100" cy="80" r="67" fill="#FFFFFF" opacity="0.55"/>
+  <path d="M87 113c-20 8-26 26-12 30 12 4 23-5 21-15" fill="none" stroke="#414268" stroke-width="9" stroke-linecap="round"/>
+  <path d="M76 138c0-19 9-34 26-38 19 4 28 19 28 38" fill="url(#fur)" stroke="#414268" stroke-width="4.5" stroke-linejoin="round"/>
+  <path d="m60 77 6-36c1-5 4-6 8-2l14 14a45 45 0 0 1 28 0l14-14c4-4 7-3 8 2l6 36c7 10 8 21 2 31-7 11-22 17-45 17s-38-6-45-17c-6-10-5-21 2-31Z" fill="url(#fur)" stroke="#414268" stroke-width="4.5" stroke-linejoin="round"/>
+  <path d="m72 47 4 26c5-5 10-9 16-12L76 44c-2-2-4 0-4 3ZM128 47l-4 26c-5-5-10-9-16-12l16-17c2-2 4 0 4 3Z" fill="#D99FCB"/>
+  <ellipse cx="84" cy="86" rx="6" ry="9" fill="#6C73B5"/>
+  <ellipse cx="116" cy="86" rx="6" ry="9" fill="#6C73B5"/>
+  <circle cx="85" cy="88" r="2.6" fill="#292947"/>
+  <circle cx="115" cy="88" r="2.6" fill="#292947"/>
+  <ellipse cx="72" cy="101" rx="8" ry="4" fill="#D99FCB" opacity="0.9"/>
+  <ellipse cx="128" cy="101" rx="8" ry="4" fill="#D99FCB" opacity="0.9"/>
+  <path d="M100 65c-3-4-8-6-11-2-4 5 1 10 11 16 10-6 15-11 11-16-3-4-8-2-11 2Z" fill="#A5A3FF" stroke="#6C73B5" stroke-width="1.7" stroke-linejoin="round"/>
+  <path d="M154 36a10 10 0 1 0 11 15 9 9 0 0 1-11-15Z" fill="#A5A3FF"/>
+  <path d="m169 48 1.5-3 1.5 3 3 1.5-3 1.5-1.5 3-1.5-3-3-1.5Z" fill="#9695D2"/>
+  <circle cx="190" cy="52" r="12" fill="#B9B9E9" stroke="#FFFFFF" stroke-width="3"/>
+  <circle cx="190" cy="82" r="12" fill="#A5A3FF" stroke="#FFFFFF" stroke-width="3"/>
+  <circle cx="190" cy="112" r="12" fill="#D99FCB" stroke="#FFFFFF" stroke-width="3"/>
+</svg>

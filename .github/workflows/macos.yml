@@ -59,5 +59,18 @@ jobs:
           APP="dist/Sweet No Sleep — Kiwi Cat.app"
           test -x "$APP/Contents/MacOS/SweetNoSleep"
           test -d "$APP/Contents/Resources/PetSkins"
+          test -s "$APP/Contents/Resources/SweetNoSleep.icns"
+          test -s "$APP/Contents/Resources/Media/menubar-awake.png"
+          test -s "$APP/Contents/Resources/Media/menubar-asleep.png"
+          test -s "$APP/Contents/Resources/Media/preview-kiwi.png"
           find "$APP/Contents/Resources" -maxdepth 1 -name '*.bundle' -print -quit | grep -q .
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$APP/Contents/Info.plist" | grep -q 'SweetNoSleep.icns'
           codesign --verify --deep --strict "$APP"
+
+      - name: Upload generated media kit
+        uses: actions/upload-artifact@v4
+        with:
+          name: sweet-no-sleep-media
+          path: Resources/Art/Rendered/
+          if-no-files-found: error
+          retention-days: 30

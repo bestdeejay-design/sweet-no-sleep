@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title description">
+  <title id="title">Sweet No Sleep — Kiwi Cat app icon</title>
+  <desc id="description">A warm beige cat face with leafy green eyes and a small kiwi heart.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFF9EC"/>
+      <stop offset="1" stop-color="#DDEFD9"/>
+    </linearGradient>
+    <linearGradient id="fur" x1="0.12" y1="0" x2="0.88" y2="1">
+      <stop offset="0" stop-color="#F3D8A7"/>
+      <stop offset="1" stop-color="#E8C48A"/>
+    </linearGradient>
+    <linearGradient id="heart" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#97D47A"/>
+      <stop offset="1" stop-color="#4F9A64"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1024" height="1024" rx="228" fill="url(#background)"/>
+  <circle cx="512" cy="512" r="410" fill="#FFFFFF" opacity="0.28"/>
+  <circle cx="164" cy="317" r="19" fill="#75C56A" opacity="0.35"/>
+  <circle cx="838" cy="728" r="13" fill="#E99B8E" opacity="0.52"/>
+  <path d="M809 247c24-31 52-39 81-34-10 30-31 51-66 56 27 4 45 19 55 46-34 6-65-7-82-36-4-11 0-22 12-32Z" fill="#75C56A" opacity="0.45"/>
+
+  <!-- One bold silhouette keeps the face legible at menu-bar and Dock sizes. -->
+  <path d="M216 451 267 190c7-39 32-47 62-19l114 107c46-17 92-17 138 0l114-107c30-28 55-20 62 19l51 261c34 50 53 99 50 159-9 150-151 246-345 246s-336-96-345-246c-3-60 16-109 50-159Z" fill="url(#fur)" stroke="#5D443B" stroke-width="26" stroke-linejoin="round"/>
+
+  <path d="m302 231 29 169c28-31 63-58 98-80l-98-91c-13-12-25-11-29 2Z" fill="#E88D85" stroke="#5D443B" stroke-width="15" stroke-linejoin="round"/>
+  <path d="m722 231-29 169c-28-31-63-58-98-80l98-91c13-12 25-11 29 2Z" fill="#E88D85" stroke="#5D443B" stroke-width="15" stroke-linejoin="round"/>
+
+  <!-- Kiwi-heart mark: fruit-green heart and two simple leaves. -->
+  <path d="M512 435c-18-24-55-46-82-18-30 31-6 76 82 126 88-50 112-95 82-126-27-28-64-6-82 18Z" fill="url(#heart)" stroke="#4D7E56" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M510 411c-13-29-11-51 6-69 22 20 26 44 10 70M518 408c13-31 33-44 59-41-5 26-23 43-54 48" fill="#75C56A" stroke="#4D7E56" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="482" cy="490" r="7" fill="#E6F4C7" opacity="0.9"/>
+  <circle cx="542" cy="510" r="7" fill="#E6F4C7" opacity="0.9"/>
+
+  <ellipse cx="387" cy="569" rx="46" ry="66" fill="#5C9B73" stroke="#5D443B" stroke-width="13"/>
+  <ellipse cx="637" cy="569" rx="46" ry="66" fill="#5C9B73" stroke="#5D443B" stroke-width="13"/>
+  <ellipse cx="394" cy="580" rx="19" ry="39" fill="#352B2A"/>
+  <ellipse cx="630" cy="580" rx="19" ry="39" fill="#352B2A"/>
+  <circle cx="375" cy="548" r="12" fill="#FFFFFF"/>
+  <circle cx="618" cy="548" r="12" fill="#FFFFFF"/>
+
+  <ellipse cx="292" cy="680" rx="47" ry="23" fill="#E99B8E" opacity="0.82"/>
+  <ellipse cx="732" cy="680" rx="47" ry="23" fill="#E99B8E" opacity="0.82"/>
+  <ellipse cx="462" cy="694" rx="62" ry="44" fill="#FFF0D2" opacity="0.94"/>
+  <ellipse cx="562" cy="694" rx="62" ry="44" fill="#FFF0D2" opacity="0.94"/>
+  <path d="M488 665c0-17 24-20 24-4 0-16 24-13 24 4 0 14-24 29-24 29s-24-15-24-29Z" fill="#E88D85" stroke="#5D443B" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M512 693c-2 22-18 32-34 34M512 693c2 22 18 32 34 34" fill="none" stroke="#5D443B" stroke-width="9" stroke-linecap="round"/>
+</svg>

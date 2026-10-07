@@ -8,8 +8,21 @@ struct SweetNoSleepApp: App {
     @StateObject private var model = SweetNoSleepModel.shared
 
     var body: some Scene {
-        MenuBarExtra(L10n.text("Kiwi"), systemImage: "leaf.fill") {
+        MenuBarExtra {
             MenuBarDashboard(model: model)
+        } label: {
+            Group {
+                if let icon = MediaAssets.menuBarIcon(isAwake: model.isKeepingAwake) {
+                    Image(nsImage: icon)
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 22, height: 22)
+                } else {
+                    Image(systemName: model.isKeepingAwake ? "bolt.fill" : "moon.zzz.fill")
+                }
+            }
+            .accessibilityLabel(L10n.text("Kiwi"))
         }
         .menuBarExtraStyle(.window)
 

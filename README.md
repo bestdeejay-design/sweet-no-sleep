@@ -2,6 +2,12 @@
 
 A native macOS desktop companion that reacts to interaction and helps keep a Mac awake during long-running work by users or AI agents.
 
+## Release media
+
+![Sweet No Sleep release banner: stay in your flow with Kiwi](Resources/Art/Rendered/banner.png)
+
+[Download the 1280 × 640 banner PNG](Resources/Art/Rendered/banner.png) · [editable banner SVG](Resources/Art/banner.svg) · [Open Graph SVG](Resources/Art/og-image.svg). The SVG files are the editable sources; `Scripts/render-media.sh` rebuilds raster assets on macOS, and macOS CI uploads the generated media kit.
+
 ## Features
 
 - **Kiwi is drawn without external artwork:** breathing, blinking, a swaying tail, pointer-following eyes, click reactions, and drag-to-move.
@@ -29,7 +35,7 @@ cd /path/to/sweet-no-sleep
 open "dist/Sweet No Sleep — Kiwi Cat.app"
 ```
 
-The build script produces a release binary, assembles a minimal `.app` bundle, copies skin and localization resources, and ad-hoc signs it for local use. Keep the app at a stable path if you enable launch at login. Distribution requires Developer ID signing, notarization, and an app icon.
+The build script produces a release binary, assembles a minimal `.app` bundle with the Kiwi app icon and companion media, copies skin and localization resources, and ad-hoc signs it for local use. Keep the app at a stable path if you enable launch at login. Distribution still requires Developer ID signing and notarization.
 
 Run the portable checks before building; on macOS the check script also builds the Swift package:
 
