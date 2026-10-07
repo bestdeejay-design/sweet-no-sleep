@@ -64,24 +64,46 @@
   <text x="830" y="432" text-anchor="middle" fill="#17251A" font-family="Avenir Next, Arial, sans-serif" font-size="11" font-weight="700">Start focus session</text>
   <text x="750" y="477" fill="#8694A5" font-family="Avenir Next, Arial, sans-serif" font-size="9" font-weight="500">A soft nudge, never a blocker.</text>
 
-  <g transform="translate(938 104) scale(0.28)">
-    <path d="M216 451 267 190c7-39 32-47 62-19l114 107c46-17 92-17 138 0l114-107c30-28 55-20 62 19l51 261c34 50 53 99 50 159-9 150-151 246-345 246s-336-96-345-246c-3-60 16-109 50-159Z" fill="url(#fur)" stroke="#5D443B" stroke-width="26" stroke-linejoin="round"/>
-    <path d="m302 231 29 169c28-31 63-58 98-80l-98-91c-13-12-25-11-29 2Z" fill="#E88D85" stroke="#5D443B" stroke-width="15" stroke-linejoin="round"/>
-    <path d="m722 231-29 169c-28-31-63-58-98-80l98-91c13-12 25-11 29 2Z" fill="#E88D85" stroke="#5D443B" stroke-width="15" stroke-linejoin="round"/>
-    <path d="M512 435c-18-24-55-46-82-18-30 31-6 76 82 126 88-50 112-95 82-126-27-28-64-6-82 18Z" fill="#75C56A" stroke="#4D7E56" stroke-width="10" stroke-linejoin="round"/>
-    <path d="M510 411c-13-29-11-51 6-69 22 20 26 44 10 70M518 408c13-31 33-44 59-41-5 26-23 43-54 48" fill="#75C56A" stroke="#4D7E56" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-    <ellipse cx="387" cy="569" rx="46" ry="66" fill="#5C9B73" stroke="#5D443B" stroke-width="13"/>
-    <ellipse cx="637" cy="569" rx="46" ry="66" fill="#5C9B73" stroke="#5D443B" stroke-width="13"/>
-    <ellipse cx="394" cy="580" rx="19" ry="39" fill="#352B2A"/>
-    <ellipse cx="630" cy="580" rx="19" ry="39" fill="#352B2A"/>
-    <circle cx="375" cy="548" r="12" fill="#FFFFFF"/>
-    <circle cx="618" cy="548" r="12" fill="#FFFFFF"/>
-    <ellipse cx="292" cy="680" rx="47" ry="23" fill="#E99B8E" opacity="0.82"/>
-    <ellipse cx="732" cy="680" rx="47" ry="23" fill="#E99B8E" opacity="0.82"/>
-    <ellipse cx="462" cy="694" rx="62" ry="44" fill="#FFF0D2" opacity="0.94"/>
-    <ellipse cx="562" cy="694" rx="62" ry="44" fill="#FFF0D2" opacity="0.94"/>
-    <path d="M488 665c0-17 24-20 24-4 0-16 24-13 24 4 0 14-24 29-24 29s-24-15-24-29Z" fill="#E88D85" stroke="#5D443B" stroke-width="7" stroke-linejoin="round"/>
-    <path d="M512 693c-2 22-18 32-34 34M512 693c2 22 18 32 34 34" fill="none" stroke="#5D443B" stroke-width="9" stroke-linecap="round"/>
+  <g transform="translate(1087 330) scale(0.8)">
+    <!-- Same static idle pose as the app's Canvas-drawn Kiwi. -->
+    <path d="M52 46 C95 67 126 77 124 22" fill="none" stroke="#5D443B" stroke-width="19" stroke-linecap="round"/>
+    <path d="M52 46 C95 67 126 77 124 22" fill="none" stroke="#E8C894" stroke-width="12.5" stroke-linecap="round"/>
+    <circle cx="124" cy="22" r="5.5" fill="#FFF0D2"/>
+    <ellipse cx="0" cy="45" rx="64" ry="55" fill="url(#fur)" stroke="#5D443B" stroke-width="4.5"/>
+    <ellipse cx="0" cy="49.5" rx="39" ry="33.5" fill="#FFF0D2" opacity="0.5"/>
+    <g transform="translate(0 -23)">
+      <path d="M-76 44 C-100 15 -98 -12 -88 -33 L-84 -102 Q-52 -88 -32 -69 C-12 -58 12 -58 32 -69 Q52 -88 84 -102 L88 -33 C98 -12 100 15 76 44 C47 99 -47 99 -76 44 Z" fill="url(#fur)" stroke="#5D443B" stroke-width="4.5" stroke-linejoin="round"/>
+      <path d="M68 -64 77 -88 Q59 -79 48 -71Z" fill="#E88D85" opacity="0.83"/>
+      <path d="M-68 -64 -77 -88 Q-59 -79 -48 -71Z" fill="#E88D85" opacity="0.83"/>
+      <path d="M0 -76 Q-12.9 -88 -17 -100 Q-4.1 -85.4 0 -76Z" fill="#75C56A"/>
+      <path d="M0 -76 Q3.6 -89 16 -102 Q12.4 -82.2 0 -76Z" fill="#75C56A" opacity="0.9"/>
+      <path d="M0 -76 Q-4.6 -92 0 -108 Q4.6 -83.3 0 -76Z" fill="#75C56A"/>
+      <path d="M0 -76 -17 -100M0 -76 16 -102M0 -76 0 -108" fill="none" stroke="#FFFFFF" stroke-opacity="0.38" stroke-width="0.7" stroke-linecap="round"/>
+      <ellipse cx="-27" cy="37" rx="12" ry="6" fill="#E99B8E" opacity="0.46"/>
+      <ellipse cx="27" cy="37" rx="12" ry="6" fill="#E99B8E" opacity="0.46"/>
+      <ellipse cx="-28.5" cy="6" rx="10.5" ry="13.2" fill="#5D443B"/>
+      <ellipse cx="-28.5" cy="6" rx="8.2" ry="11" fill="#5C9B73"/>
+      <ellipse cx="-28.5" cy="0.5" rx="3.3" ry="5.6" fill="#30282C"/>
+      <circle cx="-29.7" cy="1.3" r="1.15" fill="#FFFFFF"/>
+      <ellipse cx="28.5" cy="6" rx="10.5" ry="13.2" fill="#5D443B"/>
+      <ellipse cx="28.5" cy="6" rx="8.2" ry="11" fill="#5C9B73"/>
+      <ellipse cx="28.5" cy="0.5" rx="3.3" ry="5.6" fill="#30282C"/>
+      <circle cx="27.3" cy="1.3" r="1.15" fill="#FFFFFF"/>
+      <path d="M0 24 Q-8 16 -8.5 17 Q0 27 8.5 17 Q8 16 0 24Z" fill="#E88D85"/>
+      <path d="M0 24V31M0 31Q-7 42 -12 29M0 31Q7 42 12 29" fill="none" stroke="#5D443B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M-49 17 -84 4M-49 29 -84 25M-49 41 -84 47M49 17 84 4M49 29 84 25M49 41 84 47" fill="none" stroke="#5D443B" stroke-opacity="0.45" stroke-width="1.8" stroke-linecap="round"/>
+    </g>
+    <ellipse cx="-30" cy="80" rx="20" ry="10" fill="#FFF0D2" stroke="#5D443B" stroke-opacity="0.75" stroke-width="2.5"/>
+    <ellipse cx="30" cy="80" rx="20" ry="10" fill="#FFF0D2" stroke="#5D443B" stroke-opacity="0.75" stroke-width="2.5"/>
+    <circle cx="0" cy="40" r="20.5" fill="#75C56A" stroke="#5D443B" stroke-opacity="0.76" stroke-width="2.8"/>
+    <circle cx="0" cy="40" r="11.9" fill="#F5EFCF"/>
+    <circle cx="7.4" cy="40" r="1.8" fill="#5D443B" fill-opacity="0.7"/>
+    <circle cx="3.7" cy="46.4" r="1.8" fill="#5D443B" fill-opacity="0.7"/>
+    <circle cx="-3.7" cy="46.4" r="1.8" fill="#5D443B" fill-opacity="0.7"/>
+    <circle cx="-7.4" cy="40" r="1.8" fill="#5D443B" fill-opacity="0.7"/>
+    <circle cx="-3.7" cy="33.6" r="1.8" fill="#5D443B" fill-opacity="0.7"/>
+    <circle cx="3.7" cy="33.6" r="1.8" fill="#5D443B" fill-opacity="0.7"/>
+    <circle cx="0" cy="40" r="2.2" fill="#5D443B" fill-opacity="0.6"/>
   </g>
   <rect x="1010" y="465" width="110" height="31" rx="15.5" fill="#F5F0E3" stroke="#FFFFFF" stroke-width="2"/>
   <circle cx="1029" cy="480.5" r="4" fill="#70B978"/>

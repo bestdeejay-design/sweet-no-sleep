@@ -4,7 +4,7 @@ A native macOS desktop companion that reacts to interaction and helps keep a Mac
 
 ## Release media
 
-![Sweet No Sleep release banner: stay in your flow with Kiwi](Resources/Art/Rendered/banner.png)
+![Sweet No Sleep release banner with the same Kiwi companion as the desktop app](Resources/Art/Rendered/banner.png)
 
 [Download the 1280 × 640 banner PNG](Resources/Art/Rendered/banner.png) · [editable banner SVG](Resources/Art/banner.svg) · [Open Graph SVG](Resources/Art/og-image.svg). The SVG files are the editable sources; `Scripts/render-media.sh` rebuilds raster assets on macOS. A successful macOS CI push commits the generated images to the task branch and uploads the media kit as an artifact.
 

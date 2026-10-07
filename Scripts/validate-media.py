@@ -8,7 +8,6 @@ import struct
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Iterable
 
 ROOT = Path(__file__).resolve().parents[1]
 ART = ROOT / "Resources" / "Art"
@@ -53,6 +52,21 @@ RENDERED_IMAGES = {
     "banner.png": (1280, 640),
     "og-image.png": (1200, 630),
 }
+
+MASCOT_ART = (
+    "app-icon.svg",
+    "preview-kiwi.svg",
+    "preview-moonlight.svg",
+    "preview-strawberry.svg",
+    "banner.svg",
+    "og-image.svg",
+)
+MASCOT_SIGNATURES = (
+    "M-76 44 C-100 15 -98 -12 -88 -33 L-84 -102",
+    "M0 -76 Q-12.9 -88 -17 -100",
+    'circle cx="0" cy="40" r="20.5"',
+    'ellipse cx="30" cy="80" rx="20" ry="10"',
+)
 
 
 def report_error(errors: list[str], path: Path, message: str) -> None:
@@ -168,6 +182,21 @@ def validate_rendered(errors: list[str]) -> bool:
     return True
 
 
+def validate_mascot_consistency(errors: list[str]) -> None:
+    for name in MASCOT_ART:
+        path = ART / name
+        if not path.is_file():
+            continue
+        content = path.read_text(encoding="utf-8")
+        missing = [signature for signature in MASCOT_SIGNATURES if signature not in content]
+        if missing:
+            report_error(
+                errors,
+                path,
+                "static art must retain the app Kiwi's head, crown leaves, chest badge, and paws; review the matching Canvas pose",
+            )
+
+
 def validate_source_text(errors: list[str]) -> None:
     source_root = ROOT / "Sources"
     for path in sorted(source_root.rglob("*")):
@@ -192,6 +221,7 @@ def main() -> int:
     errors: list[str] = []
     for name, size in SOURCES.items():
         validate_svg(ART / name, size, errors)
+    validate_mascot_consistency(errors)
     for path in (ROOT / "docs" / "MEDIA.md", ROOT / "Scripts" / "render-media.sh"):
         if not path.is_file():
             report_error(errors, path, "required media-kit file is missing")

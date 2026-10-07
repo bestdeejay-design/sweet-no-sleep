@@ -32,7 +32,8 @@ On Linux, `render-media.sh` prints a skip message and exits successfully; raster
 
 - Keep the app icon's face silhouette, beige fur, green eyes, and kiwi-heart accent. Use a high-contrast outline and avoid text or detail that disappears at 16 px.
 - Menu-bar art is a **template**: use transparent backgrounds, solid black paths, rounded joins/caps, and roughly 1 px strokes in the 22 × 22 source. macOS supplies the tint. The awake and asleep states must remain distinguishable without color.
-- Skin previews are 3:2, self-contained illustrations. Show the pet silhouette first and three small palette dots second; preserve comfortable inner padding and keep the silhouette recognizable at card size.
+- Skin previews are 3:2, self-contained static poses of the same Canvas-drawn Kiwi shown on the desktop: round body, cat-head path, three crown leaves, green eyes, paws, whiskers, and round kiwi-slice chest badge. Put three palette dots beside the pet and preserve comfortable inner padding.
+- The large Kiwi on the banner and social card must use those same proportions and identifying details. These are promotional renderings of the existing pet, not a redesign or a second character. When `KiwiPetView.drawPet`, `catHeadPath`, `innerEarPath`, or the badge changes, update the SVG illustrations to match; do not change the live pet just to match campaign artwork.
 - The banner should remain legible when displayed at half size. Keep the warm paper, sage, berry, and dark-dashboard palette; do not bake release dates or temporary pricing into the artwork.
 - Do not trace or embed unlicensed third-party art. Keep source dimensions, `viewBox`, and generated 1x/2x sizes in sync.
 
