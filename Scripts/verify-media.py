@@ -43,10 +43,11 @@ RENDERS = {
     "og-image.png": (1200, 630),
 }
 
-# .icns element type -> pixel size it carries. PNG based types are the modern
-# set that iconutil and icns-pack.py write; the raw types are the legacy
-# uncompressed elements iconutil still emits for the smallest icons.
-ICNS_PNG_ELEMENTS = {
+# .icns element type -> pixel size it carries. The icp*/ic1* types are the
+# modern PNG set that icns-pack.py writes; ic04/ic05 and the is32/il32/ih32/it32
+# family are the legacy types iconutil still emits for small icons, where the
+# payload can be compressed, so their size comes from the type itself.
+ICNS_SIZE_TYPES = {
     b"icp4": 16,
     b"ic11": 32,
     b"icp5": 32,
@@ -57,14 +58,12 @@ ICNS_PNG_ELEMENTS = {
     b"ic14": 512,
     b"ic09": 512,
     b"ic10": 1024,
-}
-ICNS_RAW_ELEMENTS = {
+    b"ic04": 16,
+    b"ic05": 32,
     b"is32": 16,
     b"il32": 32,
     b"ih32": 48,
     b"it32": 128,
-    b"ic04": 16,
-    b"ic05": 32,
 }
 # Companion mask elements; they carry no size requirement of their own.
 ICNS_MASK_ELEMENTS = {b"s8mk", b"l8mk", b"h8mk", b"t8mk", b"TOC "}
@@ -80,11 +79,12 @@ def png_size(path: pathlib.Path) -> tuple[int, int]:
 
 
 def icns_sizes(path: pathlib.Path) -> tuple[set[int], set[int], list[str]]:
-    """Return (PNG verified sizes, raw element sizes, element inventory).
+    """Return (PNG measured sizes, type declared sizes, element inventory).
 
-    PNG elements are measured from their IHDR chunk; legacy raw elements are
-    accepted at the size their type declares, with the payload length used as a
-    sanity check. The inventory is reported so a failure explains itself.
+    A PNG element is measured from its IHDR chunk, so wrong art fails the check.
+    A legacy element can hold compressed data, so it is accepted at the size its
+    type declares. The inventory is reported on success and inside failure
+    messages, so a problem explains itself without the job log.
     """
     data = path.read_bytes()
     if data[:4] != b"icns":
@@ -94,7 +94,7 @@ def icns_sizes(path: pathlib.Path) -> tuple[set[int], set[int], list[str]]:
         raise ValueError(f"declared length {declared} does not match file length {len(data)}")
 
     png_sizes: set[int] = set()
-    raw_sizes: set[int] = set()
+    declared_sizes: set[int] = set()
     inventory: list[str] = []
     offset = 8
     while offset + 8 <= len(data):
@@ -104,30 +104,25 @@ def icns_sizes(path: pathlib.Path) -> tuple[set[int], set[int], list[str]]:
             raise ValueError(f"element {ostype!r} has an invalid length {length}")
         payload_length = length - 8
         is_png = data[offset + 8 : offset + 16] == b"\x89PNG\r\n\x1a\n"
-        if is_png and ostype in ICNS_PNG_ELEMENTS:
+        name = ostype.decode("ascii", "replace")
+        size = ICNS_SIZE_TYPES.get(ostype)
+        if is_png and payload_length >= 24:
             # 8 byte element header, 8 byte PNG signature, then the IHDR chunk:
             # 4 byte length, "IHDR", and the width/height pair.
             width, height = struct.unpack(">II", data[offset + 24 : offset + 32])
             if width != height:
-                raise ValueError(f"element {ostype!r} is not square ({width}x{height})")
+                raise ValueError(f"element {name!r} is not square ({width}x{height})")
             png_sizes.add(width)
-            inventory.append(f"{ostype.decode('ascii', 'replace')}={width}px/png")
-        elif ostype in ICNS_RAW_ELEMENTS:
-            size = ICNS_RAW_ELEMENTS[ostype]
-            # Raw elements store 3 or 4 bytes per pixel, optionally behind an
-            # 8 byte header, so require at least a 3 byte per pixel payload.
-            if payload_length < size * size * 3:
-                raise ValueError(
-                    f"element {ostype!r} carries {payload_length} bytes, too few for {size} px art"
-                )
-            raw_sizes.add(size)
-            inventory.append(f"{ostype.decode('ascii', 'replace')}={size}px/raw")
+            inventory.append(f"{name}={width}px/png")
+        elif size is not None:
+            declared_sizes.add(size)
+            inventory.append(f"{name}={size}px/{payload_length}B")
         elif ostype in ICNS_MASK_ELEMENTS:
-            inventory.append(f"{ostype.decode('ascii', 'replace')}/mask")
+            inventory.append(f"{name}/mask")
         else:
-            inventory.append(f"{ostype.decode('ascii', 'replace')}/{payload_length}B")
+            inventory.append(f"{name}/{payload_length}B")
         offset += length
-    return png_sizes, raw_sizes, inventory
+    return png_sizes, declared_sizes, inventory
 
 
 def main() -> int:
@@ -167,11 +162,11 @@ def main() -> int:
             errors.append("missing app icon: Resources/Media/SweetNoSleep.icns (run Scripts/render-media.sh)")
         else:
             try:
-                png_sizes, raw_sizes, inventory = icns_sizes(icns_path)
+                png_sizes, declared_sizes, inventory = icns_sizes(icns_path)
             except (OSError, ValueError) as error:
                 errors.append(f"Resources/Media/SweetNoSleep.icns is invalid: {error}")
-                png_sizes, raw_sizes, inventory = set(), set(), []
-            covered = png_sizes | raw_sizes
+                png_sizes, declared_sizes, inventory = set(), set(), []
+            covered = png_sizes | declared_sizes
             missing = [size for size in REQUIRED_ICON_SIZES if size not in covered]
             if missing:
                 detail = ", ".join(f"{size} px" for size in missing)
@@ -188,7 +183,7 @@ def main() -> int:
     print(
         f"Media check passed: {len(SOURCES)} SVG sources and {len(RENDERS) + 1} renders verified."
     )
-    print(f"SweetNoSleep.icns covers {len(png_sizes | raw_sizes)} sizes ({' '.join(inventory)}).")
+    print(f"SweetNoSleep.icns covers {len(png_sizes | declared_sizes)} sizes ({' '.join(inventory)}).")
     return 0
 
 
