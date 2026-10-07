@@ -4,7 +4,7 @@ A native macOS desktop companion that reacts to interaction and helps keep a Mac
 
 ## Release media
 
-![Sweet No Sleep release banner with the same Kiwi companion as the desktop app](Resources/Art/Rendered/banner.png)
+![Light Sweet No Sleep release banner with a focus-session dashboard preview and no pet mascot](Resources/Art/Rendered/banner.png)
 
 [Download the 1280 × 640 banner PNG](Resources/Art/Rendered/banner.png) · [editable banner SVG](Resources/Art/banner.svg) · [Open Graph SVG](Resources/Art/og-image.svg). The SVG files are the editable sources; `Scripts/render-media.sh` rebuilds raster assets on macOS. A successful macOS CI push commits the generated images to the task branch and uploads the media kit as an artifact.
 
@@ -35,7 +35,7 @@ cd /path/to/sweet-no-sleep
 open "dist/Sweet No Sleep — Kiwi Cat.app"
 ```
 
-The build script produces a release binary, assembles a minimal `.app` bundle with the Kiwi app icon and companion media, copies skin and localization resources, and ad-hoc signs it for local use. Keep the app at a stable path if you enable launch at login. Distribution still requires Developer ID signing and notarization.
+The build script produces a release binary, assembles a minimal `.app` bundle with the species-neutral leaf-and-kiwi-heart brand icon and companion media, copies skin and localization resources, and ad-hoc signs it for local use. Keep the app at a stable path if you enable launch at login. Distribution still requires Developer ID signing and notarization.
 
 Run the portable checks before building; on macOS the check script also builds the Swift package:
 

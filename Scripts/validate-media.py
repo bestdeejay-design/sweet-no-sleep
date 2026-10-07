@@ -54,11 +54,9 @@ RENDERED_IMAGES = {
 }
 
 MASCOT_ART = (
-    "app-icon.svg",
     "preview-kiwi.svg",
     "preview-moonlight.svg",
     "preview-strawberry.svg",
-    "banner.svg",
     "og-image.svg",
 )
 MASCOT_SIGNATURES = (
@@ -193,8 +191,68 @@ def validate_mascot_consistency(errors: list[str]) -> None:
             report_error(
                 errors,
                 path,
-                "static art must retain the app Kiwi's head, crown leaves, chest badge, and paws; review the matching Canvas pose",
+                "live-pet illustrations must retain the Kiwi's head, crown leaves, chest badge, and paws; review the matching Canvas pose",
             )
+
+
+def validate_species_neutral_marks(errors: list[str]) -> None:
+    app_icon = ART / "app-icon.svg"
+    if app_icon.is_file():
+        content = app_icon.read_text(encoding="utf-8")
+        try:
+            root = ET.parse(app_icon).getroot()
+        except (ET.ParseError, OSError):
+            root = None
+        ids = {element.get("id") for element in root.iter()} if root is not None else set()
+        for required_id in ("brand-card", "brand-leaf", "kiwi-heart"):
+            if required_id not in ids:
+                report_error(errors, app_icon, f"species-neutral app icon is missing #{required_id}")
+        forbidden = ("cat", "whisker", "muzzle", "paws", "catHeadPath")
+        found = [marker for marker in forbidden if marker.lower() in content.lower()]
+        if found:
+            report_error(errors, app_icon, "long-lived app icon must not depict a pet species or face")
+        for color in ("#1B293B", "#0D1420"):
+            if color.lower() not in content.lower():
+                report_error(errors, app_icon, "species-neutral app icon must keep its dark card background")
+
+    for state in ("awake", "asleep"):
+        path = ART / f"menubar-{state}.svg"
+        if not path.is_file():
+            continue
+        try:
+            root = ET.parse(path).getroot()
+        except (ET.ParseError, OSError):
+            continue
+        ids = {element.get("id") for element in root.iter()}
+        if "leaf-outline" not in ids:
+            report_error(errors, path, "menu-bar mark must contain a leaf outline")
+        expected_detail = "leaf-vein" if state == "awake" else "pause-mark"
+        if expected_detail not in ids:
+            report_error(errors, path, f"{state} menu-bar leaf is missing #{expected_detail}")
+        colors = {
+            value.lower()
+            for element in root.iter()
+            for attribute, value in element.attrib.items()
+            if attribute.rsplit("}", 1)[-1] in {"fill", "stroke"}
+        }
+        if colors - {"none", "#000000"}:
+            report_error(errors, path, "menu-bar template art must use only transparent and pure black paths")
+        widths = [
+            number(element.get("stroke-width"))
+            for element in root.iter()
+            if element.get("stroke-width") is not None
+        ]
+        if any(width is None or width < 0.75 or width > 1.35 for width in widths):
+            report_error(errors, path, "menu-bar template strokes must stay close to 1 px")
+
+
+def validate_mascot_free_banner(errors: list[str]) -> None:
+    path = ART / "banner.svg"
+    if not path.is_file():
+        return
+    content = path.read_text(encoding="utf-8")
+    if any(signature in content for signature in MASCOT_SIGNATURES) or "KIWI IS HERE" in content:
+        report_error(errors, path, "release banner should keep its light dashboard direction without a pet mascot")
 
 
 def validate_source_text(errors: list[str]) -> None:
@@ -222,6 +280,8 @@ def main() -> int:
     for name, size in SOURCES.items():
         validate_svg(ART / name, size, errors)
     validate_mascot_consistency(errors)
+    validate_species_neutral_marks(errors)
+    validate_mascot_free_banner(errors)
     for path in (ROOT / "docs" / "MEDIA.md", ROOT / "Scripts" / "render-media.sh"):
         if not path.is_file():
             report_error(errors, path, "required media-kit file is missing")

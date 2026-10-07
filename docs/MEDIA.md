@@ -6,9 +6,9 @@ The SVG files in `Resources/Art/` are the editable, hand-authored sources. They 
 
 | Source | Size / viewBox | Purpose | Generated output |
 | --- | --- | --- | --- |
-| `app-icon.svg` | 1024 × 1024 | Kiwi cat app icon: warm beige face (`#E8C48A`), leafy green eyes, kiwi-heart mark; no wordmark | `Rendered/SweetNoSleep.icns`, complete 16–1024 px iconset, `app-icon-1024.png` |
-| `menubar-awake.svg` | 22 × 22 | Awake-state monochrome template icon | `menubar-awake.png` (22 px), `menubar-awake@2x.png` (44 px) |
-| `menubar-asleep.svg` | 22 × 22 | Resting-state monochrome template icon | `menubar-asleep.png` (22 px), `menubar-asleep@2x.png` (44 px) |
+| `app-icon.svg` | 1024 × 1024 | Species-neutral brand mark: green leaf and kiwi-slice heart on a dark card; no face or pet species | `Rendered/SweetNoSleep.icns`, complete 16–1024 px iconset, `app-icon-1024.png` |
+| `menubar-awake.svg` | 22 × 22 | Complete veined leaf in the awake-state monochrome template style | `menubar-awake.png` (22 px), `menubar-awake@2x.png` (44 px) |
+| `menubar-asleep.svg` | 22 × 22 | Hollow leaf with a small pause mark for the asleep-state template | `menubar-asleep.png` (22 px), `menubar-asleep@2x.png` (44 px) |
 | `preview-kiwi.svg` | 240 × 160 | Kiwi silhouette and three palette swatches | 240 × 160 px and 480 × 320 px PNGs |
 | `preview-moonlight.svg` | 240 × 160 | Moonlight silhouette and three palette swatches | 240 × 160 px and 480 × 320 px PNGs |
 | `preview-strawberry.svg` | 240 × 160 | Strawberry silhouette and three palette swatches | 240 × 160 px and 480 × 320 px PNGs |
@@ -30,10 +30,10 @@ On Linux, `render-media.sh` prints a skip message and exits successfully; raster
 
 ## Design guidance
 
-- Keep the app icon's face silhouette, beige fur, green eyes, and kiwi-heart accent. Use a high-contrast outline and avoid text or detail that disappears at 16 px.
-- Menu-bar art is a **template**: use transparent backgrounds, solid black paths, rounded joins/caps, and roughly 1 px strokes in the 22 × 22 source. macOS supplies the tint. The awake and asleep states must remain distinguishable without color.
-- Skin previews are 3:2, self-contained static poses of the same Canvas-drawn Kiwi shown on the desktop: round body, cat-head path, three crown leaves, green eyes, paws, whiskers, and round kiwi-slice chest badge. Put three palette dots beside the pet and preserve comfortable inner padding.
-- The large Kiwi on the banner and social card must use those same proportions and identifying details. These are promotional renderings of the existing pet, not a redesign or a second character. When `KiwiPetView.drawPet`, `catHeadPath`, `innerEarPath`, or the badge changes, update the SVG illustrations to match; do not change the live pet just to match campaign artwork.
+- The app icon and menu-bar icons are long-lived brand marks, not portraits of the current pet. Keep the app icon species-neutral: a green leaf plus kiwi-heart accent on a dark card, with no face or animal silhouette. Keep the complete iconset, macOS `iconutil` pipeline, and 16–1024 px sizes in sync.
+- Menu-bar art is a **template**: use transparent backgrounds, pure-black paths, rounded joins/caps, and roughly 1 px strokes in the 22 × 22 source. macOS supplies the tint. The awake state is a complete, veined leaf; the asleep state is a hollow leaf with a small pause mark.
+- Skin previews are 3:2, self-contained static poses of the live Canvas-drawn Kiwi shown on the desktop. Preserve the current pet art and its three-palette swatches; these previews are not a species-neutral mark. When `KiwiPetView.drawPet`, `catHeadPath`, or the fruit badge changes, update the matching preview art without changing the live pet to match marketing.
+- The light release banner uses the wordmark, headline, and dashboard preview without a pet mascot. The social card may retain a live-pet illustration. Keep artwork of the pet aligned with the app's actual Canvas pose wherever it appears.
 - The banner should remain legible when displayed at half size. Keep the warm paper, sage, berry, and dark-dashboard palette; do not bake release dates or temporary pricing into the artwork.
 - Do not trace or embed unlicensed third-party art. Keep source dimensions, `viewBox`, and generated 1x/2x sizes in sync.
 
@@ -50,4 +50,4 @@ User-installed skin packs still work without a preview file; Settings falls back
 
 ## App wiring
 
-`Scripts/build-app.sh` places `SweetNoSleep.icns` in the app's Resources directory and copies rendered menu icons and skin previews into `Contents/Resources/Media`. `MediaAssets` loads the state-appropriate template image for the menu bar and the matching built-in preview for each skin card. If generated art is not available during `swift run`, the app keeps its SF Symbol and palette-swatch fallbacks.
+`Scripts/build-app.sh` places the species-neutral `SweetNoSleep.icns` in the app's Resources directory and copies rendered leaf-template icons and skin previews into `Contents/Resources/Media`. `MediaAssets` loads the state-appropriate leaf image for the menu bar and the matching built-in preview for each skin card. If generated art is not available during `swift run`, the app keeps its SF Symbol and palette-swatch fallbacks.
