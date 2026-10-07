@@ -95,7 +95,24 @@ jobs:
           fi
 
       - name: Run full project check on macOS
-        run: ./Scripts/check-project.sh
+        run: |
+          LOG_FILE="$(mktemp)"
+          STATUS=0
+          ./Scripts/check-project.sh >"$LOG_FILE" 2>&1 || STATUS=$?
+          cat "$LOG_FILE"
+          python3 - "$LOG_FILE" "$STATUS" <<'PY'
+          import pathlib
+          import sys
+          log = pathlib.Path(sys.argv[1]).read_text(errors="replace").splitlines()
+          status = int(sys.argv[2])
+          summary = " | ".join(log[-20:] or ["no output"])
+          summary = summary.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+          if status != 0:
+              print(f"::error title=Project check diagnostics::{summary}")
+          else:
+              print(f"::notice title=Project check::{summary}")
+          sys.exit(status)
+          PY
 
       - name: Assemble app bundle
         run: ./Scripts/build-app.sh release
