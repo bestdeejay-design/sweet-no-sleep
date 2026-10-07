@@ -506,12 +506,12 @@ final class PowerSourceMonitor {
             }
             let type = description[kIOPSTypeKey as String] as? String
             if type == (kIOPSInternalBatteryType as String) {
-                let current = description[kIOPSCurrentCapacityKey as String] as? Int ?? 0
-                let max = description[kIOPSMaxCapacityKey as String] as? Int ?? 100
+                let currentCapacity = description[kIOPSCurrentCapacityKey as String] as? Int ?? 0
+                let maxCapacity = description[kIOPSMaxCapacityKey as String] as? Int ?? 100
                 let isCharging = description[kIOPSIsChargingKey as String] as? Bool ?? false
                 let powerState = description[kIOPSPowerSourceStateKey as String] as? String
                 let isPluggedIn = (powerState == (kIOPSACPowerValue as String))
-                let percent = max > 0 ? Int((Double(current) / Double(max)) * 100) : current
+                let percent = maxCapacity > 0 ? Int((Double(currentCapacity) / Double(maxCapacity)) * 100) : currentCapacity
                 return PowerSourceStatus(
                     hasInternalBattery: true,
                     isPluggedIn: isPluggedIn,
