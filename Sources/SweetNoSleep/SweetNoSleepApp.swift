@@ -8,14 +8,33 @@ struct SweetNoSleepApp: App {
     @StateObject private var model = SweetNoSleepModel.shared
 
     var body: some Scene {
-        MenuBarExtra(L10n.text("Kiwi"), systemImage: "leaf.fill") {
+        MenuBarExtra {
             MenuBarDashboard(model: model)
+        } label: {
+            KiwiMenuBarLabel(model: model)
         }
         .menuBarExtraStyle(.window)
 
         Settings {
             SettingsView(model: model)
         }
+    }
+}
+
+/// Status item label: the media pack's template icons while they are available,
+/// with the original SF Symbol as a fallback for checkouts without renders.
+private struct KiwiMenuBarLabel: View {
+    @ObservedObject var model: SweetNoSleepModel
+
+    var body: some View {
+        Group {
+            if let icon = MediaLibrary.menuBarIcon(isAwake: model.isKeepingAwake) {
+                Image(nsImage: icon)
+            } else {
+                Image(systemName: model.isKeepingAwake ? "bolt.fill" : "leaf.fill")
+            }
+        }
+        .accessibilityLabel(L10n.text("Kiwi"))
     }
 }
 

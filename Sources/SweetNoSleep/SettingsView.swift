@@ -265,16 +265,7 @@ private struct CompanionSettingsPane: View {
             model.selectedSkinID = skin.id
         } label: {
             VStack(alignment: .leading, spacing: 9) {
-                HStack(spacing: 5) {
-                    Circle().fill(palette.fur).frame(width: 15, height: 15)
-                    Circle().fill(palette.accent).frame(width: 15, height: 15)
-                    Spacer(minLength: 0)
-                    if isSelected {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(Color(hex: 0x5BAF70))
-                    }
-                }
+                SkinCardArtwork(skin: skin, palette: palette, isSelected: isSelected)
                 Text(skin.name)
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundStyle(.primary)
@@ -296,6 +287,46 @@ private struct CompanionSettingsPane: View {
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.format("Skin: %@", skin.name))
         .accessibilityAddTraits(isSelected ? .isSelected : .isButton)
+    }
+}
+
+/// Preview art for one skin card: the rendered silhouette from
+/// `Resources/Art/preview-<id>.svg`. Custom packs without art keep the palette
+/// dots, and the selection checkmark stays visible in both cases.
+private struct SkinCardArtwork: View {
+    let skin: PetSkinDefinition
+    let palette: PetPalette
+    let isSelected: Bool
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            if let preview = MediaLibrary.skinPreviewImage(for: skin) {
+                Image(nsImage: preview)
+                    .resizable()
+                    .aspectRatio(2, contentMode: .fit)
+                    .frame(maxWidth: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+                    .accessibilityHidden(true)
+            } else {
+                HStack(spacing: 5) {
+                    Circle().fill(palette.fur).frame(width: 15, height: 15)
+                    Circle().fill(palette.accent).frame(width: 15, height: 15)
+                    Spacer(minLength: 0)
+                }
+                .frame(height: 15)
+            }
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color(hex: 0x5BAF70))
+                    .background {
+                        Circle()
+                            .fill(Color(nsColor: .controlBackgroundColor))
+                            .padding(1)
+                    }
+                    .padding(3)
+            }
+        }
     }
 }
 

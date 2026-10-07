@@ -1,5 +1,7 @@
 # Sweet No Sleep — Kiwi Cat
 
+![Sweet No Sleep — Kiwi Cat: keep the Mac awake while the work finishes](Resources/Media/banner.png)
+
 A native macOS desktop companion that reacts to interaction and helps keep a Mac awake during long-running work by users or AI agents.
 
 ## Features
@@ -29,7 +31,7 @@ cd /path/to/sweet-no-sleep
 open "dist/Sweet No Sleep — Kiwi Cat.app"
 ```
 
-The build script produces a release binary, assembles a minimal `.app` bundle, copies skin and localization resources, and ad-hoc signs it for local use. Keep the app at a stable path if you enable launch at login. Distribution requires Developer ID signing, notarization, and an app icon.
+The build script produces a release binary, assembles a minimal `.app` bundle, copies skin, localization, and media resources, applies the app icon, and ad-hoc signs it for local use. Keep the app at a stable path if you enable launch at login. Distribution requires Developer ID signing and notarization.
 
 Run the portable checks before building; on macOS the check script also builds the Swift package:
 
@@ -87,6 +89,17 @@ Hook callback names and payloads vary by IDE; these commands show where to conne
 
 The app can keep the **Mac** awake, but it does not manage agent queues, network access, authentication, an IDE's sleep policies, or an agent's own stop conditions. Start long sessions with **Allow normal sleep** until the workflow has been verified.
 
+## Media and art
+
+Every image is authored as SVG in `Resources/Art` and rendered into `Resources/Media` by one idempotent script:
+
+```bash
+./Scripts/render-media.sh    # app icon, menu bar icons, skin previews, banner, social card
+python3 Scripts/verify-media.py
+```
+
+The pack contains the app icon (`.icns` with 16–1024 px), the awake and asleep menu bar template icons, the Kiwi, Moonlight, and Strawberry skin previews shown on the Settings cards, the README banner, and a 1200x630 social card. On macOS the script uses the stock `qlmanage`, `sips`, and `iconutil` tools, which is also what CI does before assembling the release bundle; on Linux it uses `rsvg-convert`, `resvg`, or `pip3 install --user cairosvg`, and skips with a message when no rasterizer is available. See [the media catalog](docs/MEDIA.md) for sizes, naming, and how to add art for a new species or skin.
+
 ## Localization
 
 `Sources/SweetNoSleep/Localizable.xcstrings` is the English source catalog. User-visible app text goes through `L10n.text` or `L10n.format`, backed by `NSLocalizedString`. Run `Scripts/validate-localization.py` to check that source keys and catalog entries stay in sync. Additional locales must be generated, never hand-edited, through `Scripts/localize.sh` with the Crowdin CLI installed, `CROWDIN_CONFIG` pointing to the project config, and credentials supplied by CI. This checkout intentionally contains English source strings only and does not store provider credentials or a Crowdin project config.
@@ -98,7 +111,7 @@ The app can keep the **Mac** awake, but it does not manage agent queues, network
 python3 Scripts/validate-skins.py /path/to/a-skin-pack
 ```
 
-The check script validates shell syntax, English catalog key parity, bundled skin manifests, and hook behavior with a mocked `open` command. On macOS it also runs `swift build` and a borderless-panel roaming smoke test that verifies the frame moves and `pet.panelOrigin` is persisted. It cannot test actual power assertions or the menu-bar Settings flow; use the Mac acceptance checklist in [the code audit](docs/CODE_AUDIT.md).
+The check script validates shell syntax, English catalog key parity, bundled skin manifests, the art sources and rendered media sizes (including every `.icns` size), that `Sources` stays free of Cyrillic text, and hook behavior with a mocked `open` command. On macOS it also runs `swift build` and a borderless-panel roaming smoke test that verifies the frame moves and `pet.panelOrigin` is persisted. It cannot test actual power assertions or the menu-bar Settings flow; use the Mac acceptance checklist in [the code audit](docs/CODE_AUDIT.md).
 
 ## Architecture
 
@@ -107,6 +120,7 @@ Sources/SweetNoSleep/
 ├── SweetNoSleepApp.swift      # MenuBarExtra, app lifecycle, dashboard
 ├── SweetNoSleepModel.swift    # shared state, sessions, reminders, skin library
 ├── PetSkinDefinition.swift    # JSON schema and pack loading
+├── MediaLibrary.swift         # art catalog lookup for the menu bar and skin cards
 ├── KiwiPetView.swift          # Canvas pet, gaze, and reactions
 ├── PetPanel.swift             # transparent NSPanel, hit testing, position, roaming
 ├── PanelOriginAnimator.swift  # eased, stepped movement and persisted panel origin
@@ -115,8 +129,14 @@ Sources/SweetNoSleep/
 ├── Localization.swift         # NSLocalizedString catalog access
 └── Localizable.xcstrings      # English source strings
 
+Resources/Art/                 # SVG sources for every image in the project
+Resources/Media/               # rendered icons, previews, banner, and social card
 Resources/PetSkins/            # bundled JSON skin packs
-Scripts/build-app.sh           # app bundle assembly
+Scripts/build-app.sh           # app bundle assembly, icon, and media resources
+Scripts/render-media.sh        # SVG to PNG/.icns renderer used by CI and releases
+Scripts/svg-render.py          # Linux rasterizer fallback (cairosvg or resvg-py)
+Scripts/icns-pack.py           # .icns container writer for non-macOS hosts
+Scripts/verify-media.py        # art source and rendered-size verification
 Scripts/agent-event.sh         # individual agent lifecycle events
 Scripts/agent-session.sh       # wrapped command with heartbeat
 Scripts/check-project.sh       # portable checks, Swift build, and panel-motion smoke on Mac
@@ -125,6 +145,7 @@ Scripts/test-agent-hooks.sh    # hook smoke tests with mocked open
 Scripts/test-panel-wander.sh   # macOS panel-origin movement smoke test
 Scripts/localize.sh            # localization workflow entry point
 docs/CODE_AUDIT.md             # audit findings and Mac acceptance checklist
+docs/MEDIA.md                  # art catalog: sizes, naming, how to add new art
 docs/SKIN_AUTHORING.md         # skin pack format and installation
 docs/RESEARCH.md               # design, power-management limits, and roadmap
 ```

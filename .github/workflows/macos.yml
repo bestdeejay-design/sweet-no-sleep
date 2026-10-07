@@ -26,6 +26,13 @@ jobs:
       - name: Run portable project checks
         run: SWEET_NO_SLEEP_SKIP_SWIFT_BUILD=1 ./Scripts/check-project.sh
 
+      - name: Render the media pack with the stock macOS tools
+        run: |
+          # qlmanage rasterizes the SVG sources and iconutil packs the .icns,
+          # so this is the release path for the app icon and preview art.
+          ./Scripts/render-media.sh
+          python3 Scripts/verify-media.py
+
       - name: Build Swift package with diagnostics
         run: |
           LOG_FILE="$(mktemp)"
@@ -60,4 +67,9 @@ jobs:
           test -x "$APP/Contents/MacOS/SweetNoSleep"
           test -d "$APP/Contents/Resources/PetSkins"
           find "$APP/Contents/Resources" -maxdepth 1 -name '*.bundle' -print -quit | grep -q .
+          test -f "$APP/Contents/Resources/SweetNoSleep.icns"
+          test -f "$APP/Contents/Resources/Media/menubar-awake.png"
+          test -f "$APP/Contents/Resources/Media/menubar-asleep.png"
+          test -f "$APP/Contents/Resources/Media/preview-kiwi.png"
+          plutil -extract CFBundleIconFile raw "$APP/Contents/Info.plist" | grep -qx "SweetNoSleep.icns"
           codesign --verify --deep --strict "$APP"

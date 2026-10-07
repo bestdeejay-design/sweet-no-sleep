@@ -27,6 +27,17 @@ if [[ -d "$ROOT_DIR/Resources/PetSkins" ]]; then
   mkdir -p "$APP_DIR/Contents/Resources/PetSkins"
   cp -R "$ROOT_DIR/Resources/PetSkins/." "$APP_DIR/Contents/Resources/PetSkins/"
 fi
+if [[ -d "$ROOT_DIR/Resources/Media" ]]; then
+  # Menu bar template icons and skin previews rendered by render-media.sh.
+  mkdir -p "$APP_DIR/Contents/Resources/Media"
+  cp -R "$ROOT_DIR/Resources/Media/." "$APP_DIR/Contents/Resources/Media/"
+fi
+ICON_FILE="$ROOT_DIR/Resources/Media/SweetNoSleep.icns"
+if [[ -f "$ICON_FILE" ]]; then
+  cp "$ICON_FILE" "$APP_DIR/Contents/Resources/SweetNoSleep.icns"
+else
+  echo "Note: Resources/Media/SweetNoSleep.icns is missing; run Scripts/render-media.sh to build the app icon." >&2
+fi
 
 cat > "$APP_DIR/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -37,6 +48,8 @@ cat > "$APP_DIR/Contents/Info.plist" <<'PLIST'
     <string>en</string>
     <key>CFBundleExecutable</key>
     <string>SweetNoSleep</string>
+    <key>CFBundleIconFile</key>
+    <string>SweetNoSleep.icns</string>
     <key>CFBundleIdentifier</key>
     <string>com.sweetnosleep.kiwicat</string>
     <key>CFBundleInfoDictionaryVersion</key>

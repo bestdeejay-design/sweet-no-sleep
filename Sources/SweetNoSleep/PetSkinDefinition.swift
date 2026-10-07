@@ -92,7 +92,10 @@ enum PetSkinLibrary {
         }
     }
 
-    private static func skinDirectories() -> [URL] {
+    /// Roots that may contain skin folders: the app bundle, repository
+    /// checkouts, and the user's `Application Support` folder. Also used by
+    /// `MediaLibrary` to find an optional `preview.png` next to a `skin.json`.
+    static func skinDirectories() -> [URL] {
         var roots: [URL] = []
         if let bundleResources = Bundle.main.resourceURL {
             roots.append(bundleResources.appendingPathComponent("PetSkins", isDirectory: true))

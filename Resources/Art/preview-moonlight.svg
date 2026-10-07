@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="104" height="52" viewBox="0 0 104 52">
+  <title>Moonlight skin preview</title>
+  <!-- SNS media pack - skin preview source shown on Settings > Pet cards.
+       Silhouette geometry matches Sources/SweetNoSleep/KiwiPetView.swift:
+       translate(34 29) scale(17.2) maps 1 unit to the pet radius, so the body,
+       tail, paws, head, and badge line up with the live pet. Palette dots are
+       read from Resources/PetSkins/moonlight/skin.json: fur, accent, iris, cheek. -->
+  <defs>
+    <linearGradient id="preview-body" x1="0" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#E8E8FF"/>
+      <stop offset="1" stop-color="#B9B9E9"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0.5" y="0.5" width="103" height="51" rx="9" fill="#B9B9E9" fill-opacity="0.20" stroke="#414268" stroke-opacity="0.18"/>
+
+  <g transform="translate(34 29) scale(17.2)">
+    <!-- Tail, then body, then head: the app's paint order. -->
+    <path d="M0.52 0.46 C0.95 0.67 1.26 0.77 1.24 0.22" fill="none" stroke="#414268" stroke-width="0.19" stroke-linecap="round"/>
+    <path d="M0.52 0.46 C0.95 0.67 1.26 0.77 1.24 0.22" fill="none" stroke="#B9B9E9" stroke-width="0.125" stroke-linecap="round"/>
+    <circle cx="1.24" cy="0.22" r="0.055" fill="#E8E8FF"/>
+
+    <ellipse cx="0" cy="0.45" rx="0.64" ry="0.55" fill="url(#preview-body)" stroke="#414268" stroke-width="0.045"/>
+    <ellipse cx="0" cy="0.495" rx="0.39" ry="0.335" fill="#E8E8FF" fill-opacity="0.5"/>
+
+    <g transform="translate(0 -0.23)">
+      <g fill="#D99FCB" fill-opacity="0.86">
+        <path d="M-0.68 -0.64 L-0.77 -0.88 Q-0.59 -0.79 -0.48 -0.71 Z"/>
+        <path d="M0.68 -0.64 L0.77 -0.88 Q0.59 -0.79 0.48 -0.71 Z"/>
+      </g>
+      <path d="M-0.76 0.44 C-1.00 0.15 -0.98 -0.12 -0.88 -0.33 L-0.84 -1.02 Q-0.52 -0.88 -0.32 -0.69 C-0.12 -0.58 0.12 -0.58 0.32 -0.69 Q0.52 -0.88 0.84 -1.02 L0.88 -0.33 C0.98 -0.12 1.00 0.15 0.76 0.44 C0.47 0.99 -0.47 0.99 -0.76 0.44 Z" fill="#B9B9E9" stroke="#414268" stroke-width="0.056" stroke-linejoin="round"/>
+      <g fill="#D99FCB" fill-opacity="0.42">
+        <ellipse cx="-0.39" cy="0.31" rx="0.118" ry="0.064"/>
+        <ellipse cx="0.39" cy="0.31" rx="0.118" ry="0.064"/>
+      </g>
+      <g>
+        <ellipse cx="-0.285" cy="0.06" rx="0.118" ry="0.148" fill="#414268"/>
+        <ellipse cx="0.285" cy="0.06" rx="0.118" ry="0.148" fill="#414268"/>
+        <ellipse cx="-0.278" cy="0.068" rx="0.090" ry="0.114" fill="#6C73B5"/>
+        <ellipse cx="0.278" cy="0.068" rx="0.090" ry="0.114" fill="#6C73B5"/>
+        <ellipse cx="-0.272" cy="0.075" rx="0.055" ry="0.080" fill="#221A1F"/>
+        <ellipse cx="0.272" cy="0.075" rx="0.055" ry="0.080" fill="#221A1F"/>
+      </g>
+      <path d="M0 0.24 Q-0.085 0.17 -0.08 0.16 Q0 0.27 0.08 0.16 Q0.085 0.17 0 0.24 Z" fill="#D99FCB"/>
+      <path d="M0 0.243 L0 0.31 M0 0.31 Q-0.07 0.42 -0.12 0.29 M0 0.31 Q0.07 0.42 0.12 0.29"
+            fill="none" stroke="#414268" stroke-width="0.038" stroke-linecap="round"/>
+        <!-- Signature accent: a crescent moon instead of the leaves. -->
+        <path d="M-0.05 -1.06 C-0.30 -1.02 -0.44 -0.87 -0.40 -0.72 C-0.36 -0.58 -0.17 -0.52 0.05 -0.56
+                 C-0.10 -0.62 -0.20 -0.73 -0.17 -0.84 C-0.14 -0.95 -0.09 -1.02 -0.05 -1.06 Z"
+              fill="#A5A3FF" stroke="#414268" stroke-width="0.05" stroke-linejoin="round"/>
+    </g>
+
+    <!-- Paws sit in front of the body, as in drawPaws. -->
+    <ellipse cx="-0.30" cy="0.80" rx="0.20" ry="0.10" fill="#E8E8FF" stroke="#414268" stroke-opacity="0.75" stroke-width="0.025"/>
+    <ellipse cx="0.30" cy="0.80" rx="0.20" ry="0.10" fill="#E8E8FF" stroke="#414268" stroke-opacity="0.75" stroke-width="0.025"/>
+
+    <!-- Chest badge: the kiwi slice, simplified for this size. -->
+    <circle cx="0" cy="0.40" r="0.205" fill="#A5A3FF" stroke="#414268" stroke-opacity="0.76" stroke-width="0.028"/>
+    <circle cx="0" cy="0.40" r="0.119" fill="#F5EFCF"/>
+  </g>
+
+  <!-- Palette dots (fur, accent, iris, cheek) from Resources/PetSkins/moonlight/skin.json. -->
+  <g stroke="#414268" stroke-opacity="0.25">
+    <circle cx="72" cy="18" r="6.5" fill="#B9B9E9"/>
+    <circle cx="90" cy="18" r="6.5" fill="#A5A3FF"/>
+    <circle cx="72" cy="35" r="6.5" fill="#6C73B5"/>
+    <circle cx="90" cy="35" r="6.5" fill="#D99FCB"/>
+  </g>
+</svg>
