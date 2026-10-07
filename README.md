@@ -160,6 +160,8 @@ English source strings only.
 - `docs/PET_DRAWING_GUIDE.md` — how the pet is drawn.
 - `docs/CODE_AUDIT.md` — audit findings and Mac acceptance
   checklist.
+- `docs/IMPROVEMENTS.md` — prioritized improvement ideas with
+  proposed solutions and acceptance criteria.
 
 ## Project layout
 
