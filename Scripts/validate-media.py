@@ -65,6 +65,15 @@ RENDERED_IMAGES = {
 # The approved golden build's app icon, byte-for-byte.
 GOLDEN_APP_ICON_SHA256 = "14092e2f9e0da5c7848fb8fac0794fc6b3cdd91b7874ebb675a84f1d4be07449"
 
+# The golden build's bundled reserve menu-bar PNGs, byte-for-byte ("leave them
+# untouched": sips re-renders of the pinned menubar sources are deterministic).
+GOLDEN_MENUBAR_SHA256 = {
+    "menubar-awake.png": "ec3b5ef42f338d5179501edebf8be993b254414c34f0115d03dd41de5eb7fda1",
+    "menubar-awake@2x.png": "ba3277a898f7f21af53d64f24ab629ce314a39f65a8ad4a307ac502506cf917f",
+    "menubar-asleep.png": "c71747eff8810eb2af882445aaf78cabb63266186e7b93a997579d28e0b284d0",
+    "menubar-asleep@2x.png": "9f80defb74765a4fac2e1731e7576e025151c3f2453cbef44cf9008a6d614d0f",
+}
+
 # Live-pet pose signatures shared by the Canvas drawing and the adopted art.
 MASCOT_ART = (
     "preview-kiwi.svg",
@@ -272,6 +281,22 @@ def validate_template_menubar(errors: list[str]) -> None:
             report_error(errors, path, "menu-bar template strokes must stay close to 1 px")
 
 
+def validate_golden_menubar_renders(errors: list[str]) -> None:
+    """The reserve menu-bar PNGs stay byte-identical to the golden build's."""
+    for name, expected in GOLDEN_MENUBAR_SHA256.items():
+        path = RENDERED / name
+        if not path.is_file():
+            continue  # Reported by validate_rendered when outputs are required.
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        if digest != expected:
+            report_error(
+                errors,
+                path,
+                "reserve menu-bar render must stay byte-identical to the golden build "
+                f"(expected sha256 {expected[:12]}..., found {digest[:12]}...)",
+            )
+
+
 def validate_banner_composition(errors: list[str]) -> None:
     """Decision 4: pack-cat base with the golden cat at the agreed transform."""
     path = ART / "banner.svg"
@@ -340,6 +365,7 @@ def main() -> int:
         validate_rendered(errors)
     else:
         print("Rendered PNG/ICNS checks skipped: generate them on macOS with Scripts/render-media.sh.")
+    validate_golden_menubar_renders(errors)
 
     if errors:
         for error in errors:

@@ -28,7 +28,7 @@ The rendering script uses only macOS stock tools (`sips` and `iconutil`) and is 
 ./Scripts/check-project.sh
 ```
 
-On Linux, `render-media.sh` prints a skip message and exits successfully; raster rendering is reserved for macOS CI. The portable checks still parse every SVG, verify dimensions and self-contained references, enforce the final decision (byte-identical app icon, SF Symbol menu bar, banner and Open Graph composition anchors), reject Cyrillic source text, and check generated PNG dimensions if CI-rendered outputs are present. The macOS check additionally rebuilds and validates the complete iconset and both 1x/2x menu-bar images.
+On Linux, `render-media.sh` prints a skip message and exits successfully; raster rendering is reserved for macOS CI. The portable checks still parse every SVG, verify dimensions and self-contained references, enforce the final decision (byte-identical app icon and reserve menu-bar renders, SF Symbol menu bar, banner and Open Graph composition anchors), reject Cyrillic source text, and check generated PNG dimensions if CI-rendered outputs are present. The macOS check additionally rebuilds and validates the complete iconset and both 1x/2x menu-bar images.
 
 ## Design guidance
 
