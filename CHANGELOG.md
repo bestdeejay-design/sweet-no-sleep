@@ -5,9 +5,16 @@ The format follows Keep a Changelog, versions follow Semantic Versioning.
 
 ## [Unreleased]
 
-- Banner art slot reserved at `Resources/Art/banner.png` (README
-  placeholder only, artwork delivery pending).
-- No behavior changes; docs and repo hygiene only.
+- Final release media pack (issue #5 decision): banner, Open Graph
+  image, app icon and skin preview SVG sources in `Resources/Art/`
+  with rendered PNGs in `Resources/Art/Rendered/`; README ships the
+  banner and media links; macOS CI uploads the media kit as an
+  artifact and validates renders against golden SHA-256 pins.
+- Pet size slider spans 45–170 pt in 1 pt steps with a
+  "45 pt - compact" end label (was 90–170 pt in 2 pt steps).
+- Release community files: MIT `LICENSE`, `CODE_OF_CONDUCT.md`,
+  `CONTRIBUTING.md`, `SECURITY.md`, `SUPPORT.md`, bug/feature issue
+  forms and a pull request template.
 
 ## [0.1.0] - 2026-10-07
 
