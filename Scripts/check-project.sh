@@ -15,13 +15,29 @@ python3 Scripts/validate-skins.py
 python3 Scripts/verify-media.py
 Scripts/test-agent-hooks.sh
 
-# Sources must stay ASCII English: no Cyrillic text anywhere in Sources/.
-if grep -rlP '[\x{0400}-\x{04FF}]' Sources >/dev/null 2>&1; then
-  printf 'Cyrillic text found in Sources/:\n' >&2
-  grep -rlP '[\x{0400}-\x{04FF}]' Sources >&2
-  exit 1
-fi
-printf 'Sources contain no Cyrillic text.\n'
+# Sources must stay English: no Cyrillic text anywhere in Sources/. Done in
+# Python because BSD grep on macOS has no -P and a byte-range pattern would
+# depend on the locale.
+python3 - <<'PY'
+import pathlib
+import sys
+
+offenders = []
+for path in sorted(pathlib.Path("Sources").rglob("*")):
+    if not path.is_file():
+        continue
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        continue
+    if any(0x0400 <= ord(character) <= 0x04FF for character in text):
+        offenders.append(str(path))
+
+if offenders:
+    print("Cyrillic text found in Sources/: " + ", ".join(offenders), file=sys.stderr)
+    raise SystemExit(1)
+print("Sources contain no Cyrillic text.")
+PY
 
 if [[ "${SWEET_NO_SLEEP_SKIP_SWIFT_BUILD:-0}" == "1" ]]; then
   printf 'SKIP Swift build: explicitly skipped for split CI diagnostics.\n'

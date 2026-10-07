@@ -29,8 +29,24 @@ jobs:
       - name: Render the media pack with the stock macOS tools
         run: |
           # qlmanage rasterizes the SVG sources and iconutil packs the .icns,
-          # so this is the release path for the app icon and preview art.
-          ./Scripts/render-media.sh
+          # so this is the release path for the app icon and preview art. The
+          # renderer falls back to another tool per source, and skips with a
+          # message when the runner has none.
+          LOG_FILE="$(mktemp)"
+          if ./Scripts/render-media.sh >"$LOG_FILE" 2>&1; then
+            cat "$LOG_FILE"
+          else
+            cat "$LOG_FILE"
+            python3 - "$LOG_FILE" <<'PY'
+          import pathlib
+          import sys
+          log = pathlib.Path(sys.argv[1]).read_text(errors="replace").splitlines()
+          summary = " | ".join(log[-20:] or ["render-media.sh produced no output."])
+          summary = summary.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+          print(f"::error title=Media render diagnostics::{summary}")
+          PY
+            exit 1
+          fi
           python3 Scripts/verify-media.py
 
       - name: Build Swift package with diagnostics
