@@ -38,6 +38,11 @@ The script picks the first available rasterizer:
 
 The `.icns` is packed by `iconutil` on macOS and by `Scripts/icns-pack.py` (same
 PNG based container, documented in Apple's container reference) everywhere else.
+The two packers disagree on the small sizes: `iconutil` stores 16 px and 32 px
+as the legacy `ic04`/`ic05` elements with compressed payloads, while
+`icns-pack.py` writes them as PNG `icp4`/`icp5`. `Scripts/verify-media.py`
+accepts both layouts, measures PNG elements from their header, and takes the
+legacy types at their declared size.
 When no rasterizer is present the script prints a skip message and exits 0 on
 purpose: a checkout without rendering tools keeps the checked-in renders instead
 of failing. `Scripts/check-project.sh` then verifies sources, sizes, and `.icns`
