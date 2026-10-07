@@ -1,0 +1,45 @@
+name: Feature request
+description: Suggest an idea for SweetNoSleep
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem does this solve? Who benefits?
+      placeholder: As a user I want ...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Describe the solution, including Kiwi pet behavior if relevant.
+      placeholder: ...
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any alternative solutions or workarounds?
+    validations:
+      required: false
+  - type: dropdown
+    id: chip
+    attributes:
+      label: Tested environment
+      description: Where would you test this (macOS chip)?
+      options:
+        - Apple Silicon
+        - Intel
+        - Not tested yet
+    validations:
+      required: false
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: macOS 15.1
+    validations:
+      required: false

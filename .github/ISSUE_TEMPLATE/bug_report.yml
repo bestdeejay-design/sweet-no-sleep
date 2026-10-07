@@ -1,0 +1,54 @@
+name: Bug report
+description: Report a problem with SweetNoSleep
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened and what did you expect?
+      placeholder: Kiwi pet stays asleep after wake from sleep.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps to reproduce the issue.
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      description: Example 14.5, 15.1.
+      placeholder: macOS 15.1
+    validations:
+      required: true
+  - type: dropdown
+    id: chip
+    attributes:
+      label: Chip
+      options:
+        - Apple Silicon
+        - Intel
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: SweetNoSleep version or commit
+      placeholder: main @ abc1234 or release tag
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Relevant output of swift build, check-project.sh, or Console.
+      render: text
+    validations:
+      required: false
