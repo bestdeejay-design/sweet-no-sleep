@@ -39,10 +39,8 @@
   <text x="80" y="237" fill="#26382E" font-family="Avenir Next, Arial, sans-serif" font-size="72" font-weight="700" letter-spacing="-2.6">Stay in your</text>
   <text x="80" y="316" fill="#26382E" font-family="Avenir Next, Arial, sans-serif" font-size="78" font-weight="700" letter-spacing="-2.8">flow.</text>
   <path d="M83 343h104" stroke="#75B978" stroke-width="6" stroke-linecap="round"/>
-  <text x="82" y="393" fill="#5D685F" font-family="Avenir Next, Arial, sans-serif" font-size="22" font-weight="500">
-    <tspan x="82" dy="0">A gentle focus timer that keeps your Mac awake</tspan>
-    <tspan x="82" dy="32">while the work — or your AI agent — is still running.</tspan>
-  </text>
+  <text x="82" y="393" fill="#5D685F" font-family="Avenir Next, Arial, sans-serif" font-size="22" font-weight="500">A gentle focus timer for long sessions and AI agents.</text>
+  <text x="82" y="425" fill="#5D685F" font-family="Avenir Next, Arial, sans-serif" font-size="22" font-weight="500">Normal sleep resumes when your work is done.</text>
 
   <!-- Feature chips -->
   <g font-family="Avenir Next, Arial, sans-serif" font-size="14" font-weight="600">
@@ -58,35 +56,36 @@
   </g>
   <text x="82" y="570" fill="#8A9288" font-family="Avenir Next, Arial, sans-serif" font-size="13" font-weight="600" letter-spacing="1.25">MACOS 14+  ·  YOUR PACE, YOUR DESK</text>
 
+  <!-- The Kiwi portrait is separate from the dashboard copy, so both stay readable. -->
+  <circle cx="1114" cy="320" r="176" fill="#D7E8CE"/>
+  <circle cx="1114" cy="320" r="151" fill="#EAF2DE" opacity="0.78"/>
+
   <!-- A miniature of the real dark menu-bar dashboard. -->
-  <rect x="724" y="89" width="482" height="461" rx="34" fill="#233145" opacity="0.12"/>
-  <rect x="716" y="80" width="482" height="461" rx="34" fill="url(#panel)" stroke="#FFFFFF" stroke-opacity="0.54" stroke-width="2"/>
+  <rect x="724" y="89" width="306" height="461" rx="34" fill="#233145" opacity="0.12"/>
+  <rect x="716" y="80" width="306" height="461" rx="34" fill="url(#panel)" stroke="#FFFFFF" stroke-opacity="0.54" stroke-width="2"/>
   <circle cx="751" cy="116" r="5" fill="#E79082"/>
   <circle cx="770" cy="116" r="5" fill="#E5C178"/>
   <circle cx="789" cy="116" r="5" fill="#76C486"/>
-  <text x="751" y="160" fill="#F4F1E9" font-family="Avenir Next, Arial, sans-serif" font-size="13" font-weight="700" letter-spacing="1.7">SWEET NO SLEEP</text>
-  <text x="751" y="183" fill="#A5B0BE" font-family="Avenir Next, Arial, sans-serif" font-size="11" font-weight="500">A calm little corner for deep work</text>
+  <text x="751" y="160" fill="#F4F1E9" font-family="Avenir Next, Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="1.5">SWEET NO SLEEP</text>
+  <text x="751" y="183" fill="#A5B0BE" font-family="Avenir Next, Arial, sans-serif" font-size="10" font-weight="500">A calm corner for deep work</text>
 
-  <rect x="750" y="205" width="411" height="82" rx="19" fill="#172234" stroke="#FFFFFF" stroke-opacity="0.08"/>
-  <rect x="768" y="224" width="40" height="40" rx="13" fill="#285039"/>
-  <path d="M789 234v19m-7-12 7-7 7 7" fill="none" stroke="#99E2A3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-  <text x="824" y="239" fill="#FFFFFF" font-family="Avenir Next, Arial, sans-serif" font-size="13" font-weight="700">Keep Mac awake</text>
-  <text x="824" y="258" fill="#AEB9C6" font-family="Avenir Next, Arial, sans-serif" font-size="10" font-weight="500">System idle sleep is prevented</text>
-  <rect x="1090" y="232" width="50" height="27" rx="14" fill="#72C283"/>
-  <circle cx="1127" cy="245.5" r="10" fill="#FFFFFF"/>
+  <rect x="750" y="205" width="238" height="82" rx="19" fill="#172234" stroke="#FFFFFF" stroke-opacity="0.08"/>
+  <rect x="766" y="224" width="40" height="40" rx="13" fill="#285039"/>
+  <path d="M786 234v19m-7-12 7-7 7 7" fill="none" stroke="#99E2A3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="818" y="239" fill="#FFFFFF" font-family="Avenir Next, Arial, sans-serif" font-size="12" font-weight="700">Keep Mac awake</text>
+  <text x="818" y="258" fill="#AEB9C6" font-family="Avenir Next, Arial, sans-serif" font-size="9" font-weight="500">Idle sleep is prevented</text>
+  <rect x="930" y="232" width="46" height="27" rx="14" fill="#72C283"/>
+  <circle cx="963" cy="245.5" r="10" fill="#FFFFFF"/>
 
-  <rect x="750" y="301" width="411" height="202" rx="20" fill="#172234" stroke="#FFFFFF" stroke-opacity="0.08"/>
-  <text x="770" y="330" fill="#B4DDB9" font-family="Avenir Next, Arial, sans-serif" font-size="10" font-weight="700" letter-spacing="1.5">FOCUS SESSION</text>
-  <text x="770" y="371" fill="#F6F4EE" font-family="Avenir Next, Arial, sans-serif" font-size="24" font-weight="700">50 minutes</text>
-  <text x="770" y="394" fill="#AEB9C6" font-family="Avenir Next, Arial, sans-serif" font-size="11" font-weight="500">Normal sleep resumes when done</text>
+  <rect x="750" y="301" width="238" height="202" rx="20" fill="#172234" stroke="#FFFFFF" stroke-opacity="0.08"/>
+  <text x="770" y="330" fill="#B4DDB9" font-family="Avenir Next, Arial, sans-serif" font-size="9" font-weight="700" letter-spacing="1.3">FOCUS SESSION</text>
+  <text x="770" y="371" fill="#F6F4EE" font-family="Avenir Next, Arial, sans-serif" font-size="23" font-weight="700">50 minutes</text>
+  <text x="770" y="394" fill="#AEB9C6" font-family="Avenir Next, Arial, sans-serif" font-size="10" font-weight="500">Normal sleep resumes when done</text>
   <rect x="770" y="417" width="170" height="44" rx="15" fill="#91D18E"/>
-  <text x="855" y="445" text-anchor="middle" fill="#17251A" font-family="Avenir Next, Arial, sans-serif" font-size="12" font-weight="700">Start focus session</text>
-  <text x="770" y="481" fill="#8694A5" font-family="Avenir Next, Arial, sans-serif" font-size="10" font-weight="500">A soft nudge, never a blocker.</text>
+  <text x="855" y="445" text-anchor="middle" fill="#17251A" font-family="Avenir Next, Arial, sans-serif" font-size="11" font-weight="700">Start focus session</text>
+  <text x="770" y="481" fill="#8694A5" font-family="Avenir Next, Arial, sans-serif" font-size="9" font-weight="500">A soft nudge, never a blocker.</text>
 
-  <!-- Friendly Kiwi portrait layered over the dashboard. -->
-  <circle cx="1035" cy="390" r="154" fill="#D7E8CE"/>
-  <circle cx="1035" cy="390" r="133" fill="#EAF2DE" opacity="0.75"/>
-  <g transform="translate(840 105) scale(0.37)">
+  <g transform="translate(982 137) scale(0.3)">
     <path d="M216 451 267 190c7-39 32-47 62-19l114 107c46-17 92-17 138 0l114-107c30-28 55-20 62 19l51 261c34 50 53 99 50 159-9 150-151 246-345 246s-336-96-345-246c-3-60 16-109 50-159Z" fill="url(#fur)" stroke="#5D443B" stroke-width="26" stroke-linejoin="round"/>
     <path d="m302 231 29 169c28-31 63-58 98-80l-98-91c-13-12-25-11-29 2Z" fill="#E88D85" stroke="#5D443B" stroke-width="15" stroke-linejoin="round"/>
     <path d="m722 231-29 169c-28-31-63-58-98-80l98-91c13-12 25-11 29 2Z" fill="#E88D85" stroke="#5D443B" stroke-width="15" stroke-linejoin="round"/>
@@ -105,7 +104,7 @@
     <path d="M488 665c0-17 24-20 24-4 0-16 24-13 24 4 0 14-24 29-24 29s-24-15-24-29Z" fill="#E88D85" stroke="#5D443B" stroke-width="7" stroke-linejoin="round"/>
     <path d="M512 693c-2 22-18 32-34 34M512 693c2 22 18 32 34 34" fill="none" stroke="#5D443B" stroke-width="9" stroke-linecap="round"/>
   </g>
-  <rect x="1050" y="489" width="120" height="33" rx="16.5" fill="#F5F0E3" stroke="#FFFFFF" stroke-width="2"/>
-  <circle cx="1071" cy="505.5" r="4.5" fill="#70B978"/>
-  <text x="1083" y="510" fill="#4C5D4A" font-family="Avenir Next, Arial, sans-serif" font-size="10" font-weight="700">KIWI IS HERE</text>
+  <rect x="1064" y="472" width="120" height="33" rx="16.5" fill="#F5F0E3" stroke="#FFFFFF" stroke-width="2"/>
+  <circle cx="1085" cy="488.5" r="4.5" fill="#70B978"/>
+  <text x="1097" y="493" fill="#4C5D4A" font-family="Avenir Next, Arial, sans-serif" font-size="9" font-weight="700">KIWI IS HERE</text>
 </svg>
