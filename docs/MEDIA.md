@@ -15,7 +15,7 @@ The SVG files in `Resources/Art/` are the editable, hand-authored sources. They 
 | `banner.svg` | 1280 × 640 | Product/release banner used in the README | `Rendered/banner.png` (1280 × 640 px) |
 | `og-image.svg` | 1200 × 630 | Social/Open Graph composition for later use | `Rendered/og-image.png` (1200 × 630 px) |
 
-`Resources/Art/Rendered/` contains generated deliverables, not hand-edited sources. The iconset folder is kept beside the `.icns` so CI can verify every required representation. The macOS workflow also uploads this folder as the **sweet-no-sleep-media** artifact.
+`Resources/Art/Rendered/` contains generated deliverables, not hand-edited sources. The iconset folder is kept beside the `.icns` so CI can verify every required representation. After the macOS build and bundle checks pass, the push workflow commits these generated files to this task branch so the README's PNG link resolves; it also uploads the folder as the **sweet-no-sleep-media** artifact.
 
 ## Render and validate
 
