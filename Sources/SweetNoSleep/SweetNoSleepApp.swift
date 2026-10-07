@@ -23,9 +23,12 @@ struct SweetNoSleepApp: App {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var petController: PetPanelController?
     private var cancellables = Set<AnyCancellable>()
+    private var sigtermSource: DispatchSourceSignal?
+    private var sigintSource: DispatchSourceSignal?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApplication.shared.setActivationPolicy(.accessory)
+        setupTerminationSignalHandlers()
 
         let model = SweetNoSleepModel.shared
         let controller = PetPanelController(model: model)
@@ -50,6 +53,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    private func setupTerminationSignalHandlers() {
+        signal(SIGTERM, SIG_IGN)
+        signal(SIGINT, SIG_IGN)
+
+        let sigterm = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
+        sigterm.setEventHandler { [weak self] in
+            SweetNoSleepModel.shared.shutdown()
+            self?.petController?.close()
+            exit(0)
+        }
+        sigterm.resume()
+        sigtermSource = sigterm
+
+        let sigint = DispatchSource.makeSignalSource(signal: SIGINT, queue: .main)
+        sigint.setEventHandler { [weak self] in
+            SweetNoSleepModel.shared.shutdown()
+            self?.petController?.close()
+            exit(0)
+        }
+        sigint.resume()
+        sigintSource = sigint
+    }
+
     func application(_ application: NSApplication, open urls: [URL]) {
         for url in urls {
             SweetNoSleepModel.shared.handleAgentURL(url)
@@ -67,6 +93,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         SweetNoSleepModel.shared.shutdown()
         petController?.close()
         petController = nil
+        sigtermSource?.cancel()
+        sigtermSource = nil
+        sigintSource?.cancel()
+        sigintSource = nil
     }
 }
 
@@ -76,6 +106,7 @@ private struct MenuBarDashboard: View {
     @ObservedObject var model: SweetNoSleepModel
     @Environment(\.openSettings) private var openSettings
     @State private var confirmsImmediateSleep = false
+    @State private var showDiagnostics = false
 
     private let durations = [25, 50, 90, 120]
 
@@ -107,12 +138,17 @@ private struct MenuBarDashboard: View {
                     .padding(.top, 12)
             }
 
+            diagnosticsCard
+                .padding(.horizontal, 16)
+                .padding(.top, 10)
+
             Spacer(minLength: 12)
             footer
                 .padding(.horizontal, 19)
                 .padding(.bottom, 17)
         }
-        .frame(width: 362, height: model.isFocusSession ? 630 : 610)
+        .frame(width: 362, height: (model.isFocusSession ? 660 : 640) + (showDiagnostics ? 110 : 0))
+        .animation(.easeInOut(duration: 0.18), value: showDiagnostics)
         .background {
             ZStack(alignment: .topTrailing) {
                 LinearGradient(
@@ -391,6 +427,80 @@ private struct MenuBarDashboard: View {
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(Color(hex: 0x82D28E, opacity: 0.22), lineWidth: 1)
+        }
+    }
+
+    private var diagnosticsCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.18)) {
+                    showDiagnostics.toggle()
+                }
+            } label: {
+                HStack {
+                    Label(L10n.text("Hold diagnostics"), systemImage: "wrench.and.screwdriver")
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .tracking(1.0)
+                        .foregroundStyle(Color(hex: 0xA9D8B0))
+                    Spacer()
+                    Image(systemName: showDiagnostics ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.50))
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if showDiagnostics {
+                VStack(alignment: .leading, spacing: 5) {
+                    diagnosticDashboardRow(
+                        label: L10n.text("System assertion"),
+                        value: model.diagnostics.isSystemActive
+                            ? L10n.format("Active (ID: %u)", model.diagnostics.systemAssertionID)
+                            : L10n.text("Inactive")
+                    )
+                    diagnosticDashboardRow(
+                        label: L10n.text("Display assertion"),
+                        value: model.diagnostics.isDisplayActive
+                            ? L10n.format("Active (ID: %u)", model.diagnostics.displayAssertionID)
+                            : L10n.text("Inactive")
+                    )
+                    if model.diagnostics.isSystemActive || model.diagnostics.isDisplayActive {
+                        diagnosticDashboardRow(
+                            label: L10n.text("Next re-arm"),
+                            value: L10n.format("%d s", model.diagnostics.secondsUntilRearm)
+                        )
+                    }
+                    diagnosticDashboardRow(
+                        label: L10n.text("Power source"),
+                        value: model.diagnostics.batteryDescription
+                    )
+                    diagnosticDashboardRow(
+                        label: L10n.text("Last power event"),
+                        value: model.diagnostics.lastPowerEvent
+                    )
+                }
+                .padding(.top, 2)
+            }
+        }
+        .padding(12)
+        .background(Color(hex: 0x151F30, opacity: 0.96), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(.white.opacity(0.06), lineWidth: 1)
+        }
+    }
+
+    private func diagnosticDashboardRow(label: String, value: String) -> some View {
+        HStack(alignment: .top) {
+            Text(label)
+                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(0.55))
+            Spacer(minLength: 8)
+            Text(value)
+                .font(.system(size: 10, weight: .regular, design: .rounded).monospacedDigit())
+                .foregroundStyle(.white.opacity(0.85))
+                .multilineTextAlignment(.trailing)
         }
     }
 

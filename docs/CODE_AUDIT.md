@@ -26,6 +26,12 @@ The current workspace is Linux and does not provide Swift/Xcode or the macOS SDK
 14. **Roaming's animation completion was a false positive.** `NSAnimationContext` reported completion for `panel.animator().setFrameOrigin` without moving a borderless panel. Roaming now uses a 48-step eased animator that calls `setFrameOrigin` directly and persists `pet.panelOrigin` at every step. A macOS smoke test checks intermediate movement and the saved final origin.
 15. **Sleep protection could show duplicate system assertions.** `ProcessInfo.userInitiated` also prevents idle system sleep, duplicating the explicit IOPM assertion. The activity now uses `userInitiatedAllowingIdleSystemSleep` to avoid App Nap while allowing the single IOPM system assertion to own sleep prevention. Repeated `begin()` calls coalesce and only reconcile the optional display assertion.
 16. **Reopening Settings from the accessory menu could be flaky.** The settings action is now scheduled for the next main-actor turn after activation, then the app is activated again before invoking `openSettings()`.
+17. **Self-expiring fail-safe power assertions with re-arm (P0).** PowerKeeper now creates assertions via `IOPMAssertionCreateWithProperties` with a 120-second timeout (`kIOPMAssertionTimeoutKey = 120`, `kIOPMAssertionTimeoutActionKey = kIOPMAssertionTimeoutActionRelease`). A 90-second re-arm loop keeps the timeout from reaching zero without recreating IDs unless the kernel reaps the assertion.
+18. **Battery safety floor (P1).** Added `PowerSourceMonitor` using `IOPSCopyPowerSourcesInfo` on a coalescing `DispatchSourceTimer` (20s interval, 5s leeway). Assertions pause automatically on battery when charge falls to or below the configurable threshold (default 20%, 0 = disabled), and resume when reconnected to power.
+19. **Monotonic continuous awake cap (P1).** Hold duration is tracked using monotonic `ProcessInfo.processInfo.systemUptime`. Reaching the configurable cap (default 4 hours, 0 = disabled) releases assertions and notifies the user without flapping.
+20. **Clean release on sleep and termination signals (P1).** `NSWorkspace.willSleepNotification` releases assertion handles prior to sleep and `didWakeNotification` recreates them fresh. `SIGTERM` and `SIGINT` are caught via `DispatchSourceSignal` to run `shutdown()` and clean up IOKit assertions before process exit.
+21. **Human-readable localized assertion reasons (P2).** Assertions pass `kIOPMAssertionHumanReadableReasonKey` and `kIOPMAssertionLocalizationBundlePathKey` for localized display in `pmset` and macOS system menus. Dynamic reason updates modify existing assertion properties via `IOPMAssertionSetProperty` without creating redundant assertions.
+22. **Hold diagnostics in the menu bar dashboard and settings (P2).** Added live diagnostics displaying system and display assertion IDs, re-arm countdown timer, power source status, and the most recent power lifecycle event.
 
 ## Checks run locally and on GitHub
 
@@ -68,9 +74,15 @@ On a Mac, run `./Scripts/check-project.sh`, then `./Scripts/build-app.sh release
 ### Power and agent hooks
 
 - Enable and disable manual protection and inspect `pmset -g assertions`: Sweet No Sleep should own exactly one `PreventUserIdleSystemSleep` assertion, plus one display assertion only when enabled. Test the optional display assertion separately.
+- Inspect `pmset -g assertions | grep "pid $(pgrep -x SweetNoSleep)"`: verify `Timeout` shows 120s countdown and re-arms at ~90s without creating new assertion IDs.
+- Test `kill -9 <pid>` mid-session: verify the kernel reaps the assertion within 120 seconds with no app cleanup.
+- Test `kill <pid>` (SIGTERM) mid-session: verify the signal handler releases assertions immediately.
+- Test battery floor: on a laptop on battery below threshold (e.g. 20%), verify assertions pause and status reflects battery floor; connect power adapter and verify protection automatically resumes.
+- Test continuous awake cap: verify hold releases and notifies when monotonic uptime reaches the cap.
+- Open Hold diagnostics in the menu bar dashboard and Settings > Power; confirm live updates for assertion IDs, next re-arm countdown, power source, and last power event with ≤1s staleness.
 - Run a safe timed session with normal sleep on completion. Test immediate sleep only in a controlled environment without important work. Confirm a new agent event in the short delay cancels the sleep request.
 - Test `./Scripts/agent-session.sh smoke-1 -- <short-command>`, a failed command, manual agent-session stop, bridge disable, and lease expiry without heartbeat. Start with normal sleep, not immediate sleep.
-- Test Mac sleep/wake during an active session and confirm a warning appears if macOS cannot restore the optional display assertion.
+- Test Mac sleep/wake during an active session and confirm assertions release before sleep and restore after wake.
 - Click the menu-bar **Settings** button and confirm the Settings scene opens while the app uses accessory activation policy.
 
 ## Further development plan

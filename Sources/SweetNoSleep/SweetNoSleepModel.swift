@@ -48,7 +48,9 @@ final class SweetNoSleepModel: ObservableObject {
 
     private let defaults = UserDefaults.standard
     private let powerKeeper = PowerKeeper()
+    private let powerSourceMonitor = PowerSourceMonitor()
     private var sessionTimer: Timer?
+    private var heartbeatTimer: Timer?
     private var moodTimer: Timer?
     private var playfulTimer: Timer?
     private var breakTimer: Timer?
@@ -62,6 +64,9 @@ final class SweetNoSleepModel: ObservableObject {
     // click meant to wake the Mac does not accidentally poke the pet.
     private var lastSystemWakeDate: Date?
     private var wakeObserver: NSObjectProtocol?
+    private var holdStartUptime: TimeInterval?
+    private var hasCapTripped = false
+    private var isPausedByBatteryFloor = false
     private static let agentLeaseTimeout: TimeInterval = 180
 
     @Published private(set) var isKeepingAwake = false {
@@ -75,6 +80,7 @@ final class SweetNoSleepModel: ObservableObject {
     @Published private(set) var powerWarning: String?
     @Published var statusMessage = L10n.text("Kiwi is ready to keep you company")
     @Published private(set) var mood: KiwiMood = .idle
+    @Published private(set) var diagnostics = PowerDiagnostics()
 
     @Published var selectedMinutes: Int {
         didSet { defaults.set(selectedMinutes, forKey: Key.selectedMinutes) }
@@ -99,6 +105,20 @@ final class SweetNoSleepModel: ObservableObject {
             defaults.set(keepDisplayAwake, forKey: Key.keepDisplayAwake)
             guard oldValue != keepDisplayAwake, isKeepingAwake else { return }
             refreshPowerAssertions()
+        }
+    }
+
+    @Published var batteryFloorPercent: Int {
+        didSet {
+            defaults.set(batteryFloorPercent, forKey: Key.batteryFloorPercent)
+            handlePowerSourceChange(powerSourceMonitor.currentStatus)
+        }
+    }
+
+    @Published var continuousAwakeCapHours: Int {
+        didSet {
+            defaults.set(continuousAwakeCapHours, forKey: Key.continuousAwakeCapHours)
+            checkAwakeCap()
         }
     }
 
@@ -215,6 +235,8 @@ final class SweetNoSleepModel: ObservableObject {
         selectedMinutes = min(max(savedMinutes, 15), 240)
         petSize = min(max(savedSize, 45), 170)
         keepDisplayAwake = defaults.object(forKey: Key.keepDisplayAwake) as? Bool ?? false
+        batteryFloorPercent = min(max(defaults.object(forKey: Key.batteryFloorPercent) as? Int ?? 20, 0), 50)
+        continuousAwakeCapHours = min(max(defaults.object(forKey: Key.continuousAwakeCapHours) as? Int ?? 4, 0), 12)
         resumeKeepAwakeOnLaunch = defaults.object(forKey: Key.resumeOnLaunch) as? Bool ?? false
         agentBridgeEnabled = defaults.object(forKey: Key.agentBridgeEnabled) as? Bool ?? false
         isPetVisible = defaults.object(forKey: Key.petVisible) as? Bool ?? true
@@ -247,6 +269,7 @@ final class SweetNoSleepModel: ObservableObject {
             self.sessionTimer = nil
             self.breakTimer?.invalidate()
             self.breakTimer = nil
+            self.stopHeartbeatTimer()
             self.isBreakDue = false
             self.sessionEndDate = nil
             self.sessionCompletionAction = nil
@@ -254,13 +277,22 @@ final class SweetNoSleepModel: ObservableObject {
             self.isFocusSession = false
             self.manualAwake = false
             self.isKeepingAwake = false
+            self.holdStartUptime = nil
             self.powerWarning = message
             self.statusMessage = message
             self.setTemporaryMood(.resting, duration: 1.8, then: .idle)
+            self.updateDiagnostics()
         }
         powerKeeper.onWarning = { [weak self] message in
             self?.powerWarning = message
             self?.statusMessage = message
+            self?.updateDiagnostics()
+        }
+        powerKeeper.onDiagnosticsChanged = { [weak self] in
+            self?.updateDiagnostics()
+        }
+        powerSourceMonitor.onStatusChange = { [weak self] status in
+            self?.handlePowerSourceChange(status)
         }
         // Track system wake to grant taps a short grace period afterwards.
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
@@ -270,8 +302,10 @@ final class SweetNoSleepModel: ObservableObject {
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.lastSystemWakeDate = Date()
+                self?.updateDiagnostics()
             }
         }
+        updateDiagnostics()
         schedulePlayfulMoment()
     }
 
@@ -302,10 +336,19 @@ final class SweetNoSleepModel: ObservableObject {
         sessionCompletionAction = nil
         remainingSeconds = nil
         isFocusSession = false
-        startPowerAssertions(reason: "Sweet No Sleep - manual mode")
+        holdStartUptime = ProcessInfo.processInfo.systemUptime
+        hasCapTripped = false
+        isPausedByBatteryFloor = false
+
+        startPowerAssertions(
+            reason: "Sweet No Sleep - manual mode",
+            humanReadableReason: L10n.text("Sweet No Sleep - manual keep-awake mode")
+        )
         guard isKeepingAwake else { return }
-        statusMessage = L10n.text("Kiwi is keeping your Mac awake")
-        setMood(isBreakDue ? .breakReminder : .working)
+        if !isPausedByBatteryFloor {
+            statusMessage = L10n.text("Kiwi is keeping your Mac awake")
+            setMood(isBreakDue ? .breakReminder : .working)
+        }
     }
 
     func startFocusSession(confirmedImmediateSleep: Bool = false) {
@@ -316,7 +359,14 @@ final class SweetNoSleepModel: ObservableObject {
 
         cancelPendingImmediateSleepRequest()
         let minutes = min(max(selectedMinutes, 15), 240)
-        startPowerAssertions(reason: "Sweet No Sleep - focus session, \(minutes) min")
+        holdStartUptime = ProcessInfo.processInfo.systemUptime
+        hasCapTripped = false
+        isPausedByBatteryFloor = false
+
+        startPowerAssertions(
+            reason: "Sweet No Sleep - focus session, \(minutes) min",
+            humanReadableReason: L10n.format("Sweet No Sleep - focus session (%d min)", minutes)
+        )
         guard isKeepingAwake else { return }
 
         manualAwake = false
@@ -324,8 +374,10 @@ final class SweetNoSleepModel: ObservableObject {
         sessionEndDate = Date().addingTimeInterval(TimeInterval(minutes * 60))
         sessionCompletionAction = completionAction
         isFocusSession = true
-        statusMessage = L10n.format("Focus session started - %d min", minutes)
-        setMood(isBreakDue ? .breakReminder : .working)
+        if !isPausedByBatteryFloor {
+            statusMessage = L10n.format("Focus session started - %d min", minutes)
+            setMood(isBreakDue ? .breakReminder : .working)
+        }
         updateCountdown()
         sessionTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
@@ -342,6 +394,7 @@ final class SweetNoSleepModel: ObservableObject {
         breakTimer?.invalidate()
         breakTimer = nil
         isBreakDue = false
+        stopHeartbeatTimer()
         agentLeaseTimer?.invalidate()
         agentLeaseTimer = nil
         agentLeases.removeAll()
@@ -351,9 +404,13 @@ final class SweetNoSleepModel: ObservableObject {
         sessionCompletionAction = nil
         remainingSeconds = nil
         isFocusSession = false
+        holdStartUptime = nil
+        hasCapTripped = false
+        isPausedByBatteryFloor = false
         powerKeeper.end()
         isKeepingAwake = false
         powerWarning = nil
+        updateDiagnostics()
 
         guard wasRunning else { return }
         statusMessage = L10n.text("Kiwi's shift is over - your Mac is back to its normal sleep settings")
@@ -363,6 +420,8 @@ final class SweetNoSleepModel: ObservableObject {
     func shutdown() {
         stopKeepingAwake()
         powerKeeper.shutdown()
+        powerSourceMonitor.shutdown()
+        stopHeartbeatTimer()
     }
 
     // MARK: Local agent bridge
@@ -423,12 +482,21 @@ final class SweetNoSleepModel: ObservableObject {
             }
         }
 
+        if holdStartUptime == nil {
+            holdStartUptime = ProcessInfo.processInfo.systemUptime
+            hasCapTripped = false
+        }
+
         if !isKeepingAwake {
-            startPowerAssertions(reason: "Sweet No Sleep - AI agent work")
+            startPowerAssertions(
+                reason: "Sweet No Sleep - AI agent work",
+                humanReadableReason: L10n.text("Sweet No Sleep - AI agent work in progress")
+            )
         }
         if isKeepingAwake,
            !isFocusSession,
            !manualAwake,
+           !isPausedByBatteryFloor,
            (mood == .idle || mood == .resting) {
             setMood(isBreakDue ? .breakReminder : .working)
         }
@@ -475,15 +543,20 @@ final class SweetNoSleepModel: ObservableObject {
         sessionTimer = nil
         breakTimer?.invalidate()
         breakTimer = nil
+        stopHeartbeatTimer()
         isBreakDue = false
         sessionEndDate = nil
         sessionCompletionAction = nil
         remainingSeconds = nil
+        holdStartUptime = nil
+        hasCapTripped = false
+        isPausedByBatteryFloor = false
         powerKeeper.end()
         isKeepingAwake = false
         powerWarning = nil
         statusMessage = L10n.format("%@ - your Mac is back to its normal sleep settings", message)
         setTemporaryMood(.celebrating, duration: 1.6, then: .idle)
+        updateDiagnostics()
     }
 
     // MARK: Pet interactions
@@ -544,10 +617,32 @@ final class SweetNoSleepModel: ObservableObject {
         pendingImmediateSleepToken = nil
     }
 
-    private func startPowerAssertions(reason: String) {
+    private func startPowerAssertions(reason: String, humanReadableReason: String) {
         guard !isKeepingAwake else { return }
         powerWarning = nil
-        let result = powerKeeper.begin(reason: reason, keepDisplayOn: keepDisplayAwake)
+
+        let currentPS = powerSourceMonitor.currentStatus
+        if batteryFloorPercent > 0,
+           currentPS.hasInternalBattery,
+           !currentPS.isPluggedIn,
+           currentPS.batteryPercent <= batteryFloorPercent {
+            isKeepingAwake = true
+            isPausedByBatteryFloor = true
+            powerWarning = L10n.format("Battery below %d%% - assertions released.", batteryFloorPercent)
+            statusMessage = L10n.format("Battery is below %d%% - plug in to enable sleep protection.", batteryFloorPercent)
+            powerKeeper.setLastPowerEvent(L10n.format("Battery below %d%% - assertions released.", batteryFloorPercent))
+            startHeartbeatTimer()
+            scheduleBreakReminder()
+            setTemporaryMood(.resting, duration: 1.8, then: .resting)
+            updateDiagnostics()
+            return
+        }
+
+        let result = powerKeeper.begin(
+            reason: reason,
+            humanReadableReason: humanReadableReason,
+            keepDisplayOn: keepDisplayAwake
+        )
         guard result.success else {
             manualAwake = false
             isKeepingAwake = false
@@ -556,24 +651,36 @@ final class SweetNoSleepModel: ObservableObject {
             sessionTimer = nil
             breakTimer?.invalidate()
             breakTimer = nil
+            stopHeartbeatTimer()
             isBreakDue = false
             sessionEndDate = nil
             sessionCompletionAction = nil
             remainingSeconds = nil
+            holdStartUptime = nil
             powerWarning = result.message
             statusMessage = result.message ?? L10n.text("Could not enable sleep protection.")
             setTemporaryMood(.resting, duration: 1.8, then: .idle)
+            updateDiagnostics()
             return
         }
 
         isKeepingAwake = true
+        isPausedByBatteryFloor = false
         powerWarning = result.message
+        startHeartbeatTimer()
         scheduleBreakReminder()
+        updateDiagnostics()
     }
 
     private func refreshPowerAssertions() {
+        let reason = isFocusSession ? "Sweet No Sleep - focus session" : "Sweet No Sleep - manual mode"
+        let humanReadable = isFocusSession
+            ? L10n.format("Sweet No Sleep - focus session (%d min)", selectedMinutes)
+            : L10n.text("Sweet No Sleep - manual keep-awake mode")
+
         let result = powerKeeper.begin(
-            reason: isFocusSession ? "Sweet No Sleep - focus session" : "Sweet No Sleep - manual mode",
+            reason: reason,
+            humanReadableReason: humanReadable,
             keepDisplayOn: keepDisplayAwake
         )
         guard result.success else {
@@ -581,6 +688,7 @@ final class SweetNoSleepModel: ObservableObject {
             sessionTimer = nil
             breakTimer?.invalidate()
             breakTimer = nil
+            stopHeartbeatTimer()
             isBreakDue = false
             sessionEndDate = nil
             sessionCompletionAction = nil
@@ -588,12 +696,97 @@ final class SweetNoSleepModel: ObservableObject {
             isFocusSession = false
             manualAwake = false
             isKeepingAwake = false
+            holdStartUptime = nil
             powerWarning = result.message
             statusMessage = result.message ?? L10n.text("Could not refresh sleep protection.")
             setTemporaryMood(.resting, duration: 1.8, then: .idle)
+            updateDiagnostics()
             return
         }
         powerWarning = result.message
+        updateDiagnostics()
+    }
+
+    private func handlePowerSourceChange(_ status: PowerSourceStatus) {
+        updateDiagnostics()
+        guard isKeepingAwake else { return }
+
+        if batteryFloorPercent > 0,
+           status.hasInternalBattery,
+           !status.isPluggedIn,
+           status.batteryPercent <= batteryFloorPercent {
+            if !isPausedByBatteryFloor {
+                isPausedByBatteryFloor = true
+                powerKeeper.pauseAssertions(eventDescription: L10n.format("Battery below %d%% - assertions released.", batteryFloorPercent))
+                powerWarning = L10n.format("Battery below %d%% - assertions released.", batteryFloorPercent)
+                statusMessage = L10n.format("Battery below %d%% - sleep protection paused to save battery.", batteryFloorPercent)
+                setTemporaryMood(.resting, duration: 1.8, then: .resting)
+            }
+        } else {
+            if isPausedByBatteryFloor {
+                isPausedByBatteryFloor = false
+                powerWarning = nil
+                let res = powerKeeper.resumeAssertions(
+                    keepDisplayOn: keepDisplayAwake,
+                    eventDescription: L10n.text("Power restored: assertions resumed")
+                )
+                if res.success {
+                    statusMessage = L10n.text("Power restored - sleep protection resumed.")
+                    setMood(isBreakDue ? .breakReminder : .working)
+                } else {
+                    powerWarning = res.message
+                }
+            }
+        }
+    }
+
+    private func checkAwakeCap() {
+        guard isKeepingAwake,
+              continuousAwakeCapHours > 0,
+              !hasCapTripped,
+              let startUptime = holdStartUptime
+        else { return }
+
+        let elapsed = ProcessInfo.processInfo.systemUptime - startUptime
+        let capSeconds = Double(continuousAwakeCapHours * 3600)
+        if elapsed >= capSeconds {
+            hasCapTripped = true
+            let hours = continuousAwakeCapHours
+            stopKeepingAwake()
+            powerWarning = L10n.format("Awake cap reached (%d h).", hours)
+            statusMessage = L10n.format("Continuous awake cap reached (%d hours) - sleep protection stopped to save power.", hours)
+            powerKeeper.setLastPowerEvent(L10n.text("Awake cap reached: assertions released"))
+        }
+    }
+
+    private func startHeartbeatTimer() {
+        heartbeatTimer?.invalidate()
+        heartbeatTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.checkAwakeCap()
+                self.updateDiagnostics()
+            }
+        }
+    }
+
+    private func stopHeartbeatTimer() {
+        heartbeatTimer?.invalidate()
+        heartbeatTimer = nil
+    }
+
+    private func updateDiagnostics() {
+        let seconds = max(0, Int(ceil(powerKeeper.nextRearmDate?.timeIntervalSinceNow ?? 0)))
+        let powerSource = powerSourceMonitor.currentStatus
+        diagnostics = PowerDiagnostics(
+            systemAssertionID: powerKeeper.systemAssertionID,
+            displayAssertionID: powerKeeper.displayAssertionID,
+            isSystemActive: powerKeeper.isSystemAsserted,
+            isDisplayActive: powerKeeper.isDisplayAsserted,
+            secondsUntilRearm: (powerKeeper.isSystemAsserted || powerKeeper.isDisplayAsserted) ? seconds : 0,
+            batteryDescription: powerSource.descriptionText,
+            lastPowerEvent: powerKeeper.lastPowerEvent
+        )
     }
 
     private func updateCountdown() {
@@ -622,15 +815,20 @@ final class SweetNoSleepModel: ObservableObject {
                 : L10n.text("Timer finished - manual sleep protection is still on")
         } else {
             powerKeeper.end()
+            stopHeartbeatTimer()
             breakTimer?.invalidate()
             breakTimer = nil
             isBreakDue = false
             isKeepingAwake = false
+            holdStartUptime = nil
+            hasCapTripped = false
+            isPausedByBatteryFloor = false
             powerWarning = nil
             statusMessage = L10n.text("Goal reached - the session is complete")
         }
 
         setTemporaryMood(.celebrating, duration: 2.2, then: .idle)
+        updateDiagnostics()
 
         guard shouldSleepImmediately, !otherWorkRemains else { return }
         // Let the release of our assertions reach power management first.
@@ -649,6 +847,7 @@ final class SweetNoSleepModel: ObservableObject {
             guard let error = self.powerKeeper.requestImmediateSleep() else { return }
             self.statusMessage = L10n.format("Session ended, but sleep did not start: %@", error)
             self.powerWarning = error
+            self.updateDiagnostics()
         }
     }
 
@@ -750,6 +949,8 @@ final class SweetNoSleepModel: ObservableObject {
         static let skin = "pet.skin"
         static let petSize = "pet.size"
         static let keepDisplayAwake = "power.keepDisplayAwake"
+        static let batteryFloorPercent = "power.batteryFloorPercent"
+        static let continuousAwakeCapHours = "power.continuousAwakeCapHours"
         static let completionAction = "session.completionAction"
         static let resumeOnLaunch = "power.resumeOnLaunch"
         static let agentBridgeEnabled = "agentBridge.enabled"

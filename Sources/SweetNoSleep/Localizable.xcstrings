@@ -1,6 +1,16 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "%@ (display)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ (display)"
+          }
+        }
+      }
+    },
     "%@ - other sessions are still protected": {
       "localizations": {
         "en": {
@@ -31,12 +41,92 @@
         }
       }
     },
+    "%d hours": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d hours"
+          }
+        }
+      }
+    },
     "%d min": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "%d min"
+          }
+        }
+      }
+    },
+    "%d s": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d s"
+          }
+        }
+      }
+    },
+    "%d%% (Charging)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d%% (Charging)"
+          }
+        }
+      }
+    },
+    "%d%% (On battery)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d%% (On battery)"
+          }
+        }
+      }
+    },
+    "%d%% (Power Adapter)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d%% (Power Adapter)"
+          }
+        }
+      }
+    },
+    "%d%% (pause below)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d%% (pause below)"
+          }
+        }
+      }
+    },
+    "0% (Disabled)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "0% (Disabled)"
+          }
+        }
+      }
+    },
+    "12 hours": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "12 hours"
           }
         }
       }
@@ -81,12 +171,32 @@
         }
       }
     },
+    "50%": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "50%"
+          }
+        }
+      }
+    },
     "A %d-minute session": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "A %d-minute session"
+          }
+        }
+      }
+    },
+    "AC Power (No battery)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AC Power (No battery)"
           }
         }
       }
@@ -117,6 +227,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "About every %d sec"
+          }
+        }
+      }
+    },
+    "Active (ID: %u)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active (ID: %u)"
           }
         }
       }
@@ -231,6 +351,116 @@
         }
       }
     },
+    "Assertions active (120s timeout)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assertions active (120s timeout)"
+          }
+        }
+      }
+    },
+    "Assertions re-armed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assertions re-armed"
+          }
+        }
+      }
+    },
+    "Assertions released": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assertions released"
+          }
+        }
+      }
+    },
+    "Automatically release assertions after continuous awake time to prevent battery drain from forgotten sessions.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatically release assertions after continuous awake time to prevent battery drain from forgotten sessions."
+          }
+        }
+      }
+    },
+    "Awake cap reached (%d h).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Awake cap reached (%d h)."
+          }
+        }
+      }
+    },
+    "Awake cap reached: assertions released": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Awake cap reached: assertions released"
+          }
+        }
+      }
+    },
+    "Battery below %d%% - assertions released.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Battery below %d%% - assertions released."
+          }
+        }
+      }
+    },
+    "Battery below %d%% - sleep protection paused to save battery.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Battery below %d%% - sleep protection paused to save battery."
+          }
+        }
+      }
+    },
+    "Battery is below %d%% - plug in to enable sleep protection.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Battery is below %d%% - plug in to enable sleep protection."
+          }
+        }
+      }
+    },
+    "Battery safety floor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Battery safety floor"
+          }
+        }
+      }
+    },
+    "Battery safety floor percentage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Battery safety floor percentage"
+          }
+        }
+      }
+    },
     "Behavior": {
       "localizations": {
         "en": {
@@ -331,6 +561,36 @@
         }
       }
     },
+    "Continuous awake cap": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuous awake cap"
+          }
+        }
+      }
+    },
+    "Continuous awake cap in hours": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuous awake cap in hours"
+          }
+        }
+      }
+    },
+    "Continuous awake cap reached (%d hours) - sleep protection stopped to save power.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuous awake cap reached (%d hours) - sleep protection stopped to save power."
+          }
+        }
+      }
+    },
     "Could not connect to the macOS power management service.": {
       "localizations": {
         "en": {
@@ -371,12 +631,32 @@
         }
       }
     },
+    "Could not restore display sleep protection during re-arm (error %d).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not restore display sleep protection during re-arm (error %d)."
+          }
+        }
+      }
+    },
     "Could not restore idle-sleep protection after wake (error %d).": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Could not restore idle-sleep protection after wake (error %d)."
+          }
+        }
+      }
+    },
+    "Could not restore system sleep protection during re-arm (error %d).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not restore system sleep protection during re-arm (error %d)."
           }
         }
       }
@@ -451,12 +731,62 @@
         }
       }
     },
+    "Desktops and plugged-in MacBooks are not affected.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desktops and plugged-in MacBooks are not affected."
+          }
+        }
+      }
+    },
+    "Disabled": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disabled"
+          }
+        }
+      }
+    },
+    "Disabled (0%)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disabled (0%)"
+          }
+        }
+      }
+    },
+    "Disabled (0h)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disabled (0h)"
+          }
+        }
+      }
+    },
     "Display and system": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Display and system"
+          }
+        }
+      }
+    },
+    "Display assertion": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Display assertion"
           }
         }
       }
@@ -631,12 +961,32 @@
         }
       }
     },
+    "Hold diagnostics": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hold diagnostics"
+          }
+        }
+      }
+    },
     "I understand - start session": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "I understand - start session"
+          }
+        }
+      }
+    },
+    "Inactive": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inactive"
           }
         }
       }
@@ -821,6 +1171,16 @@
         }
       }
     },
+    "Last power event": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last power event"
+          }
+        }
+      }
+    },
     "Launch Sweet No Sleep at login": {
       "localizations": {
         "en": {
@@ -857,6 +1217,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Leave this off if you do not want to use battery after a restart."
+          }
+        }
+      }
+    },
+    "Live status of power assertions, battery polling, and kernel timers.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live status of power assertions, battery polling, and kernel timers."
           }
         }
       }
@@ -901,12 +1271,32 @@
         }
       }
     },
+    "Next re-arm": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next re-arm"
+          }
+        }
+      }
+    },
     "Nice break - I'll gently remind you again in %d min": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Nice break - I'll gently remind you again in %d min"
+          }
+        }
+      }
+    },
+    "None": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None"
           }
         }
       }
@@ -981,6 +1371,16 @@
         }
       }
     },
+    "Pause sleep protection when battery charge drops below a safe level. Protection resumes when plugged in.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause sleep protection when battery charge drops below a safe level. Protection resumes when plugged in."
+          }
+        }
+      }
+    },
     "Pet": {
       "localizations": {
         "en": {
@@ -1027,6 +1427,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Power and startup"
+          }
+        }
+      }
+    },
+    "Power restored - sleep protection resumed.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Power restored - sleep protection resumed."
+          }
+        }
+      }
+    },
+    "Power restored: assertions resumed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Power restored: assertions resumed"
+          }
+        }
+      }
+    },
+    "Power source": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Power source"
           }
         }
       }
@@ -1331,12 +1761,72 @@
         }
       }
     },
+    "Sweet No Sleep - AI agent work in progress": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sweet No Sleep - AI agent work in progress"
+          }
+        }
+      }
+    },
+    "Sweet No Sleep - focus session (%d min)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sweet No Sleep - focus session (%d min)"
+          }
+        }
+      }
+    },
+    "Sweet No Sleep - manual keep-awake mode": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sweet No Sleep - manual keep-awake mode"
+          }
+        }
+      }
+    },
+    "System assertion": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System assertion"
+          }
+        }
+      }
+    },
     "System idle sleep is prevented": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "System idle sleep is prevented"
+          }
+        }
+      }
+    },
+    "System will sleep: assertions released": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System will sleep: assertions released"
+          }
+        }
+      }
+    },
+    "System woke: assertions restored": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System woke: assertions restored"
           }
         }
       }
@@ -1487,6 +1977,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "User folder: ~/Library/Application Support/SweetNoSleep/PetSkins - place one skin.json in each skin folder."
+          }
+        }
+      }
+    },
+    "Uses monotonic system uptime; pauses while the Mac is asleep.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uses monotonic system uptime; pauses while the Mac is asleep."
           }
         }
       }
