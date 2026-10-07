@@ -11,6 +11,12 @@ printf 'Shell syntax checks passed.\n'
 
 python3 -m json.tool Sources/SweetNoSleep/Localizable.xcstrings >/dev/null
 python3 Scripts/validate-localization.py
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  Scripts/render-media.sh
+  python3 Scripts/validate-media.py --check-rendered
+else
+  python3 Scripts/validate-media.py
+fi
 python3 Scripts/validate-skins.py
 Scripts/test-agent-hooks.sh
 

@@ -71,12 +71,12 @@
         }
       }
     },
-    "90 pt - compact": {
+    "45 pt - compact": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "90 pt - compact"
+            "value": "45 pt - compact"
           }
         }
       }
@@ -111,12 +111,32 @@
         }
       }
     },
+    "About every %d sec": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About every %d sec"
+          }
+        }
+      }
+    },
     "Active now: %d": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Active now: %d"
+          }
+        }
+      }
+    },
+    "Adjust how Kiwi moves and which playful moments appear during an awake session.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adjust how Kiwi moves and which playful moments appear during an awake session."
           }
         }
       }
@@ -371,12 +391,52 @@
         }
       }
     },
+    "Curious": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Curious"
+          }
+        }
+      }
+    },
+    "Curious mood weight": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Curious mood weight"
+          }
+        }
+      }
+    },
     "Current size: %d pt - changes apply immediately on the desktop.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Current size: %d pt - changes apply immediately on the desktop."
+          }
+        }
+      }
+    },
+    "Dancing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dancing"
+          }
+        }
+      }
+    },
+    "Dancing mood weight": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dancing mood weight"
           }
         }
       }
@@ -721,26 +781,6 @@
         }
       }
     },
-    "Kiwi's shift is over - your Mac is back to its normal sleep settings": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kiwi's shift is over - your Mac is back to its normal sleep settings"
-          }
-        }
-      }
-    },
-    "Kiwi, the Sweet No Sleep pet": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kiwi, the Sweet No Sleep pet"
-          }
-        }
-      }
-    },
     "Kiwi's eyes follow the pointer automatically.": {
       "localizations": {
         "en": {
@@ -757,6 +797,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kiwi's personality"
+          }
+        }
+      }
+    },
+    "Kiwi's shift is over - your Mac is back to its normal sleep settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiwi's shift is over - your Mac is back to its normal sleep settings"
+          }
+        }
+      }
+    },
+    "Kiwi, the Sweet No Sleep pet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiwi, the Sweet No Sleep pet"
           }
         }
       }
@@ -827,6 +887,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mac is protected from idle sleep"
+          }
+        }
+      }
+    },
+    "Mood weights - higher values make a mood more likely; 0 turns it off.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mood weights - higher values make a mood more likely; 0 turns it off."
           }
         }
       }
@@ -927,6 +997,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pet size"
+          }
+        }
+      }
+    },
+    "Playful moment interval": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Playful moment interval"
           }
         }
       }
@@ -1231,6 +1311,26 @@
         }
       }
     },
+    "Stretching": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stretching"
+          }
+        }
+      }
+    },
+    "Stretching mood weight": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stretching mood weight"
+          }
+        }
+      }
+    },
     "System idle sleep is prevented": {
       "localizations": {
         "en": {
@@ -1287,6 +1387,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "The bridge is off by default. Only trust installed hooks: any local process that can open the URL scheme can send an event. Without a heartbeat, a session expires after 3 minutes. Agent events never trigger immediate sleep."
+          }
+        }
+      }
+    },
+    "The exact delay varies slightly within 60 to 120 seconds.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The exact delay varies slightly within 60 to 120 seconds."
           }
         }
       }
@@ -1477,116 +1587,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "macOS rejected the sleep request (error %d)."
-          }
-        }
-      }
-    },
-    "About every %d sec": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "About every %d sec"
-          }
-        }
-      }
-    },
-    "Adjust how Kiwi moves and which playful moments appear during an awake session.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adjust how Kiwi moves and which playful moments appear during an awake session."
-          }
-        }
-      }
-    },
-    "Curious": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Curious"
-          }
-        }
-      }
-    },
-    "Curious mood weight": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Curious mood weight"
-          }
-        }
-      }
-    },
-    "Dancing": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dancing"
-          }
-        }
-      }
-    },
-    "Dancing mood weight": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dancing mood weight"
-          }
-        }
-      }
-    },
-    "Mood weights - higher values make a mood more likely; 0 turns it off.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mood weights - higher values make a mood more likely; 0 turns it off."
-          }
-        }
-      }
-    },
-    "Playful moment interval": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Playful moment interval"
-          }
-        }
-      }
-    },
-    "Stretching": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stretching"
-          }
-        }
-      }
-    },
-    "Stretching mood weight": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stretching mood weight"
-          }
-        }
-      }
-    },
-    "The exact delay varies slightly within 60 to 120 seconds.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The exact delay varies slightly within 60 to 120 seconds."
           }
         }
       }

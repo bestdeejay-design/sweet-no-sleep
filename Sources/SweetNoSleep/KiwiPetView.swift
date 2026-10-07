@@ -159,60 +159,6 @@ struct KiwiPetView: View {
 
     @State private var isDragging = false
     @State private var trackedWindow: NSWindow?
-    @State private var celebrationStartedAt: Date?
-
-    private static let celebrationEffectWindow: TimeInterval = 2.0
-    // Dancing moments last 3.4–5.2 seconds; use their midpoint for the FX envelope.
-    private static let dancingEffectWindow: TimeInterval = 4.3
-
-    private static let celebrationLeaves: [(
-        x: CGFloat, y: CGFloat, directionX: CGFloat, directionY: CGFloat, size: CGFloat,
-        phase: Double, xSpeed: Double, ySpeed: Double, swaySpeed: Double
-    )] = [
-        (-0.78, -0.25, -0.27, -0.46, 0.21, 0.2, 0.90, 0.72, 1.20),
-        (0.78, -0.21, 0.27, -0.47, 0.22, 1.4, 0.82, 0.96, 1.05),
-        (-0.97, 0.06, -0.34, -0.22, 0.20, 2.3, 0.71, 1.10, 1.28),
-        (0.97, 0.13, 0.34, -0.21, 0.22, 3.2, 1.00, 0.78, 0.91),
-        (-0.78, -0.67, -0.19, -0.29, 0.21, 4.0, 1.10, 0.85, 1.30),
-        (0.75, -0.69, 0.20, -0.30, 0.23, 5.0, 0.88, 1.18, 0.98)
-    ]
-
-    private static let moonDustSparks: [(
-        x: CGFloat, y: CGFloat, scale: CGFloat, phase: Double, xSpeed: Double, ySpeed: Double
-    )] = [
-        (-1.08, -0.46, 0.065, 0.1, 0.82, 0.63),
-        (-0.74, -0.75, 0.052, 0.8, 0.71, 0.92),
-        (-0.22, -0.84, 0.062, 1.5, 0.93, 0.72),
-        (0.30, -0.79, 0.055, 2.3, 0.68, 1.08),
-        (0.73, -0.74, 0.067, 3.1, 1.06, 0.77),
-        (1.15, -0.84, 0.055, 3.8, 0.78, 1.14),
-        (1.17, 0.05, 0.070, 4.5, 0.91, 0.69),
-        (0.82, 0.52, 0.055, 5.2, 0.74, 1.02),
-        (0.24, 0.80, 0.064, 5.9, 1.12, 0.81),
-        (-0.28, 0.84, 0.055, 6.6, 0.79, 0.96),
-        (-0.80, 0.51, 0.070, 7.3, 0.98, 0.73),
-        (-1.16, 0.06, 0.060, 8.0, 0.72, 1.11)
-    ]
-
-    private static let berryHearts: [(x: CGFloat, y: CGFloat, size: CGFloat, phase: Double)] = [
-        (-0.98, -0.42, 0.13, 0.2),
-        (0.98, -0.55, 0.16, 2.3),
-        (-0.89, 0.24, 0.10, 4.4)
-    ]
-
-    private static let starburstStars: [(x: CGFloat, y: CGFloat, size: CGFloat, phase: Double)] = [
-        (-1.00, -0.48, 0.11, 0.1),
-        (0.98, -0.53, 0.14, 1.7),
-        (-0.94, 0.25, 0.085, 3.4),
-        (0.88, 0.28, 0.09, 5.1)
-    ]
-
-    private static let celebrationPlusSparkles: [(x: CGFloat, y: CGFloat, phase: Double)] = [
-        (-1.18, -0.78, 0.3),
-        (1.15, -0.75, 1.9),
-        (-1.17, 0.24, 3.5),
-        (1.18, 0.30, 5.1)
-    ]
 
     private var renderedSize: CGFloat {
         sizeOverride ?? CGFloat(model.petSize)
@@ -224,12 +170,11 @@ struct KiwiPetView: View {
     var body: some View {
         TimelineView(
             .animation(
-                minimumInterval: reduceMotion ? 0.12 : 1.0 / 60.0,
+                minimumInterval: reduceMotion ? 0.12 : 1.0 / 24.0,
                 paused: !model.isPetVisible
             )
         ) { timeline in
             Canvas { context, size in
-                let effectProgress = currentCelebrationProgress(at: timeline.date)
                 Self.drawPet(
                     in: &context,
                     size: size,
@@ -237,20 +182,12 @@ struct KiwiPetView: View {
                     mood: model.mood,
                     palette: .palette(for: model.activeSkin),
                     gaze: tracksCursor ? cursorGaze(canvasSize: canvasSize, topInset: model.isBreakDue ? PetBreakReminderBubble.height : 0) : .zero,
-                    reducedMotion: reduceMotion,
-                    celebrationProgress: effectProgress
+                    reducedMotion: reduceMotion
                 )
             }
             .frame(width: canvasSize, height: canvasSize)
         }
         .frame(width: canvasSize, height: canvasSize)
-        .onChange(of: model.mood, initial: true) { _, mood in
-            if mood == .celebrating || mood == .dancing {
-                celebrationStartedAt = Date()
-            } else {
-                celebrationStartedAt = nil
-            }
-        }
         .background {
             if tracksCursor {
                 WindowAccessor(window: $trackedWindow)
@@ -267,14 +204,6 @@ struct KiwiPetView: View {
         .accessibilityHint(allowsDragging
             ? L10n.text("Click to say hello, or drag the pet to move it.")
             : L10n.text("Click to say hello."))
-    }
-
-    private func currentCelebrationProgress(at date: Date) -> Double {
-        guard let celebrationStartedAt else { return 0 }
-        let duration = model.mood == .dancing
-            ? Self.dancingEffectWindow
-            : Self.celebrationEffectWindow
-        return min(max(date.timeIntervalSince(celebrationStartedAt) / duration, 0), 1)
     }
 
     private func cursorGaze(canvasSize: CGFloat, topInset: CGFloat) -> CGPoint {
@@ -316,8 +245,7 @@ struct KiwiPetView: View {
         mood: KiwiMood,
         palette: PetPalette,
         gaze: CGPoint,
-        reducedMotion: Bool,
-        celebrationProgress: Double
+        reducedMotion: Bool
     ) {
         let radius = min(size.width, size.height) * 0.335
         let center = CGPoint(x: size.width * 0.50, y: size.height * 0.55)
@@ -333,8 +261,6 @@ struct KiwiPetView: View {
         let bodyCenter = CGPoint(x: center.x + danceSway, y: center.y + bob - danceBounce)
         let headBob = CGPoint(x: headCenter.x + danceSway * 0.32, y: headCenter.y + bob - danceBounce * 0.42 - stretchLift)
         let posedBreath = breath + (isStretching ? 0.045 : 0)
-        let effectEnvelope = reducedMotion ? CGFloat(0.8) : celebrationOpacityEnvelope(progress: celebrationProgress)
-        let isCelebrating = mood == .celebrating || mood == .dancing
 
         if mood == .working || mood == .celebrating || mood == .dancing || mood == .breakReminder {
             let haloRect = CGRect(
@@ -344,25 +270,26 @@ struct KiwiPetView: View {
                 height: radius * 2.32
             )
             let haloOpacity = mood == .celebrating || mood == .dancing ? 0.15 : (mood == .breakReminder ? 0.13 : 0.08)
-            let envelope = isCelebrating ? Double(effectEnvelope) : 1
-            context.fill(Path(ellipseIn: haloRect), with: .color(palette.accent.opacity(haloOpacity * envelope)))
-            if isCelebrating {
-                drawCelebrationHaloRing(
-                    in: &context,
-                    center: center,
-                    radius: radius,
-                    time: time,
-                    palette: palette,
-                    envelope: effectEnvelope,
-                    reducedMotion: reducedMotion
-                )
-            }
+            context.fill(Path(ellipseIn: haloRect), with: .color(palette.accent.opacity(haloOpacity)))
         }
 
         drawTail(in: &context, center: bodyCenter, radius: radius, time: time, palette: palette, mood: mood, reducedMotion: reducedMotion)
         drawBody(in: &context, center: bodyCenter, radius: radius, palette: palette, breath: posedBreath)
+        // Gentle head tilt: subtle rotation of the head/face group during calm moods.
+        let headTilt = Self.headTiltAngle(time: time, mood: mood, reducedMotion: reducedMotion)
+        if headTilt != 0 {
+            context.concatenate(CGAffineTransform(translationX: headBob.x, y: headBob.y))
+            context.concatenate(CGAffineTransform(rotationAngle: headTilt))
+            context.concatenate(CGAffineTransform(translationX: -headBob.x, y: -headBob.y))
+        }
         drawHead(in: &context, center: headBob, radius: radius, palette: palette, breath: posedBreath)
         drawFace(in: &context, center: headBob, radius: radius, time: time, palette: palette, mood: mood, gaze: gaze, reducedMotion: reducedMotion)
+        drawCheekHeart(in: &context, headCenter: headBob, radius: radius, time: time, palette: palette, mood: mood, reducedMotion: reducedMotion)
+        if headTilt != 0 {
+            context.concatenate(CGAffineTransform(translationX: headBob.x, y: headBob.y))
+            context.concatenate(CGAffineTransform(rotationAngle: -headTilt))
+            context.concatenate(CGAffineTransform(translationX: -headBob.x, y: -headBob.y))
+        }
         drawPaws(in: &context, center: bodyCenter, radius: radius, palette: palette, time: time, mood: mood, reducedMotion: reducedMotion)
         drawKiwiBadge(in: &context, center: CGPoint(x: center.x + danceSway * 0.45, y: center.y + radius * 0.40 + bob - danceBounce), radius: radius, palette: palette, time: time, mood: mood, reducedMotion: reducedMotion)
 
@@ -374,7 +301,6 @@ struct KiwiPetView: View {
                 time: time,
                 palette: palette,
                 effect: profile.celebrationEffect,
-                envelope: effectEnvelope,
                 reducedMotion: reducedMotion
             )
         }
@@ -573,42 +499,75 @@ struct KiwiPetView: View {
         context.fill(Path(ellipseIn: tipDot), with: .color(palette.furLight))
     }
 
-    private static func celebrationOpacityEnvelope(progress: Double) -> CGFloat {
-        let progress = min(max(progress, 0), 1)
-        let easeIn = smoothstep(progress / 0.20)
-        let easeOut = smoothstep((1 - progress) / 0.40)
-        return CGFloat(min(easeIn, easeOut) * 0.90)
+    // Gentle head tilt roughly every 18s during calm moods (idle/working).
+    // Active for 2s per cycle with smoothstep ease in/out, alternating direction.
+    // Frozen straight when reduced motion is on.
+    private static func headTiltAngle(time: Double, mood: KiwiMood, reducedMotion: Bool) -> CGFloat {
+        guard !reducedMotion, mood == .idle || mood == .working else { return 0 }
+        let period = 18.0
+        let duration = 2.0
+        let phase = time.truncatingRemainder(dividingBy: period)
+        guard phase >= 0, phase < duration else { return 0 }
+        let t = phase / duration // 0...1
+        func smoothstep(_ a: Double, _ b: Double, _ x: Double) -> Double {
+            let clamped = min(max((x - a) / (b - a), 0), 1)
+            return clamped * clamped * (3 - 2 * clamped)
+        }
+        let envelope = smoothstep(0, 0.4, t) * (1 - smoothstep(0.6, 1.0, t))
+        let cycle = Int(floor(time / period))
+        let direction: Double = cycle % 2 == 0 ? 1 : -1
+        let maxAngle = 7.0 * Double.pi / 180.0 // subtle, up to ~7 degrees
+        return CGFloat(direction * maxAngle * envelope)
     }
 
-    private static func smoothstep(_ value: Double) -> Double {
-        let value = min(max(value, 0), 1)
-        return value * value * (3 - 2 * value)
-    }
-
-    private static func drawCelebrationHaloRing(
+    // Small soft heart in cheek color during celebrating, with light pulsation.
+    // No celebration progress is plumbed into drawPet, so opacity is a steady
+    // soft value; reduced motion renders a static heart.
+    private static func drawCheekHeart(
         in context: inout GraphicsContext,
-        center: CGPoint,
+        headCenter: CGPoint,
         radius: CGFloat,
         time: Double,
         palette: PetPalette,
-        envelope: CGFloat,
+        mood: KiwiMood,
         reducedMotion: Bool
     ) {
-        let pulse = reducedMotion ? 0 : sin(time * 2.2)
-        let radiusScale = CGFloat(1 + pulse * 0.06)
-        let ringCenter = CGPoint(x: center.x, y: center.y + radius * 0.18)
-        let ringRect = CGRect(
-            x: ringCenter.x - radius * 1.16 * radiusScale,
-            y: ringCenter.y - radius * 1.16 * radiusScale,
-            width: radius * 2.32 * radiusScale,
-            height: radius * 2.32 * radiusScale
+        guard mood == .celebrating else { return }
+        let pulse = reducedMotion ? 1.0 : 1.0 + 0.08 * sin(time * 6.0)
+        let heartSize = radius * 0.16 * CGFloat(pulse)
+        let heartCenter = CGPoint(x: headCenter.x + radius * 0.52, y: headCenter.y + radius * 0.33)
+        context.fill(heartPath(center: heartCenter, size: heartSize), with: .color(palette.cheek.opacity(0.85)))
+    }
+
+    // Master opacity envelope over the ~2.0s celebration window (poke duration upstream).
+    // Ease-in over first 20%, full hold, ease-out over last 40%. Peak ~0.9.
+    // Reduced motion freezes at 0.8 with no drift.
+    private static func celebrationAlpha(time: Double, reducedMotion: Bool) -> CGFloat {
+        if reducedMotion { return 0.8 }
+        let window = 2.0
+        var progress = (time.truncatingRemainder(dividingBy: window)) / window
+        if progress < 0 { progress += 1 }
+        func smoothstep(_ edge0: Double, _ edge1: Double, _ x: Double) -> Double {
+            let clamped = min(max((x - edge0) / (edge1 - edge0), 0), 1)
+            return clamped * clamped * (3 - 2 * clamped)
+        }
+        let fadeIn = smoothstep(0, 0.2, progress)
+        let fadeOut = 1 - smoothstep(0.6, 1.0, progress)
+        return CGFloat(0.9 * fadeIn * fadeOut)
+    }
+
+    // Plus-shaped sparkle path (rounded cross), filled for blink sparkles.
+    private static func plusSparkPath(center: CGPoint, arm: CGFloat, thickness: CGFloat) -> Path {
+        var path = Path()
+        path.addRoundedRect(
+            in: CGRect(x: center.x - arm, y: center.y - thickness / 2, width: arm * 2, height: thickness),
+            cornerSize: CGSize(width: thickness / 2, height: thickness / 2)
         )
-        let opacity = 0.16 + pulse * 0.06
-        context.stroke(
-            Path(ellipseIn: ringRect),
-            with: .color(palette.accent.opacity(opacity * Double(envelope))),
-            style: StrokeStyle(lineWidth: max(radius * 0.035, 1.2))
+        path.addRoundedRect(
+            in: CGRect(x: center.x - thickness / 2, y: center.y - arm, width: thickness, height: arm * 2),
+            cornerSize: CGSize(width: thickness / 2, height: thickness / 2)
         )
+        return path
     }
 
     private static func drawCelebrationEffect(
@@ -618,115 +577,116 @@ struct KiwiPetView: View {
         time: Double,
         palette: PetPalette,
         effect: PetCelebrationEffect,
-        envelope: CGFloat,
         reducedMotion: Bool
     ) {
+        // Global envelope: ultra-smooth fades across the celebration window.
+        let alpha = celebrationAlpha(time: time, reducedMotion: reducedMotion)
+        guard alpha > 0.01 else { return }
+        // Normalized fade factor (1.0 at envelope peak) so base opacities keep
+        // their designed visibility while still fading smoothly in/out.
+        let fade = alpha / 0.9
+
+        // Pulsating halo ring shared by all celebration effects:
+        // radius breathes +-6%, opacity sweeps 0.10-0.22.
+        let haloPulse: CGFloat = reducedMotion ? 1.0 : 1.0 + 0.06 * CGFloat(sin(time * 5.0))
+        let haloBase: CGFloat = reducedMotion ? 0.16 : 0.10 + 0.12 * CGFloat(0.5 + 0.5 * sin(time * 5.0))
+        let haloRect = CGRect(
+            x: center.x - radius * 1.16 * haloPulse,
+            y: center.y - radius * 0.98 * haloPulse,
+            width: radius * 2.32 * haloPulse,
+            height: radius * 2.32 * haloPulse
+        )
+        context.stroke(
+            Path(ellipseIn: haloRect),
+            with: .color(palette.accent.opacity(min(haloBase * fade, 1.0))),
+            style: StrokeStyle(lineWidth: max(radius * 0.05, 1), lineCap: .round)
+        )
+
+        // Plus-shaped blink sparkles shared by all celebration effects (0 -> 1 -> 0).
+        let blinkers: [(CGFloat, CGFloat, Double)] = [
+            (-1.12, -0.78, 0.0), (1.12, -0.82, 2.1), (-1.06, 0.44, 4.2), (1.04, 0.48, 1.05)
+        ]
+        for (x, y, phase) in blinkers {
+            let point = CGPoint(x: center.x + x * radius, y: center.y + y * radius)
+            let blink: CGFloat = reducedMotion ? 0.7 : CGFloat(pow(max(0, sin(time * 3.0 + phase)), 2.0))
+            guard blink > 0.02 else { continue }
+            let arm = radius * 0.09 * (reducedMotion ? 1.0 : (0.85 + 0.15 * blink))
+            context.fill(
+                plusSparkPath(center: point, arm: arm, thickness: max(arm * 0.38, 0.8)),
+                with: .color(palette.furLight.opacity(min(blink * fade, 1.0)))
+            )
+        }
+
+        let twinkle = reducedMotion ? 0.86 : CGFloat(0.72 + (sin(time * 7) + 1) * 0.14)
         switch effect {
         case .leaves:
-            for leaf in Self.celebrationLeaves {
-                let driftX = reducedMotion ? 0 : CGFloat(sin(time * leaf.xSpeed + leaf.phase)) * radius * 0.025
-                let driftY = reducedMotion ? 0 : CGFloat(cos(time * leaf.ySpeed + leaf.phase)) * radius * 0.030
-                let sway = reducedMotion ? 0 : CGFloat(sin(time * leaf.swaySpeed + leaf.phase)) * radius * 0.025
-                let swayY = reducedMotion ? 0 : CGFloat(cos(time * leaf.swaySpeed + leaf.phase)) * radius * 0.012
-                let from = CGPoint(x: center.x + leaf.x * radius + driftX, y: center.y + leaf.y * radius + driftY)
-                let to = CGPoint(
-                    x: from.x + leaf.directionX * radius + sway,
-                    y: from.y + leaf.directionY * radius + swayY
-                )
+            // 6 leaves at ~1.5-2x size, each with its own drift/twinkle phase.
+            let leaves: [(CGFloat, CGFloat, CGFloat, CGFloat, Double)] = [
+                (-0.84, -0.24, -0.19, -0.39, 0.0),
+                (0.82, -0.18, 0.20, -0.39, 1.1),
+                (-0.95, 0.30, -0.16, -0.34, 2.2),
+                (0.96, 0.32, 0.16, -0.34, 3.3),
+                (-0.45, -0.95, -0.10, -0.36, 4.4),
+                (0.48, -0.97, 0.10, -0.36, 5.3)
+            ]
+            let leafScales: [CGFloat] = [0.24, 0.26, 0.21, 0.22, 0.20, 0.23]
+            for (index, leaf) in leaves.enumerated() {
+                let (ax, ay, dx, dy, phase) = leaf
+                let drift: CGFloat = reducedMotion ? 0 : CGFloat(sin(time * 4 + phase)) * radius * 0.035
+                let from = CGPoint(x: center.x + ax * radius, y: center.y + ay * radius + drift)
+                let to = CGPoint(x: from.x + dx * radius, y: from.y + dy * radius + drift * 0.5)
+                let shimmer: CGFloat = reducedMotion ? 1.0 : 0.82 + 0.18 * CGFloat(0.5 + 0.5 * sin(time * 7 + phase))
                 drawLeaf(
                     in: &context,
                     from: from,
                     to: to,
-                    radius: radius * leaf.size,
-                    color: palette.accent,
-                    opacity: envelope
+                    radius: radius * leafScales[index] * (reducedMotion ? 1.0 : twinkle),
+                    color: palette.accent.opacity(min(0.92 * shimmer * fade, 1.0))
                 )
             }
         case .moonDust:
+            // Crescent at 1.5x plus 12 individually-phased sparks.
             let moonCenter = CGPoint(x: center.x + radius * 0.98, y: center.y - radius * 0.42)
+            let crescentRadius = radius * 0.17 * 1.5
+            let moonPulse: CGFloat = reducedMotion ? 1.0 : 1.0 + 0.05 * CGFloat(sin(time * 5.0 + 0.7))
             context.fill(
-                crescentPath(center: moonCenter, radius: radius * 0.255),
-                with: .color(palette.accent.opacity(0.92 * Double(envelope)))
+                crescentPath(center: moonCenter, radius: crescentRadius * moonPulse),
+                with: .color(palette.accent.opacity(min(0.92 * fade, 1.0)))
             )
-            for spark in Self.moonDustSparks {
-                let driftX = reducedMotion ? 0 : CGFloat(sin(time * spark.xSpeed + spark.phase)) * radius * 0.018
-                let driftY = reducedMotion ? 0 : CGFloat(cos(time * spark.ySpeed + spark.phase)) * radius * 0.022
-                let twinkle = reducedMotion
-                    ? CGFloat(0.84)
-                    : CGFloat(0.62 + 0.38 * (0.5 + 0.5 * sin(time * 3.2 + spark.phase)))
-                let point = CGPoint(x: center.x + spark.x * radius + driftX, y: center.y + spark.y * radius + driftY)
-                let sparkRadius = radius * spark.scale * twinkle
+            for i in 0..<12 {
+                let phase = Double(i) * 0.9
+                let angle = Double(i) * .pi * 2 / 12 + 0.3
+                let dist: CGFloat = reducedMotion ? radius * 0.38 : radius * (0.38 + 0.08 * CGFloat(sin(time * 2.5 + phase)))
+                let point = CGPoint(
+                    x: moonCenter.x + CGFloat(cos(angle)) * dist,
+                    y: moonCenter.y + CGFloat(sin(angle)) * dist
+                )
+                let flicker: CGFloat = reducedMotion ? 1.0 : 0.55 + 0.45 * CGFloat(0.5 + 0.5 * sin(time * 6.0 + phase * 1.7))
+                let scale: CGFloat = 0.055 + 0.03 * CGFloat(0.5 + 0.5 * sin(phase * 2.3))
                 context.fill(
-                    starPath(center: point, outerRadius: sparkRadius, innerRadius: sparkRadius * 0.30),
-                    with: .color(palette.furLight.opacity(Double(envelope * twinkle)))
+                    starPath(center: point, outerRadius: radius * scale * flicker, innerRadius: radius * scale * 0.30),
+                    with: .color(palette.furLight.opacity(min(0.95 * flicker * fade, 1.0)))
                 )
             }
         case .berryHearts:
-            for heart in Self.berryHearts {
-                let pulse = reducedMotion ? CGFloat(1) : CGFloat(1 + 0.10 * sin(time * 2.4 + heart.phase))
-                let driftX = reducedMotion ? 0 : CGFloat(sin(time * 0.82 + heart.phase)) * radius * 0.012
-                let driftY = reducedMotion ? 0 : CGFloat(sin(time * 1.25 + heart.phase)) * radius * 0.030
-                let point = CGPoint(x: center.x + heart.x * radius + driftX, y: center.y + heart.y * radius + driftY)
+            // Same heart shapes/positions; envelope fades + +-10% size pulsation.
+            let hearts: [(CGFloat, CGFloat, CGFloat, Double)] = [
+                (-0.98, -0.42, 0.13, 0.0), (0.98, -0.55, 0.16, 2.1), (-0.89, 0.24, 0.10, 4.2)
+            ]
+            for (x, y, scale, phase) in hearts {
+                let point = CGPoint(x: center.x + x * radius, y: center.y + y * radius)
+                let beat: CGFloat = reducedMotion ? 1.0 : 1.0 + 0.10 * CGFloat(sin(time * 6.0 + phase))
                 context.fill(
-                    heartPath(center: point, size: radius * heart.size * pulse),
-                    with: .color(palette.cheek.opacity(0.92 * Double(envelope)))
+                    heartPath(center: point, size: radius * scale * twinkle * beat),
+                    with: .color(palette.cheek.opacity(min(0.92 * fade, 1.0)))
                 )
             }
         case .starburst:
-            for star in Self.starburstStars {
-                let twinkle = reducedMotion
-                    ? CGFloat(0.84)
-                    : CGFloat(0.70 + 0.30 * (0.5 + 0.5 * sin(time * 3.2 + star.phase)))
-                let driftX = reducedMotion ? 0 : CGFloat(sin(time * 0.76 + star.phase)) * radius * 0.016
-                let driftY = reducedMotion ? 0 : CGFloat(cos(time * 0.88 + star.phase)) * radius * 0.018
-                let point = CGPoint(x: center.x + star.x * radius + driftX, y: center.y + star.y * radius + driftY)
-                let starRadius = radius * star.size * twinkle
-                context.fill(
-                    starPath(center: point, outerRadius: starRadius, innerRadius: starRadius * 0.32),
-                    with: .color(palette.accent.opacity(Double(envelope * twinkle)))
-                )
+            let stars: [(CGFloat, CGFloat, CGFloat)] = [(-1.00, -0.48, 0.11), (0.98, -0.53, 0.14), (-0.94, 0.25, 0.085), (0.88, 0.28, 0.09)]
+            for (x, y, scale) in stars {
+                let point = CGPoint(x: center.x + x * radius, y: center.y + y * radius)
+                context.fill(starPath(center: point, outerRadius: radius * scale * twinkle, innerRadius: radius * scale * 0.32), with: .color(palette.accent.opacity(min(0.95 * fade, 1.0))))
             }
-        }
-
-        drawCelebrationPlusSparkles(
-            in: &context,
-            center: center,
-            radius: radius,
-            time: time,
-            color: palette.furLight,
-            envelope: envelope,
-            reducedMotion: reducedMotion
-        )
-    }
-
-    private static func drawCelebrationPlusSparkles(
-        in context: inout GraphicsContext,
-        center: CGPoint,
-        radius: CGFloat,
-        time: Double,
-        color: Color,
-        envelope: CGFloat,
-        reducedMotion: Bool
-    ) {
-        for sparkle in celebrationPlusSparkles {
-            let pulse = reducedMotion
-                ? CGFloat(0.72)
-                : CGFloat(pow(max(sin(time * 2.6 + sparkle.phase), 0), 1.5))
-            guard pulse > 0.01 else { continue }
-            let driftX = reducedMotion ? 0 : CGFloat(sin(time * 0.72 + sparkle.phase)) * radius * 0.012
-            let driftY = reducedMotion ? 0 : CGFloat(cos(time * 0.86 + sparkle.phase)) * radius * 0.014
-            let point = CGPoint(x: center.x + sparkle.x * radius + driftX, y: center.y + sparkle.y * radius + driftY)
-            let plusRadius = radius * 0.09 * pulse
-            var plus = Path()
-            plus.move(to: CGPoint(x: point.x - plusRadius, y: point.y))
-            plus.addLine(to: CGPoint(x: point.x + plusRadius, y: point.y))
-            plus.move(to: CGPoint(x: point.x, y: point.y - plusRadius))
-            plus.addLine(to: CGPoint(x: point.x, y: point.y + plusRadius))
-            context.stroke(
-                plus,
-                with: .color(color.opacity(Double(envelope))),
-                style: StrokeStyle(lineWidth: max(radius * 0.026 * pulse, 0.8), lineCap: .round)
-            )
         }
     }
 
@@ -832,17 +792,17 @@ struct KiwiPetView: View {
         return path
     }
 
-    private static func drawLeaf(in context: inout GraphicsContext, from start: CGPoint, to end: CGPoint, radius: CGFloat, color: Color, opacity: CGFloat = 1) {
+    private static func drawLeaf(in context: inout GraphicsContext, from start: CGPoint, to end: CGPoint, radius: CGFloat, color: Color) {
         let midpoint = CGPoint(x: (start.x + end.x) / 2, y: (start.y + end.y) / 2)
         var leaf = Path()
         leaf.move(to: start)
         leaf.addQuadCurve(to: end, control: CGPoint(x: midpoint.x - radius * 0.42, y: midpoint.y))
         leaf.addQuadCurve(to: start, control: CGPoint(x: midpoint.x + radius * 0.42, y: midpoint.y + radius * 0.25))
-        context.fill(leaf, with: .color(color.opacity(Double(opacity))))
+        context.fill(leaf, with: .color(color))
         var vein = Path()
         vein.move(to: start)
         vein.addLine(to: end)
-        context.stroke(vein, with: .color(Color.white.opacity(0.38 * Double(opacity))), style: StrokeStyle(lineWidth: max(radius * 0.10, 0.6), lineCap: .round))
+        context.stroke(vein, with: .color(Color.white.opacity(0.38)), style: StrokeStyle(lineWidth: max(radius * 0.10, 0.6), lineCap: .round))
     }
 
     private static func starPath(center: CGPoint, outerRadius: CGFloat, innerRadius: CGFloat) -> Path {

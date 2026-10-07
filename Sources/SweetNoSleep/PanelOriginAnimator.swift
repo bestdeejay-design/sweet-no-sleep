@@ -20,7 +20,8 @@ enum PetPanelPosition {
 /// does not reliably animate `setFrameOrigin` for non-activating panels.
 @MainActor
 final class PanelOriginAnimator {
-    static let stepCount = 48
+    // SCRATCH: 60 Hz stepping (was 48 steps = 10 Hz judder). Upstream: parametrize + throttle stores.
+    static let stepCount = 288
     static let duration: TimeInterval = 4.8
 
     private weak var panel: NSWindow?

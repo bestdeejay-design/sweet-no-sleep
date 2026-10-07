@@ -146,11 +146,11 @@ private struct CompanionSettingsPane: View {
             }
 
             SettingsCard(title: L10n.text("Pet size"), subtitle: L10n.format("Current size: %d pt - changes apply immediately on the desktop.", Int(model.petSize))) {
-                Slider(value: sizeBinding, in: 90...170, step: 2)
+                Slider(value: sizeBinding, in: 45...170, step: 1)
                     .tint(Color(hex: 0x74C987))
                     .accessibilityLabel(L10n.text("Pet size"))
                 HStack {
-                    Text(L10n.text("90 pt - compact"))
+                    Text(L10n.text("45 pt - compact"))
                     Spacer()
                     Text(L10n.text("170 pt - large"))
                 }
@@ -260,21 +260,38 @@ private struct CompanionSettingsPane: View {
 
     private func skinChoice(_ skin: PetSkinDefinition) -> some View {
         let palette = PetPalette.palette(for: skin)
+        let preview = MediaAssets.skinPreview(for: skin.id)
         let isSelected = model.selectedSkinID == skin.id
         return Button {
             model.selectedSkinID = skin.id
         } label: {
-            VStack(alignment: .leading, spacing: 9) {
-                HStack(spacing: 5) {
-                    Circle().fill(palette.fur).frame(width: 15, height: 15)
-                    Circle().fill(palette.accent).frame(width: 15, height: 15)
-                    Spacer(minLength: 0)
+            VStack(alignment: .leading, spacing: 8) {
+                ZStack(alignment: .topTrailing) {
+                    Group {
+                        if let preview {
+                            Image(nsImage: preview)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                        } else {
+                            skinSwatchesPreview(palette)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(Color(hex: 0x5BAF70))
+                            .font(.system(size: 16, weight: .semibold))
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(.white, Color(hex: 0x5BAF70))
+                            .padding(7)
                     }
                 }
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(Color.primary.opacity(0.07), lineWidth: 1)
+                }
+
                 Text(skin.name)
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundStyle(.primary)
@@ -285,8 +302,8 @@ private struct CompanionSettingsPane: View {
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(11)
-            .frame(maxWidth: .infinity, minHeight: 82, alignment: .leading)
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 13, style: .continuous)
@@ -296,6 +313,31 @@ private struct CompanionSettingsPane: View {
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.format("Skin: %@", skin.name))
         .accessibilityAddTraits(isSelected ? .isSelected : .isButton)
+    }
+
+    private func skinSwatchesPreview(_ palette: PetPalette) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(palette.fur.opacity(0.22))
+            Circle()
+                .fill(palette.fur)
+                .frame(width: 58, height: 58)
+                .overlay {
+                    Image(systemName: "pawprint.fill")
+                        .font(.system(size: 23, weight: .medium))
+                        .foregroundStyle(palette.outline)
+                }
+            HStack(spacing: 7) {
+                Circle().fill(palette.fur).frame(width: 13, height: 13)
+                Circle().fill(palette.accent).frame(width: 13, height: 13)
+                Circle().fill(palette.cheek).frame(width: 13, height: 13)
+            }
+            .padding(6)
+            .background(.white.opacity(0.85), in: Capsule())
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+            .padding(7)
+        }
+        .aspectRatio(1.5, contentMode: .fit)
     }
 }
 

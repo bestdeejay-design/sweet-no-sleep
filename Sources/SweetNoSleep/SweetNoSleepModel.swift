@@ -1,3 +1,4 @@
+import AppKit
 import Combine
 import Foundation
 import SwiftUI
@@ -57,6 +58,10 @@ final class SweetNoSleepModel: ObservableObject {
     private var manualAwake = false
     private var agentLeases: [String: Date] = [:]
     private var agentLeaseTimer: Timer?
+    // Last system wake time. Taps within the grace window are ignored so a
+    // click meant to wake the Mac does not accidentally poke the pet.
+    private var lastSystemWakeDate: Date?
+    private var wakeObserver: NSObjectProtocol?
     private static let agentLeaseTimeout: TimeInterval = 180
 
     @Published private(set) var isKeepingAwake = false {
@@ -208,7 +213,7 @@ final class SweetNoSleepModel: ObservableObject {
         selectedSkinID = usableSkins.first(where: { $0.id == (savedSkinID ?? "") })?.id ?? usableSkins[0].id
         completionAction = savedAction
         selectedMinutes = min(max(savedMinutes, 15), 240)
-        petSize = min(max(savedSize, 90), 170)
+        petSize = min(max(savedSize, 45), 170)
         keepDisplayAwake = defaults.object(forKey: Key.keepDisplayAwake) as? Bool ?? false
         resumeKeepAwakeOnLaunch = defaults.object(forKey: Key.resumeOnLaunch) as? Bool ?? false
         agentBridgeEnabled = defaults.object(forKey: Key.agentBridgeEnabled) as? Bool ?? false
@@ -256,6 +261,16 @@ final class SweetNoSleepModel: ObservableObject {
         powerKeeper.onWarning = { [weak self] message in
             self?.powerWarning = message
             self?.statusMessage = message
+        }
+        // Track system wake to grant taps a short grace period afterwards.
+        wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.lastSystemWakeDate = Date()
+            }
         }
         schedulePlayfulMoment()
     }
@@ -475,6 +490,9 @@ final class SweetNoSleepModel: ObservableObject {
 
     func poke() {
         guard mood != .dragging else { return }
+        // Ignore taps right after system wake: the user was waking the Mac,
+        // not tapping the pet.
+        if let lastWake = lastSystemWakeDate, Date().timeIntervalSince(lastWake) < 3.0 { return }
         statusMessage = isKeepingAwake
             ? L10n.text("Kiwi is on duty and protecting this session.")
             : L10n.text("Should Kiwi get to work too - or take a break?")

@@ -116,6 +116,9 @@ final class PetPanelController {
     private var dragOrigin: NSPoint?
     private var wanderTimer: Timer?
     private var wanderAnimator: PanelOriginAnimator?
+    // Validity flag for the current two-leg stroll. Set false by cancellation
+    // so a leg-1 completion never starts leg 2 after the trip was killed.
+    private var wanderTripValid = false
     private var cancellables = Set<AnyCancellable>()
 
     init(model: SweetNoSleepModel) {
@@ -304,34 +307,141 @@ final class PetPanelController {
         var safeFrame = screen.visibleFrame.insetBy(dx: 18, dy: 18)
         safeFrame.size.width = max(safeFrame.width - panel.frame.width, 1)
         safeFrame.size.height = max(safeFrame.height - panel.frame.height, 1)
-        let target = NSPoint(
-            x: CGFloat.random(in: safeFrame.minX...safeFrame.maxX),
-            y: CGFloat.random(in: safeFrame.minY...safeFrame.maxY)
-        )
+        let start = panel.frame.origin
+        // Final target, kept away from the cursor so the pet never strolls under it.
+        let target = pickTargetAvoidingCursor(in: safeFrame)
+        // Curved path: midpoint pushed perpendicular to the trip, then away from cursor.
+        let midpoint = curvedMidpoint(from: start, to: target, in: safeFrame)
 
         guard model.beginWandering() else { return }
         cancelWanderAnimation()
+        wanderTripValid = true
         let animator = PanelOriginAnimator()
         wanderAnimator = animator
+        // Leg 1: start -> midpoint. Leg 2 starts from its completion handler.
         animator.animate(
             panel: panel,
-            to: target,
+            to: midpoint,
             onStep: { origin in
                 PetPanelPosition.store(origin)
             },
             completion: { [weak self] in
                 guard let self else { return }
-                self.wanderAnimator = nil
-                self.model.endWandering()
-                self.finishDragging()
-                if !self.model.isBreakDue {
-                    self.model.poke()
+                // Trip was cancelled mid-flight: drop it without closing the mood state twice.
+                guard self.wanderTripValid else { return }
+                guard let panel = self.panel, panel.isVisible else {
+                    self.wanderTripValid = false
+                    self.wanderAnimator = nil
+                    self.model.endWandering()
+                    return
                 }
+                // Leg 2: midpoint -> final target. Single endWandering/poke/finishDragging
+                // for the whole trip happens here.
+                animator.animate(
+                    panel: panel,
+                    to: target,
+                    onStep: { origin in
+                        PetPanelPosition.store(origin)
+                    },
+                    completion: { [weak self] in
+                        guard let self else { return }
+                        guard self.wanderTripValid else { return }
+                        self.wanderTripValid = false
+                        self.wanderAnimator = nil
+                        self.model.endWandering()
+                        self.finishDragging()
+                        if !self.model.isBreakDue {
+                            self.model.poke()
+                        }
+                    }
+                )
             }
         )
     }
 
+    // MARK: Curved stroll helpers
+
+    /// Picks a stroll target outside a 160pt cursor exclusion zone.
+    /// Resamples up to 8 times; falls back to the farthest candidate seen.
+    private func pickTargetAvoidingCursor(in safeFrame: NSRect) -> NSPoint {
+        // NSEvent.mouseLocation already uses bottom-left origin screen coords,
+        // directly comparable with visibleFrame-based points. No flip needed.
+        let cursor = NSEvent.mouseLocation
+        let exclusionRadius: CGFloat = 160
+        var farthest = randomPoint(in: safeFrame)
+        var farthestDistance = distance(from: farthest, to: cursor)
+        // Check the initial candidate first.
+        if farthestDistance >= exclusionRadius { return farthest }
+        for _ in 0..<8 {
+            let candidate = randomPoint(in: safeFrame)
+            let dist = distance(from: candidate, to: cursor)
+            if dist > farthestDistance {
+                farthest = candidate
+                farthestDistance = dist
+            }
+            if dist >= exclusionRadius { return candidate }
+        }
+        // All candidates were too close: take the farthest one.
+        return farthest
+    }
+
+    private func randomPoint(in safeFrame: NSRect) -> NSPoint {
+        NSPoint(
+            x: CGFloat.random(in: safeFrame.minX...safeFrame.maxX),
+            y: CGFloat.random(in: safeFrame.minY...safeFrame.maxY)
+        )
+    }
+
+    /// Returns the midpoint of (start, target) pushed perpendicular by a random
+    /// 25-40% of the trip length, then nudged away from the cursor. Clamped to safeFrame.
+    private func curvedMidpoint(from start: NSPoint, to target: NSPoint, in safeFrame: NSRect) -> NSPoint {
+        let center = NSPoint(x: (start.x + target.x) / 2, y: (start.y + target.y) / 2)
+        let dx = target.x - start.x
+        let dy = target.y - start.y
+        let length = hypot(dx, dy)
+        guard length >= 1 else { return clampToSafeFrame(center, in: safeFrame) }
+        // Perpendicular unit vector.
+        let perp = NSPoint(x: -dy / length, y: dx / length)
+        let magnitude = length * CGFloat.random(in: 0.25...0.40)
+        let sign: CGFloat = Bool.random() ? 1 : -1
+        var midpoint = NSPoint(
+            x: center.x + perp.x * magnitude * sign,
+            y: center.y + perp.y * magnitude * sign
+        )
+        // Push the midpoint away from the cursor so the curve bows around it.
+        let cursor = NSEvent.mouseLocation
+        let awayX = midpoint.x - cursor.x
+        let awayY = midpoint.y - cursor.y
+        let awayDist = hypot(awayX, awayY)
+        let keepAwayRadius: CGFloat = 200
+        if awayDist < keepAwayRadius {
+            if awayDist >= 1 {
+                let push = keepAwayRadius - awayDist
+                midpoint.x += (awayX / awayDist) * push
+                midpoint.y += (awayY / awayDist) * push
+            } else {
+                // Midpoint sits exactly on the cursor: reuse the perpendicular push.
+                midpoint.x += perp.x * 120 * sign
+                midpoint.y += perp.y * 120 * sign
+            }
+        }
+        return clampToSafeFrame(midpoint, in: safeFrame)
+    }
+
+    private func clampToSafeFrame(_ point: NSPoint, in safeFrame: NSRect) -> NSPoint {
+        NSPoint(
+            x: min(max(point.x, safeFrame.minX), safeFrame.maxX),
+            y: min(max(point.y, safeFrame.minY), safeFrame.maxY)
+        )
+    }
+
+    private func distance(from a: NSPoint, to b: NSPoint) -> CGFloat {
+        hypot(a.x - b.x, a.y - b.y)
+    }
+
     private func cancelWanderAnimation() {
+        // Invalidate the trip so a pending leg-1 completion cannot start leg 2.
+        wanderTripValid = false
         wanderAnimator?.cancel()
         wanderAnimator = nil
     }
