@@ -2,26 +2,23 @@ import AppKit
 import Foundation
 
 /// Loads the rendered, hand-authored media from an app bundle or source checkout.
+///
+/// The menu bar intentionally stays on the SF Symbol (`leaf.fill`); the bundled
+/// `menubar-awake/asleep.png` files are reserve assets this type never loads.
 enum MediaAssets {
-    static func menuBarIcon(isAwake: Bool) -> NSImage? {
-        let state = isAwake ? "awake" : "asleep"
-        return image(named: "menubar-\(state)", logicalSize: NSSize(width: 22, height: 22), isTemplate: true)
-    }
-
     static func skinPreview(for skinID: String) -> NSImage? {
         let allowed = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_")
         guard !skinID.isEmpty, skinID.unicodeScalars.allSatisfy({ allowed.contains($0) }) else { return nil }
-        return image(named: "preview-\(skinID)", logicalSize: NSSize(width: 240, height: 160), isTemplate: false)
+        return image(named: "preview-\(skinID)", logicalSize: NSSize(width: 240, height: 160))
     }
 
-    private static func image(named name: String, logicalSize: NSSize, isTemplate: Bool) -> NSImage? {
+    private static func image(named name: String, logicalSize: NSSize) -> NSImage? {
         for directory in renderedDirectories() {
             // Prefer the Retina image. Its NSImage point size is normalized below.
             for suffix in ["@2x.png", ".png"] {
                 let url = directory.appendingPathComponent(name + suffix)
                 guard let image = NSImage(contentsOf: url) else { continue }
                 image.size = logicalSize
-                image.isTemplate = isTemplate
                 return image
             }
         }

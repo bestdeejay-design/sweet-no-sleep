@@ -1,5 +1,3 @@
-<!-- Banner placeholder: add Resources/Art/banner.png (arena delivers), then replace this comment with: <p align="center"><img src="Resources/Art/banner.png" alt="Sweet No Sleep banner" width="820"></p> -->
-
 # Sweet No Sleep — Kiwi Cat
 
 A native macOS companion that keeps your Mac awake during long work
@@ -10,6 +8,12 @@ to stay awake.
 
 No menus to learn, no accounts, no network calls. Just a pet that
 watches over your focus time.
+
+## Release media
+
+![Sweet No Sleep release banner: Keep the Mac awake while the work finishes, with Kiwi beside a focus-session dashboard preview](Resources/Art/Rendered/banner.png)
+
+[Download the 1280 × 640 banner PNG](Resources/Art/Rendered/banner.png) · [editable banner SVG](Resources/Art/banner.svg) · [Open Graph SVG](Resources/Art/og-image.svg). The SVG files are the editable sources; `Scripts/render-media.sh` rebuilds raster assets on macOS. A successful macOS CI push commits the generated images to the task branch and uploads the media kit as an artifact.
 
 ## Features
 
@@ -79,7 +83,7 @@ a macOS system pane). Three sections:
 
 - **Focus.** Session duration, completion behavior (release
   assertion vs. immediate sleep), and manual awake mode.
-- **Pet.** Skin picker, size (90-170 pt), visibility, window level,
+- **Pet.** Skin picker, size (45-170 pt), visibility, window level,
   screen roaming (off by default; first stroll about 3 seconds
   after enabling, then roughly every 28 seconds), animation,
   playful moments, and break reminders. Drag Kiwi to reposition.

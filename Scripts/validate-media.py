@@ -1,8 +1,17 @@
 #!/usr/bin/env python3
-"""Validate hand-authored SVG media and the macOS-rendered release assets."""
+"""Validate hand-authored SVG media and the macOS-rendered release assets.
+
+The checks encode the final media pack decision from issue #5:
+  1. app-icon.svg is the golden build's Kiwi cat icon, kept byte-identical;
+  2. the menu bar keeps the SF Symbol (see validate_menu_bar_symbol);
+  3. skin previews are the adopted pack-leaf live-pet sources;
+  4. banner.svg is the pack-cat base with the golden cat at the agreed transform;
+  5. og-image.svg is the pack-leaf base with the mini app icon at the agreed transform.
+"""
 from __future__ import annotations
 
 import argparse
+import hashlib
 import re
 import struct
 import sys
@@ -53,12 +62,23 @@ RENDERED_IMAGES = {
     "og-image.png": (1200, 630),
 }
 
+# The approved golden build's app icon, byte-for-byte.
+GOLDEN_APP_ICON_SHA256 = "14092e2f9e0da5c7848fb8fac0794fc6b3cdd91b7874ebb675a84f1d4be07449"
+
+# The golden build's bundled reserve menu-bar PNGs, byte-for-byte ("leave them
+# untouched": sips re-renders of the pinned menubar sources are deterministic).
+GOLDEN_MENUBAR_SHA256 = {
+    "menubar-awake.png": "ec3b5ef42f338d5179501edebf8be993b254414c34f0115d03dd41de5eb7fda1",
+    "menubar-awake@2x.png": "ba3277a898f7f21af53d64f24ab629ce314a39f65a8ad4a307ac502506cf917f",
+    "menubar-asleep.png": "c71747eff8810eb2af882445aaf78cabb63266186e7b93a997579d28e0b284d0",
+    "menubar-asleep@2x.png": "9f80defb74765a4fac2e1731e7576e025151c3f2453cbef44cf9008a6d614d0f",
+}
+
+# Live-pet pose signatures shared by the Canvas drawing and the adopted art.
 MASCOT_ART = (
-    "app-icon.svg",
     "preview-kiwi.svg",
     "preview-moonlight.svg",
     "preview-strawberry.svg",
-    "banner.svg",
     "og-image.svg",
 )
 MASCOT_SIGNATURES = (
@@ -67,6 +87,11 @@ MASCOT_SIGNATURES = (
     'circle cx="0" cy="40" r="20.5"',
     'ellipse cx="30" cy="80" rx="20" ry="10"',
 )
+
+# Composition anchors from the final decision.
+BANNER_CAT_TRANSFORM = "translate(707.1 88.7) scale(0.49)"
+OG_MINI_ICON_TRANSFORM = "translate(67 65) scale(0.04296875)"
+GOLDEN_CAT_HEAD = "M-76 44 C-100 15 -98 -12 -88 -33 L-84 -102"
 
 
 def report_error(errors: list[str], path: Path, message: str) -> None:
@@ -168,7 +193,7 @@ def validate_icns(path: Path, errors: list[str]) -> None:
         report_error(errors, path, "ICNS container has no complete image chunks")
 
 
-def validate_rendered(errors: list[str]) -> bool:
+def validate_rendered(errors: list[str]) -> None:
     iconset_dir = RENDERED / "SweetNoSleep.iconset"
     if not iconset_dir.is_dir():
         report_error(errors, iconset_dir, "generated iconset is missing")
@@ -179,7 +204,6 @@ def validate_rendered(errors: list[str]) -> bool:
     validate_icns(RENDERED / "SweetNoSleep.icns", errors)
     for name, size in RENDERED_IMAGES.items():
         validate_png(RENDERED / name, size, errors)
-    return True
 
 
 def validate_mascot_consistency(errors: list[str]) -> None:
@@ -193,8 +217,112 @@ def validate_mascot_consistency(errors: list[str]) -> None:
             report_error(
                 errors,
                 path,
-                "static art must retain the app Kiwi's head, crown leaves, chest badge, and paws; review the matching Canvas pose",
+                "live-pet illustrations must retain the Kiwi's head, crown leaves, chest badge, and paws; review the matching Canvas pose",
             )
+
+
+def validate_golden_app_icon(errors: list[str]) -> None:
+    """Decision 1: the app icon is the golden build's Kiwi cat, byte-identical."""
+    path = ART / "app-icon.svg"
+    if not path.is_file():
+        return  # Already reported as a missing source.
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    if digest != GOLDEN_APP_ICON_SHA256:
+        report_error(
+            errors,
+            path,
+            "app icon must stay byte-identical to the approved golden build's icon "
+            f"(expected sha256 {GOLDEN_APP_ICON_SHA256[:12]}..., found {digest[:12]}...)",
+        )
+
+
+def validate_menu_bar_symbol(errors: list[str]) -> None:
+    """Decision 2: the menu bar keeps the SF Symbol; bundled menubar PNGs are reserve."""
+    app_source = ROOT / "Sources" / "SweetNoSleep" / "SweetNoSleepApp.swift"
+    if app_source.is_file():
+        content = app_source.read_text(encoding="utf-8")
+        if 'systemImage: "leaf.fill"' not in content:
+            report_error(errors, app_source, 'the menu bar must keep MenuBarExtra(systemImage: "leaf.fill")')
+    sources_root = ROOT / "Sources"
+    if sources_root.is_dir():
+        for path in sorted(sources_root.rglob("*.swift")):
+            try:
+                content = path.read_text(encoding="utf-8")
+            except (OSError, UnicodeError):
+                continue
+            if "menuBarIcon" in content:
+                report_error(errors, path, "menu-bar PNGs are reserve assets; Sources/ must not load them")
+
+
+def validate_template_menubar(errors: list[str]) -> None:
+    """Bundled reserve menu-bar art keeps the original template rules."""
+    for state in ("awake", "asleep"):
+        path = ART / f"menubar-{state}.svg"
+        if not path.is_file():
+            continue
+        try:
+            root = ET.parse(path).getroot()
+        except (ET.ParseError, OSError):
+            continue
+        colors = {
+            value.lower()
+            for element in root.iter()
+            for attribute, value in element.attrib.items()
+            if attribute.rsplit("}", 1)[-1] in {"fill", "stroke"}
+        }
+        if colors - {"none", "#000000"}:
+            report_error(errors, path, "menu-bar template art must use only transparent and pure black paths")
+        widths = [
+            number(element.get("stroke-width"))
+            for element in root.iter()
+            if element.get("stroke-width") is not None
+        ]
+        if any(width is None or width < 0.75 or width > 1.35 for width in widths):
+            report_error(errors, path, "menu-bar template strokes must stay close to 1 px")
+
+
+def validate_golden_menubar_renders(errors: list[str]) -> None:
+    """The reserve menu-bar PNGs stay byte-identical to the golden build's."""
+    for name, expected in GOLDEN_MENUBAR_SHA256.items():
+        path = RENDERED / name
+        if not path.is_file():
+            continue  # Reported by validate_rendered when outputs are required.
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        if digest != expected:
+            report_error(
+                errors,
+                path,
+                "reserve menu-bar render must stay byte-identical to the golden build "
+                f"(expected sha256 {expected[:12]}..., found {digest[:12]}...)",
+            )
+
+
+def validate_banner_composition(errors: list[str]) -> None:
+    """Decision 4: pack-cat base with the golden cat at the agreed transform."""
+    path = ART / "banner.svg"
+    if not path.is_file():
+        return
+    content = path.read_text(encoding="utf-8")
+    if BANNER_CAT_TRANSFORM not in content:
+        report_error(errors, path, f"banner must place the golden cat with transform {BANNER_CAT_TRANSFORM}")
+    if GOLDEN_CAT_HEAD not in content:
+        report_error(errors, path, "banner must carry the golden build's cat (app-icon.svg pose), not a face-only mark")
+    if 'x="836" y="76" width="182"' not in content:
+        report_error(errors, path, "banner must keep the pack-cat base layout (ON DUTY pill moved out of place or removed)")
+
+
+def validate_og_composition(errors: list[str]) -> None:
+    """Decision 5: pack-leaf base with the mini app icon (rounded rect + cat)."""
+    path = ART / "og-image.svg"
+    if not path.is_file():
+        return
+    content = path.read_text(encoding="utf-8")
+    if OG_MINI_ICON_TRANSFORM not in content:
+        report_error(errors, path, f"og image must place the mini app icon with transform {OG_MINI_ICON_TRANSFORM}")
+    if '<rect width="1024" height="1024" rx="228"' not in content or "url(#golden-bg)" not in content:
+        report_error(errors, path, "og image mini icon must contain the rounded card from app-icon.svg")
+    if GOLDEN_CAT_HEAD not in content:
+        report_error(errors, path, "og image mini icon must contain the golden build's cat")
 
 
 def validate_source_text(errors: list[str]) -> None:
@@ -221,10 +349,13 @@ def main() -> int:
     errors: list[str] = []
     for name, size in SOURCES.items():
         validate_svg(ART / name, size, errors)
+    validate_golden_app_icon(errors)
+    validate_menu_bar_symbol(errors)
+    validate_template_menubar(errors)
     validate_mascot_consistency(errors)
-    # Deviation: docs/MEDIA.md dropped — it is outside the task's allowed status
-    # paths and was absent at base b09d593 (golden-only artifact).
-    for path in (ROOT / "Scripts" / "render-media.sh",):
+    validate_banner_composition(errors)
+    validate_og_composition(errors)
+    for path in (ROOT / "docs" / "MEDIA.md", ROOT / "Scripts" / "render-media.sh"):
         if not path.is_file():
             report_error(errors, path, "required media-kit file is missing")
     validate_source_text(errors)
@@ -234,6 +365,7 @@ def main() -> int:
         validate_rendered(errors)
     else:
         print("Rendered PNG/ICNS checks skipped: generate them on macOS with Scripts/render-media.sh.")
+    validate_golden_menubar_renders(errors)
 
     if errors:
         for error in errors:
