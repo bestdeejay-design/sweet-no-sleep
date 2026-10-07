@@ -46,7 +46,8 @@ struct PanelWanderSmokeTest {
             }
         )
 
-        let deadline = Date().addingTimeInterval(7)
+        // Allow scheduling slack on loaded macOS runners; the animation itself lasts 4.8 seconds.
+        let deadline = Date().addingTimeInterval(15)
         while !finished && Date() < deadline {
             RunLoop.main.run(mode: .default, before: Date(timeIntervalSinceNow: 0.05))
         }

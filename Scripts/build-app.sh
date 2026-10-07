@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 CONFIGURATION="${1:-release}"
 APP_NAME="Sweet No Sleep — Kiwi Cat.app"
 APP_DIR="$ROOT_DIR/dist/$APP_NAME"
+"$ROOT_DIR/Scripts/render-media.sh"
 swift build --package-path "$ROOT_DIR" --configuration "$CONFIGURATION"
 BIN_DIR="$(swift build --package-path "$ROOT_DIR" --configuration "$CONFIGURATION" --show-bin-path)"
 BINARY="$BIN_DIR/SweetNoSleep"
@@ -28,6 +29,27 @@ if [[ -d "$ROOT_DIR/Resources/PetSkins" ]]; then
   cp -R "$ROOT_DIR/Resources/PetSkins/." "$APP_DIR/Contents/Resources/PetSkins/"
 fi
 
+MEDIA_DIR="$ROOT_DIR/Resources/Art/Rendered"
+ICON_FILE="$MEDIA_DIR/SweetNoSleep.icns"
+if [[ ! -s "$ICON_FILE" ]]; then
+  echo "Rendered app icon is missing: $ICON_FILE" >&2
+  exit 1
+fi
+cp "$ICON_FILE" "$APP_DIR/Contents/Resources/SweetNoSleep.icns"
+mkdir -p "$APP_DIR/Contents/Resources/Media"
+for media in \
+  menubar-awake.png menubar-awake@2x.png \
+  menubar-asleep.png menubar-asleep@2x.png \
+  preview-kiwi.png preview-kiwi@2x.png \
+  preview-moonlight.png preview-moonlight@2x.png \
+  preview-strawberry.png preview-strawberry@2x.png; do
+  if [[ ! -s "$MEDIA_DIR/$media" ]]; then
+    echo "Rendered app media is missing: $MEDIA_DIR/$media" >&2
+    exit 1
+  fi
+  cp "$MEDIA_DIR/$media" "$APP_DIR/Contents/Resources/Media/$media"
+done
+
 cat > "$APP_DIR/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -47,6 +69,8 @@ cat > "$APP_DIR/Contents/Info.plist" <<'PLIST'
     <string>Sweet No Sleep — Kiwi Cat</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
+    <key>CFBundleIconFile</key>
+    <string>SweetNoSleep.icns</string>
     <key>CFBundleShortVersionString</key>
     <string>0.3.0</string>
     <key>CFBundleVersion</key>
