@@ -71,6 +71,16 @@
         }
       }
     },
+    "%d waiting": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d waiting"
+          }
+        }
+      }
+    },
     "%d%% (Charging)": {
       "localizations": {
         "en": {
@@ -211,6 +221,16 @@
         }
       }
     },
+    "AGENT NEEDS APPROVAL": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AGENT NEEDS APPROVAL"
+          }
+        }
+      }
+    },
     "AI agent connection": {
       "localizations": {
         "en": {
@@ -271,6 +291,16 @@
         }
       }
     },
+    "After the last agent finishes, keep the Mac awake briefly so background work can settle.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After the last agent finishes, keep the Mac awake briefly so background work can settle."
+          }
+        }
+      }
+    },
     "After this session, your Mac will go to sleep immediately": {
       "localizations": {
         "en": {
@@ -297,6 +327,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "Agent connections: %d"
+          }
+        }
+      }
+    },
+    "Agent finished - holding awake for %d min": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent finished - holding awake for %d min"
+          }
+        }
+      }
+    },
+    "Agent is waiting for approval: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent is waiting for approval: %@"
+          }
+        }
+      }
+    },
+    "Agent is waiting for your approval.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent is waiting for your approval."
+          }
+        }
+      }
+    },
+    "Agent resumed work.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent resumed work."
           }
         }
       }
@@ -347,6 +417,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "An AI agent reported that work has started."
+          }
+        }
+      }
+    },
+    "An agent is waiting for approval": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An agent is waiting for approval"
+          }
+        }
+      }
+    },
+    "An agent is waiting for your approval. Reply in your terminal or IDE to continue.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An agent is waiting for your approval. Reply in your terminal or IDE to continue."
+          }
+        }
+      }
+    },
+    "An agent paused and waits for your approval. Reply y/n in your terminal or IDE; heartbeats resume work automatically.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An agent paused and waits for your approval. Reply y/n in your terminal or IDE; heartbeats resume work automatically."
+          }
+        }
+      }
+    },
+    "Approval needed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approval needed"
           }
         }
       }
@@ -591,6 +701,16 @@
         }
       }
     },
+    "Copy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy"
+          }
+        }
+      }
+    },
     "Could not connect to the macOS power management service.": {
       "localizations": {
         "en": {
@@ -821,6 +941,16 @@
         }
       }
     },
+    "Enable localhost webhook": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable localhost webhook"
+          }
+        }
+      }
+    },
     "Enable manual sleep protection at launch": {
       "localizations": {
         "en": {
@@ -921,12 +1051,12 @@
         }
       }
     },
-    "From the repository root: ./Scripts/agent-session.sh my-agent-1 -- ./run-agent.sh\nFor IDE hooks: agent-event.sh start > heartbeat (about once a minute) > done or failed; use one ID per session.": {
+    "From the repository root: ./Scripts/agent-session.sh my-agent-1 -- ./run-agent.sh\nFor IDE hooks: agent-event.sh start > heartbeat (about once a minute) > waiting (when approval is needed) > done or failed; use one ID per session.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "From the repository root: ./Scripts/agent-session.sh my-agent-1 -- ./run-agent.sh\nFor IDE hooks: agent-event.sh start > heartbeat (about once a minute) > done or failed; use one ID per session."
+            "value": "From the repository root: ./Scripts/agent-session.sh my-agent-1 -- ./run-agent.sh\nFor IDE hooks: agent-event.sh start > heartbeat (about once a minute) > waiting (when approval is needed) > done or failed; use one ID per session."
           }
         }
       }
@@ -937,6 +1067,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Goal reached - the session is complete"
+          }
+        }
+      }
+    },
+    "Heartbeats resume work": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heartbeats resume work"
           }
         }
       }
@@ -1121,6 +1261,16 @@
         }
       }
     },
+    "Kiwi needs your approval": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiwi needs your approval"
+          }
+        }
+      }
+    },
     "Kiwi uses temporary system power assertions and releases them when work ends.": {
       "localizations": {
         "en": {
@@ -1231,12 +1381,22 @@
         }
       }
     },
-    "Local hooks can tell Kiwi when work starts, send heartbeats, and report completion.": {
+    "Local hooks can tell Kiwi when work starts, send heartbeats, report waiting for approval, and report completion.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Local hooks can tell Kiwi when work starts, send heartbeats, and report completion."
+            "value": "Local hooks can tell Kiwi when work starts, send heartbeats, report waiting for approval, and report completion."
+          }
+        }
+      }
+    },
+    "Local webhook": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local webhook"
           }
         }
       }
@@ -1247,6 +1407,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Look away from your code and focus on something in the distance for about 20 seconds."
+          }
+        }
+      }
+    },
+    "Loopback-only HTTP listener on 127.0.0.1:18290 for sandboxed runners that cannot open URL schemes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loopback-only HTTP listener on 127.0.0.1:18290 for sandboxed runners that cannot open URL schemes."
           }
         }
       }
@@ -1321,6 +1491,16 @@
         }
       }
     },
+    "Off": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off"
+          }
+        }
+      }
+    },
     "Okay - I'll remind you again in %d min": {
       "localizations": {
         "en": {
@@ -1337,6 +1517,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "One agent heartbeat expired - other sessions are still active"
+          }
+        }
+      }
+    },
+    "Only applies when the after-session action is Allow normal sleep. A new agent event cancels the grace period immediately.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only applies when the after-session action is Allow normal sleep. A new agent event cancels the grace period immediately."
           }
         }
       }
@@ -1367,6 +1557,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Open skins folder"
+          }
+        }
+      }
+    },
+    "POST /agent/start, /agent/heartbeat, /agent/waiting, /agent/done, /agent/failed with JSON {\"session\": \"id\"}. Requires the bearer token below.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "POST /agent/start, /agent/heartbeat, /agent/waiting, /agent/done, /agent/failed with JSON {\"session\": \"id\"}. Requires the bearer token below."
           }
         }
       }
@@ -1407,6 +1607,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Playful moment interval"
+          }
+        }
+      }
+    },
+    "Port 18290 is already in use": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Port 18290 is already in use"
+          }
+        }
+      }
+    },
+    "Post-agent grace period": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Post-agent grace period"
+          }
+        }
+      }
+    },
+    "Post-agent grace period in minutes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Post-agent grace period in minutes"
           }
         }
       }
@@ -1541,6 +1771,16 @@
         }
       }
     },
+    "Regenerate": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regenerate"
+          }
+        }
+      }
+    },
     "Release the sleep assertion and let macOS use its normal energy settings.": {
       "localizations": {
         "en": {
@@ -1667,6 +1907,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Show Kiwi on the desktop"
+          }
+        }
+      }
+    },
+    "Show agent status light on chest badge": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show agent status light on chest badge"
           }
         }
       }
@@ -1807,6 +2057,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "System idle sleep is prevented"
+          }
+        }
+      }
+    },
+    "System will sleep - sleep protection released.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System will sleep - sleep protection released."
           }
         }
       }
@@ -2011,6 +2271,16 @@
         }
       }
     },
+    "Webhook listener failed: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Webhook listener failed: %@"
+          }
+        }
+      }
+    },
     "When the goal is reached": {
       "localizations": {
         "en": {
@@ -2027,6 +2297,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "When this is off, the display may turn off while the Mac stays awake for work. This saves battery."
+          }
+        }
+      }
+    },
+    "Working sessions glow in the skin accent color; waiting sessions glow amber. Manual awake mode without agents shows no light.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Working sessions glow in the skin accent color; waiting sessions glow amber. Manual awake mode without agents shows no light."
           }
         }
       }
@@ -2087,6 +2367,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "macOS rejected the sleep request (error %d)."
+          }
+        }
+      }
+    },
+    "y / n": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "y / n"
           }
         }
       }

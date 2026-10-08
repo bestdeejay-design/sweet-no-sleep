@@ -219,7 +219,7 @@ private struct MenuBarDashboard: View {
                 )
 
             VStack(alignment: .leading, spacing: 8) {
-                Text(model.activeAgentCount > 0 ? L10n.text("Kiwi is with your agent") : (model.isKeepingAwake ? L10n.text("Kiwi is on duty") : L10n.text("Kiwi is ready to help")))
+                Text(model.hasWaitingAgent ? L10n.text("Kiwi needs your approval") : (model.activeAgentCount > 0 ? L10n.text("Kiwi is with your agent") : (model.isKeepingAwake ? L10n.text("Kiwi is on duty") : L10n.text("Kiwi is ready to help"))))
                     .font(.system(size: 17, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                     .fixedSize(horizontal: false, vertical: true)
@@ -347,13 +347,19 @@ private struct MenuBarDashboard: View {
 
     private var agentSessionCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label(L10n.text("AGENT AT WORK"), systemImage: "cpu")
+            Label(model.hasWaitingAgent ? L10n.text("AGENT NEEDS APPROVAL") : L10n.text("AGENT AT WORK"), systemImage: model.hasWaitingAgent ? "questionmark.circle.fill" : "cpu")
                 .font(.system(size: 10, weight: .bold, design: .rounded))
                 .tracking(1.0)
-                .foregroundStyle(Color(hex: 0xA9D8B0))
+                .foregroundStyle(Color(hex: model.hasWaitingAgent ? 0xE5A93C : 0xA9D8B0))
             Text(L10n.format("%d active connections", model.activeAgentCount))
                 .font(.system(size: 17, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
+            if model.hasWaitingAgent {
+                Text(L10n.text("An agent paused and waits for your approval. Reply y/n in your terminal or IDE; heartbeats resume work automatically."))
+                    .font(.system(size: 10, design: .rounded))
+                    .foregroundStyle(Color(hex: 0xE5A93C))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             Text(L10n.text("Protection remains active while heartbeats arrive. After 3 minutes without a signal, Kiwi releases the assertion so the Mac is not kept awake indefinitely."))
                 .font(.system(size: 10, design: .rounded))
                 .foregroundStyle(.white.opacity(0.58))

@@ -444,21 +444,84 @@ private struct PowerSettingsPane: View {
                 }
             }
 
-            SettingsCard(title: L10n.text("AI agent connection"), subtitle: L10n.text("Local hooks can tell Kiwi when work starts, send heartbeats, and report completion.")) {
+            SettingsCard(title: L10n.text("AI agent connection"), subtitle: L10n.text("Local hooks can tell Kiwi when work starts, send heartbeats, report waiting for approval, and report completion.")) {
                 Toggle(L10n.text("Allow events from local hooks"), isOn: $model.agentBridgeEnabled)
                 Text(L10n.text("The bridge is off by default. Only trust installed hooks: any local process that can open the URL scheme can send an event. Without a heartbeat, a session expires after 3 minutes. Agent events never trigger immediate sleep."))
                     .font(.system(size: 11, design: .rounded))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                Text(L10n.text("From the repository root: ./Scripts/agent-session.sh my-agent-1 -- ./run-agent.sh\nFor IDE hooks: agent-event.sh start > heartbeat (about once a minute) > done or failed; use one ID per session."))
+                Text(L10n.text("From the repository root: ./Scripts/agent-session.sh my-agent-1 -- ./run-agent.sh\nFor IDE hooks: agent-event.sh start > heartbeat (about once a minute) > waiting (when approval is needed) > done or failed; use one ID per session."))
                     .font(.system(size: 10, design: .monospaced))
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+                Toggle(L10n.text("Show agent status light on chest badge"), isOn: $model.agentBadgeLightEnabled)
+                Text(L10n.text("Working sessions glow in the skin accent color; waiting sessions glow amber. Manual awake mode without agents shows no light."))
+                    .font(.system(size: 10, design: .rounded))
+                    .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 if model.activeAgentCount > 0 {
                     Label(L10n.format("Active now: %d", model.activeAgentCount), systemImage: "cpu")
                         .font(.system(size: 11, weight: .medium, design: .rounded))
                         .foregroundStyle(Color(hex: 0x5EAC70))
+                }
+                if model.hasWaitingAgent {
+                    Label(L10n.text("An agent is waiting for approval"), systemImage: "questionmark.circle.fill")
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundStyle(Color(hex: 0xE5A93C))
+                }
+            }
+
+            SettingsCard(title: L10n.text("Post-agent grace period"), subtitle: L10n.text("After the last agent finishes, keep the Mac awake briefly so background work can settle.")) {
+                HStack(spacing: 10) {
+                    Text(model.agentCooldownMinutes == 0 ? L10n.text("Off") : L10n.format("%d min", model.agentCooldownMinutes))
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .frame(width: 80, alignment: .leading)
+                    Slider(value: Binding(
+                        get: { Double(model.agentCooldownMinutes) },
+                        set: { model.agentCooldownMinutes = Int($0) }
+                    ), in: 0...5, step: 1)
+                    .tint(Color(hex: 0x74C987))
+                    .accessibilityLabel(L10n.text("Post-agent grace period in minutes"))
+                }
+                Text(L10n.text("Only applies when the after-session action is Allow normal sleep. A new agent event cancels the grace period immediately."))
+                    .font(.system(size: 10, design: .rounded))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            SettingsCard(title: L10n.text("Local webhook"), subtitle: L10n.text("Loopback-only HTTP listener on 127.0.0.1:18290 for sandboxed runners that cannot open URL schemes.")) {
+                Toggle(L10n.text("Enable localhost webhook"), isOn: $model.agentWebhookEnabled)
+                Text(L10n.text("POST /agent/start, /agent/heartbeat, /agent/waiting, /agent/done, /agent/failed with JSON {\"session\": \"id\"}. Requires the bearer token below."))
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 8) {
+                    Text(model.agentWebhookToken)
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Spacer(minLength: 4)
+                    Button(L10n.text("Copy")) {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(model.agentWebhookToken, forType: .string)
+                    }
+                    .buttonStyle(.link)
+                    .font(.system(size: 11, design: .rounded))
+                    Button(L10n.text("Regenerate")) {
+                        model.regenerateWebhookToken()
+                    }
+                    .buttonStyle(.link)
+                    .font(.system(size: 11, design: .rounded))
+                }
+                if let webhookError = model.agentWebhookError {
+                    Label(webhookError, systemImage: "exclamationmark.triangle.fill")
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundStyle(Color(hex: 0xD99142))
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
 
