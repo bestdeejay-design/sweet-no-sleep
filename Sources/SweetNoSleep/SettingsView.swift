@@ -6,16 +6,36 @@ struct SettingsView: View {
     @ObservedObject var model: SweetNoSleepModel
 
     var body: some View {
-        TabView {
-            FocusSettingsPane(model: model)
-                .tabItem { Label(L10n.text("Focus"), systemImage: "bolt.fill") }
-            CompanionSettingsPane(model: model)
-                .tabItem { Label(L10n.text("Pet"), systemImage: "pawprint.fill") }
-            PowerSettingsPane(model: model)
-                .tabItem { Label(L10n.text("Power"), systemImage: "battery.100percent") }
+        VStack(spacing: 0) {
+            TabView {
+                FocusSettingsPane(model: model)
+                    .tabItem { Label(L10n.text("Focus"), systemImage: "bolt.fill") }
+                CompanionSettingsPane(model: model)
+                    .tabItem { Label(L10n.text("Pet"), systemImage: "pawprint.fill") }
+                PowerSettingsPane(model: model)
+                    .tabItem { Label(L10n.text("Power"), systemImage: "battery.100percent") }
+            }
+            HStack(spacing: 6) {
+                Text("Sweet No Sleep")
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                Spacer()
+                Text(L10n.format("Version %@ (build %@)", version, build))
+                    .font(.system(size: 10, design: .rounded))
+            }
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 6)
         }
-        .frame(width: 660, height: 535)
+        .frame(width: 660, height: 555)
         .background(Color(nsColor: .windowBackgroundColor))
+    }
+
+    private var version: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
+    }
+
+    private var build: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
     }
 }
 

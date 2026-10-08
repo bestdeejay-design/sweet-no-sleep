@@ -2171,6 +2171,16 @@
         }
       }
     },
+    "Version %@ (build %@)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@ (build %@)"
+          }
+        }
+      }
+    },
     "Waiting for your answer": {
       "localizations": {
         "en": {
