@@ -5,6 +5,10 @@ The format follows Keep a Changelog, versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+- README "The cats": Kiwi (the original, three palette looks) and
+  Kot-Arbuz (layered sprite character, leaf celebrations, agent
+  awareness) as two characters with their own names, with the skin
+  card preview inline and a link to the character case on dajet.ru.
 - Final release media pack (issue #5 decision): banner, Open Graph
   image, app icon and skin preview SVG sources in `Resources/Art/`
   with rendered PNGs in `Resources/Art/Rendered/`; README ships the
