@@ -110,3 +110,14 @@ On a Mac, run `./Scripts/check-project.sh`, then `./Scripts/build-app.sh release
 - AppKit panels, IOKit assertions, and the menu-bar UI were not interactively exercised. The macOS runner built and signed the `.app` but did not launch it. Hook smoke tests use a mocked `open` command and do not prove URL-scheme registration in an installed `.app`.
 - The local URL bridge is opt-in but not authenticated; any local process that can open the registered scheme can send events.
 - The assertion protects against idle sleep; it cannot override lid closure, user-initiated sleep, critical power conditions, or system policy.
+
+## Mac acceptance note — AI Agent Integrations v2 (F0-F5, Issue #11)
+
+Implemented on `arena/3331051a-sweet-no-sleep` (base: `arena/22936f10-sweet-no-sleep` P0-P2 + frozen docs). Linux `./Scripts/check-project.sh` passes (238 L10n keys, 9 mocked hook events); Swift build and the checks below require macOS.
+
+- F0 agentLight: enable bridge, start an agent (`agent-event.sh start s1`); chest badge glows in the skin accent color. Manual awake with no agents shows no light. Disable via Settings > Power > Show agent status light. Under Reduce Motion the glow is static (opacity 0.85).
+- F1 waiting: `agent-event.sh waiting s1 "approve deploy"` turns Kiwi attentive (raised paw, ?/! glyphs, y/n bubble, amber light) and takes precedence over break reminders; `heartbeat s1` resumes working. Playful moments and strolls are suppressed while waiting.
+- F2 MCP: `SWEET_NOSLEEP_WEBHOOK_TOKEN="<token>" python3 mcp-server/server.py`, then stdio `initialize`, `tools/list` (3 tools), and one `tools/call` per tool; with the app running and webhook enabled, holds/waiting/release round-trip; with the app stopped, the server falls back to `open sweetnosleep://...` (logs on stderr only).
+- F3 webhook: enable Settings > Power > Local webhook, copy the token, then curl 200 (valid bearer), 401 (bad token), 403 (Host: localhost), 403 (Origin: https://example.com), 405 (GET), 413 (5 KB body). Occupy 18290 with another listener and confirm Settings shows "Port 18290 is already in use". Confirm no macOS firewall prompt (bind is 127.0.0.1 only).
+- F4 grace: set grace to 1 min, completion action Allow normal sleep, run `agent-event.sh start s1` then `done s1`; status shows "Agent finished - holding awake for 1 min" and assertions persist for 1 min. During grace, `start s2` cancels grace immediately. With grace 0 or action sleep-immediately, no grace. Sleep the Mac during grace and confirm clean teardown without resurrection after wake.
+- F5 presets: `./Scripts/install-presets.sh --list`, install Claude hooks into a scratch dir and confirm merge; copy tasks.json into a scratch workspace; `./Scripts/test-agent-hooks.sh` passes all five events.

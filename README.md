@@ -37,9 +37,14 @@ watches over your focus time.
   dismiss, or disable). Respects system Reduce Motion.
 - **Agent bridge (opt-in, local only).** An off-by-default URL-scheme
   bridge (`sweetnosleep://`) lets coding agents and IDE hooks hold
-  awake with `start`, minute-interval `heartbeat`, and terminal
-  `done` / `failed` events. A 3-minute heartbeat lease means a lost
-  hook never keeps the Mac awake forever.
+  awake with `start`, minute-interval `heartbeat`, `waiting` for
+  approval pauses, and terminal `done` / `failed` events. A 3-minute
+  heartbeat lease means a lost hook never keeps the Mac awake forever.
+  Waiting sessions show Kiwi's attentive pose with an amber chest light
+  and a y/n bubble. Optional loopback webhook (`127.0.0.1:18290`,
+  bearer token), stdlib-only MCP server (`mcp-server/server.py`), and
+  a post-agent grace period (1-5 min) are included; see `presets/` and
+  `Scripts/install-presets.sh`.
 - **Power done right.** App Nap friendly activity plus
   `PreventUserIdleSystemSleep` assertions. Optional separate display
   control: keep the Mac awake while allowing the display to sleep.
@@ -131,20 +136,47 @@ use the wrapper for agent commands (sends `start`, heartbeats every
 ```
 
 Or call lifecycle events directly from IDE hook callbacks, reusing
-one session ID and heartbeating about once a minute (including
-while waiting for approval):
+one session ID and heartbeating about once a minute:
 
 ```bash
 ./Scripts/agent-event.sh start "$SESSION_ID"
 ./Scripts/agent-event.sh heartbeat "$SESSION_ID"
+./Scripts/agent-event.sh waiting "$SESSION_ID" "need approval for rm -rf"  # pauses work, Kiwi turns attentive
 ./Scripts/agent-event.sh done "$SESSION_ID"    # success
 ./Scripts/agent-event.sh failed "$SESSION_ID"  # error or cancellation
 ```
 
-The bridge is unauthenticated local IPC: any local process that can
-open the URL scheme may send events. Enable it only for trusted
-hooks. Agent events can release an assertion but never trigger
-immediate sleep.
+For sandboxed runners that cannot open URL schemes, enable
+**Settings -> Power -> Local webhook** and POST JSON instead:
+
+```bash
+curl -X POST http://127.0.0.1:18290/agent/waiting \
+  -H "Host: 127.0.0.1:18290" \
+  -H "Authorization: Bearer $SWEET_NOSLEEP_WEBHOOK_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"session":"my-agent-123","reason":"need approval"}'
+```
+
+MCP-compatible clients can use the stdlib-only server (no pip
+dependencies, logs to stderr, falls back to the URL scheme when the
+webhook is unreachable):
+
+```bash
+SWEET_NOSLEEP_WEBHOOK_TOKEN="<token from Settings>" python3 mcp-server/server.py
+```
+
+Out-of-the-box presets live in `presets/` (Claude Code hooks,
+Cursor/VS Code tasks). Install interactively with
+`./Scripts/install-presets.sh`.
+
+The URL bridge is unauthenticated local IPC: any local process that
+can open the URL scheme may send events. Enable it only for trusted
+hooks. The webhook adds a bearer token and strict Host/Origin checks
+but is still loopback-only local IPC, not a security boundary.
+Agent events can release an assertion but never trigger immediate
+sleep. After the last agent finishes, an optional grace period
+(Settings -> Power -> Post-agent grace period, default 1 min) holds
+awake briefly when the after-session action is Allow normal sleep.
 
 ## Localization
 
@@ -178,6 +210,7 @@ English source strings only.
 Sources/SweetNoSleep/
   SweetNoSleepApp.swift      # MenuBarExtra, lifecycle, dashboard
   SweetNoSleepModel.swift    # shared state, sessions, reminders, skins
+  AgentWebhookServer.swift   # loopback HTTP webhook (Network.framework)
   PetSkinDefinition.swift    # JSON schema and pack loading
   KiwiPetView.swift          # Canvas pet, gaze, reactions
   PetPanel.swift             # transparent NSPanel, roaming, position
@@ -192,6 +225,9 @@ Scripts/build-app.sh         # .app bundle assembly
 Scripts/check-project.sh     # portable checks + swift build on Mac
 Scripts/agent-event.sh       # single agent lifecycle event
 Scripts/agent-session.sh     # wrapped command with heartbeat
+Scripts/install-presets.sh   # interactive preset installer
+mcp-server/server.py         # stdlib-only MCP server (stdio)
+presets/                     # Claude Code hooks, Cursor/VS Code tasks
 ```
 
 ---
