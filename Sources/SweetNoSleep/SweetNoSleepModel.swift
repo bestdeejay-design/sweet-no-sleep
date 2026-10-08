@@ -90,6 +90,7 @@ final class SweetNoSleepModel: ObservableObject {
     private var pendingImmediateSleepToken: UUID?
     private var manualAwake = false
     private var agentLeaseTimer: Timer?
+    private var agentWebhookServer: AgentWebhookServer?
     // Last system wake time. Taps within the grace window are ignored so a
     // click meant to wake the Mac does not accidentally poke the pet.
     private var lastSystemWakeDate: Date?
@@ -207,6 +208,21 @@ final class SweetNoSleepModel: ObservableObject {
         }
     }
 
+    @Published private(set) var agentWebhookError: String?
+
+    @Published var agentWebhookEnabled: Bool {
+        didSet {
+            defaults.set(agentWebhookEnabled, forKey: Key.agentWebhookEnabled)
+            if oldValue != agentWebhookEnabled {
+                if agentWebhookEnabled { startWebhookServer() } else { stopWebhookServer() }
+            }
+        }
+    }
+
+    @Published var agentWebhookToken: String {
+        didSet { defaults.set(agentWebhookToken, forKey: Key.agentWebhookToken) }
+    }
+
     /// Chest badge light plus the active-session count on the pet.
     @Published var agentIndicatorEnabled: Bool {
         didSet { defaults.set(agentIndicatorEnabled, forKey: Key.agentIndicatorEnabled) }
@@ -315,6 +331,14 @@ final class SweetNoSleepModel: ObservableObject {
         resumeKeepAwakeOnLaunch = defaults.object(forKey: Key.resumeOnLaunch) as? Bool ?? false
         agentBridgeEnabled = defaults.object(forKey: Key.agentBridgeEnabled) as? Bool ?? false
         agentIndicatorEnabled = defaults.object(forKey: Key.agentIndicatorEnabled) as? Bool ?? true
+        agentWebhookEnabled = defaults.object(forKey: Key.agentWebhookEnabled) as? Bool ?? false
+        if let savedToken = defaults.string(forKey: Key.agentWebhookToken), Self.isValidWebhookToken(savedToken) {
+            agentWebhookToken = savedToken
+        } else {
+            let freshToken = Self.makeWebhookToken()
+            defaults.set(freshToken, forKey: Key.agentWebhookToken)
+            agentWebhookToken = freshToken
+        }
         isPetVisible = defaults.object(forKey: Key.petVisible) as? Bool ?? true
         alwaysOnTop = defaults.object(forKey: Key.alwaysOnTop) as? Bool ?? true
         roamingEnabled = defaults.object(forKey: Key.roamingEnabled) as? Bool ?? false
@@ -368,6 +392,10 @@ final class SweetNoSleepModel: ObservableObject {
         // The greeting needs the loaded skin, so it cannot live in the
         // property initializer.
         statusMessage = L10n.format("%@ is ready to keep you company", characterName)
+
+        if agentWebhookEnabled {
+            startWebhookServer()
+        }
         powerKeeper.onDiagnosticsChanged = { [weak self] in
             self?.updateDiagnostics()
         }
@@ -499,6 +527,7 @@ final class SweetNoSleepModel: ObservableObject {
     }
 
     func shutdown() {
+        stopWebhookServer()
         stopKeepingAwake()
         powerKeeper.shutdown()
         powerSourceMonitor.shutdown()
@@ -523,6 +552,17 @@ final class SweetNoSleepModel: ObservableObject {
         else { return }
         let reason = components?.queryItems?.first(where: { $0.name == "reason" })?.value
 
+        handleAgentEvent(action: action, sessionID: sessionID, reason: reason)
+    }
+
+    /// Shared agent-event pipeline for both delivery channels: the
+    /// sweetnosleep:// URL scheme and the loopback webhook server.
+    func handleAgentEvent(action: String, sessionID: String, reason: String?) {
+        let trimmedReason = reason?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanReason: String? = {
+            guard let value = trimmedReason, !value.isEmpty else { return nil }
+            return String(value.prefix(200))
+        }()
         switch action.lowercased() {
         case "start":
             renewAgentSession(sessionID: sessionID)
@@ -541,6 +581,51 @@ final class SweetNoSleepModel: ObservableObject {
             return
         }
     }
+
+    // MARK: Loopback webhook (F3)
+
+    func regenerateWebhookToken() {
+        agentWebhookToken = Self.makeWebhookToken()
+    }
+
+    private static func makeWebhookToken() -> String {
+        UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
+    }
+
+    private static func isValidWebhookToken(_ token: String) -> Bool {
+        guard token.count == 32 else { return false }
+        return token.allSatisfy { $0.isHexDigit }
+    }
+
+    private func startWebhookServer() {
+        stopWebhookServer()
+        agentWebhookError = nil
+        let server = AgentWebhookServer(
+            port: 18290,
+            token: agentWebhookToken,
+            onEvent: { [weak self] action, sessionID, reason in
+                guard let self else { return }
+                guard self.agentBridgeEnabled else { return }
+                guard !sessionID.isEmpty, sessionID.count <= 120 else { return }
+                if action == "heartbeat", self.agentSessions[sessionID] == nil {
+                    return
+                }
+                self.handleAgentEvent(action: action, sessionID: sessionID, reason: reason)
+            },
+            onError: { [weak self] message in
+                self?.agentWebhookError = message
+            }
+        )
+        agentWebhookServer = server
+        server.start()
+    }
+
+    private func stopWebhookServer() {
+        agentWebhookServer?.stop()
+        agentWebhookServer = nil
+        agentWebhookError = nil
+    }
+
 
     /// Closes the waiting bubble for the sessions that currently wait. The
     /// agent keeps waiting in its own window: this only hides the prompt.
@@ -1119,6 +1204,8 @@ final class SweetNoSleepModel: ObservableObject {
         static let completionAction = "session.completionAction"
         static let resumeOnLaunch = "power.resumeOnLaunch"
         static let agentBridgeEnabled = "agentBridge.enabled"
+        static let agentWebhookEnabled = "agent.webhookEnabled"
+        static let agentWebhookToken = "agent.webhookToken"
         static let agentIndicatorEnabled = "agentBridge.indicatorEnabled"
         static let petVisible = "pet.visible"
         static let alwaysOnTop = "pet.alwaysOnTop"
