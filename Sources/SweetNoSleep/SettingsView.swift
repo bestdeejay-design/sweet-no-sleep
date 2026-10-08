@@ -36,7 +36,7 @@ private struct FocusSettingsPane: View {
             SettingsHero(
                 symbol: "bolt.fill",
                 title: L10n.text("Focus without unexpected sleep"),
-                subtitle: L10n.text("Start a session manually and choose what Kiwi should do when it ends.")
+                subtitle: L10n.format("Start a session manually and choose what %@ should do when it ends.", model.characterName)
             )
 
             SettingsCard(title: L10n.text("Duration"), subtitle: L10n.format("Selected: %d minutes", model.selectedMinutes)) {
@@ -70,7 +70,7 @@ private struct FocusSettingsPane: View {
                     .foregroundStyle(Color(hex: 0xD99142))
                     .fixedSize(horizontal: false, vertical: true)
                 } else {
-                    Text(SessionCompletionAction.allowNormalSleep.detail)
+                    Text(SessionCompletionAction.allowNormalSleep.detail(persona: model.characterName))
                         .font(.system(size: 11, design: .rounded))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -109,8 +109,8 @@ private struct CompanionSettingsPane: View {
         SettingsScrollPane {
             SettingsHero(
                 symbol: "pawprint.fill",
-                title: L10n.text("Kiwi's personality"),
-                subtitle: L10n.text("Choose Kiwi's look and how visibly the pet joins your workday.")
+                title: L10n.format("%@'s personality", model.characterName),
+                subtitle: L10n.format("Choose %@'s look and how visibly the pet joins your workday.", model.characterName)
             )
 
             SettingsCard(title: L10n.text("Skin library"), subtitle: L10n.text("Choose a look. New skins install separately and do not require source-code changes.")) {
@@ -161,7 +161,7 @@ private struct CompanionSettingsPane: View {
                     .foregroundStyle(.secondary)
             }
 
-            SettingsCard(title: L10n.text("Behavior"), subtitle: L10n.text("Adjust how Kiwi moves and which playful moments appear during an awake session.")) {
+            SettingsCard(title: L10n.text("Behavior"), subtitle: L10n.format("Adjust how %@ moves and which playful moments appear during an awake session.", model.characterName)) {
                 Toggle(L10n.text("Roam gently across the screen"), isOn: $model.roamingEnabled)
                 Label(L10n.text("The first stroll starts about 3 seconds after enabling; later strolls begin about every 28 seconds."), systemImage: "figure.walk")
                     .font(.system(size: 10, design: .rounded))
@@ -206,12 +206,12 @@ private struct CompanionSettingsPane: View {
                     )
                 }
 
-                Label(L10n.text("Kiwi's eyes follow the pointer automatically."), systemImage: "eye")
+                Label(L10n.format("%@'s eyes follow the pointer automatically.", model.characterName), systemImage: "eye")
                     .font(.system(size: 10, design: .rounded))
                     .foregroundStyle(.secondary)
             }
 
-            SettingsCard(title: L10n.text("Eye and attention breaks"), subtitle: L10n.text("During an awake session, Kiwi gently suggests looking away from code and into the distance for about 20 seconds.")) {
+            SettingsCard(title: L10n.text("Eye and attention breaks"), subtitle: L10n.format("During an awake session, %@ gently suggests looking away from code and into the distance for about 20 seconds.", model.characterName)) {
                 Toggle(L10n.text("Remind me to take a short break"), isOn: $model.breakRemindersEnabled)
                 if model.breakRemindersEnabled {
                     HStack(spacing: 10) {
@@ -235,7 +235,7 @@ private struct CompanionSettingsPane: View {
             }
 
             SettingsCard(title: L10n.text("Desktop layer"), subtitle: L10n.text("The pet window is transparent and does not take focus away from your code editor.")) {
-                Toggle(L10n.text("Show Kiwi on the desktop"), isOn: $model.isPetVisible)
+                Toggle(L10n.format("Show %@ on the desktop", model.characterName), isOn: $model.isPetVisible)
             }
         }
     }
@@ -357,7 +357,7 @@ private struct PowerSettingsPane: View {
                 subtitle: L10n.text("Sleep protection is active only while awake mode or a timer is running.")
             )
 
-            SettingsCard(title: L10n.text("Display and system"), subtitle: L10n.text("Kiwi uses temporary system power assertions and releases them when work ends.")) {
+            SettingsCard(title: L10n.text("Display and system"), subtitle: L10n.format("%@ uses temporary system power assertions and releases them when work ends.", model.characterName)) {
                 Toggle(L10n.text("Keep the display on during a session"), isOn: $model.keepDisplayAwake)
                 Text(L10n.text("When this is off, the display may turn off while the Mac stays awake for work. This saves battery."))
                     .font(.system(size: 11, design: .rounded))
@@ -444,7 +444,7 @@ private struct PowerSettingsPane: View {
                 }
             }
 
-            SettingsCard(title: L10n.text("AI agent connection"), subtitle: L10n.text("Local hooks can tell Kiwi when work starts, send heartbeats, report completion, or ask for your approval.")) {
+            SettingsCard(title: L10n.text("AI agent connection"), subtitle: L10n.format("Local hooks can tell %@ when work starts, send heartbeats, report completion, or ask for your approval.", model.characterName)) {
                 Toggle(L10n.text("Allow events from local hooks"), isOn: $model.agentBridgeEnabled)
                 Text(L10n.text("The bridge is off by default. Only trust installed hooks: any local process that can open the URL scheme can send an event. Without a heartbeat, a session expires after 3 minutes. Agent events never trigger immediate sleep."))
                     .font(.system(size: 11, design: .rounded))
@@ -493,7 +493,7 @@ private struct PowerSettingsPane: View {
                 }
             }
 
-            SettingsCard(title: L10n.text("Launch at login"), subtitle: L10n.text("Useful if Kiwi is part of your everyday work setup.")) {
+            SettingsCard(title: L10n.text("Launch at login"), subtitle: L10n.format("Useful if %@ is part of your everyday work setup.", model.characterName)) {
                 Toggle(L10n.text("Launch Sweet No Sleep at login"), isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { _, enabled in
                         updateLoginItem(enabled: enabled)

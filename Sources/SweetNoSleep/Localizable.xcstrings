@@ -31,6 +31,116 @@
         }
       }
     },
+    "%@ is keeping your Mac awake": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is keeping your Mac awake"
+          }
+        }
+      }
+    },
+    "%@ is on duty": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is on duty"
+          }
+        }
+      }
+    },
+    "%@ is on duty and protecting this session.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is on duty and protecting this session."
+          }
+        }
+      }
+    },
+    "%@ is ready to help": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is ready to help"
+          }
+        }
+      }
+    },
+    "%@ is ready to keep you company": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is ready to keep you company"
+          }
+        }
+      }
+    },
+    "%@ is with your agent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is with your agent"
+          }
+        }
+      }
+    },
+    "%@ needs your approval": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ needs your approval"
+          }
+        }
+      }
+    },
+    "%@ uses temporary system power assertions and releases them when work ends.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ uses temporary system power assertions and releases them when work ends."
+          }
+        }
+      }
+    },
+    "%@'s eyes follow the pointer automatically.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@'s eyes follow the pointer automatically."
+          }
+        }
+      }
+    },
+    "%@'s personality": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@'s personality"
+          }
+        }
+      }
+    },
+    "%@'s shift is over - your Mac is back to its normal sleep settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@'s shift is over - your Mac is back to its normal sleep settings"
+          }
+        }
+      }
+    },
     "%@, the Sweet No Sleep pet": {
       "localizations": {
         "en": {
@@ -281,22 +391,22 @@
         }
       }
     },
-    "Adjust how Kiwi moves and which playful moments appear during an awake session.": {
+    "Adjust how %@ moves and which playful moments appear during an awake session.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Adjust how Kiwi moves and which playful moments appear during an awake session."
+            "value": "Adjust how %@ moves and which playful moments appear during an awake session."
           }
         }
       }
     },
-    "After a confirmed session, Kiwi will request immediate system sleep.": {
+    "After a confirmed session, %@ will request immediate system sleep.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "After a confirmed session, Kiwi will request immediate system sleep."
+            "value": "After a confirmed session, %@ will request immediate system sleep."
           }
         }
       }
@@ -581,12 +691,12 @@
         }
       }
     },
-    "Choose Kiwi's look and how visibly the pet joins your workday.": {
+    "Choose %@'s look and how visibly the pet joins your workday.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose Kiwi's look and how visibly the pet joins your workday."
+            "value": "Choose %@'s look and how visibly the pet joins your workday."
           }
         }
       }
@@ -891,12 +1001,12 @@
         }
       }
     },
-    "During an awake session, Kiwi gently suggests looking away from code and into the distance for about 20 seconds.": {
+    "During an awake session, %@ gently suggests looking away from code and into the distance for about 20 seconds.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "During an awake session, Kiwi gently suggests looking away from code and into the distance for about 20 seconds."
+            "value": "During an awake session, %@ gently suggests looking away from code and into the distance for about 20 seconds."
           }
         }
       }
@@ -1001,6 +1111,16 @@
         }
       }
     },
+    "From the repository root: ./Scripts/agent-session.sh my-agent-1 -- ./run-agent.sh\nFor IDE hooks: agent-event.sh start > heartbeat (about once a minute) > waiting when a question needs you > done or failed; use one ID per session.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From the repository root: ./Scripts/agent-session.sh my-agent-1 -- ./run-agent.sh\nFor IDE hooks: agent-event.sh start > heartbeat (about once a minute) > waiting when a question needs you > done or failed; use one ID per session."
+          }
+        }
+      }
+    },
     "Goal reached - the session is complete": {
       "localizations": {
         "en": {
@@ -1011,12 +1131,12 @@
         }
       }
     },
-    "Hide Kiwi": {
+    "Hide %@": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hide Kiwi"
+            "value": "Hide %@"
           }
         }
       }
@@ -1131,116 +1251,6 @@
         }
       }
     },
-    "Kiwi is keeping your Mac awake": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kiwi is keeping your Mac awake"
-          }
-        }
-      }
-    },
-    "Kiwi is on duty": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kiwi is on duty"
-          }
-        }
-      }
-    },
-    "Kiwi is on duty and protecting this session.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kiwi is on duty and protecting this session."
-          }
-        }
-      }
-    },
-    "Kiwi is ready to help": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kiwi is ready to help"
-          }
-        }
-      }
-    },
-    "Kiwi is ready to keep you company": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kiwi is ready to keep you company"
-          }
-        }
-      }
-    },
-    "Kiwi is with your agent": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kiwi is with your agent"
-          }
-        }
-      }
-    },
-    "Kiwi needs your approval": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kiwi needs your approval"
-          }
-        }
-      }
-    },
-    "Kiwi uses temporary system power assertions and releases them when work ends.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kiwi uses temporary system power assertions and releases them when work ends."
-          }
-        }
-      }
-    },
-    "Kiwi's eyes follow the pointer automatically.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kiwi's eyes follow the pointer automatically."
-          }
-        }
-      }
-    },
-    "Kiwi's personality": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kiwi's personality"
-          }
-        }
-      }
-    },
-    "Kiwi's shift is over - your Mac is back to its normal sleep settings": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kiwi's shift is over - your Mac is back to its normal sleep settings"
-          }
-        }
-      }
-    },
     "Last power event": {
       "localizations": {
         "en": {
@@ -1297,6 +1307,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Live status of power assertions, battery polling, and kernel timers."
+          }
+        }
+      }
+    },
+    "Local hooks can tell %@ when work starts, send heartbeats, report completion, or ask for your approval.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local hooks can tell %@ when work starts, send heartbeats, report completion, or ask for your approval."
           }
         }
       }
@@ -1541,12 +1561,12 @@
         }
       }
     },
-    "Protection remains active while heartbeats arrive. After 3 minutes without a signal, Kiwi releases the assertion so the Mac is not kept awake indefinitely.": {
+    "Protection remains active while heartbeats arrive. After 3 minutes without a signal, %@ releases the assertion so the Mac is not kept awake indefinitely.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Protection remains active while heartbeats arrive. After 3 minutes without a signal, Kiwi releases the assertion so the Mac is not kept awake indefinitely."
+            "value": "Protection remains active while heartbeats arrive. After 3 minutes without a signal, %@ releases the assertion so the Mac is not kept awake indefinitely."
           }
         }
       }
@@ -1711,32 +1731,32 @@
         }
       }
     },
-    "Should Kiwi get to work too - or take a break?": {
+    "Should %@ get to work too - or take a break?": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Should Kiwi get to work too - or take a break?"
+            "value": "Should %@ get to work too - or take a break?"
           }
         }
       }
     },
-    "Show Kiwi": {
+    "Show %@": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Show Kiwi"
+            "value": "Show %@"
           }
         }
       }
     },
-    "Show Kiwi on the desktop": {
+    "Show %@ on the desktop": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Show Kiwi on the desktop"
+            "value": "Show %@ on the desktop"
           }
         }
       }
@@ -1801,12 +1821,12 @@
         }
       }
     },
-    "Start a session manually and choose what Kiwi should do when it ends.": {
+    "Start a session manually and choose what %@ should do when it ends.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Start a session manually and choose what Kiwi should do when it ends."
+            "value": "Start a session manually and choose what %@ should do when it ends."
           }
         }
       }
@@ -2051,12 +2071,12 @@
         }
       }
     },
-    "Useful if Kiwi is part of your everyday work setup.": {
+    "Useful if %@ is part of your everyday work setup.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Useful if Kiwi is part of your everyday work setup."
+            "value": "Useful if %@ is part of your everyday work setup."
           }
         }
       }
@@ -2217,26 +2237,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "macOS rejected the sleep request (error %d)."
-          }
-        }
-      }
-    },
-    "Local hooks can tell Kiwi when work starts, send heartbeats, report completion, or ask for your approval.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Local hooks can tell Kiwi when work starts, send heartbeats, report completion, or ask for your approval."
-          }
-        }
-      }
-    },
-    "From the repository root: ./Scripts/agent-session.sh my-agent-1 -- ./run-agent.sh\nFor IDE hooks: agent-event.sh start > heartbeat (about once a minute) > waiting when a question needs you > done or failed; use one ID per session.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "From the repository root: ./Scripts/agent-session.sh my-agent-1 -- ./run-agent.sh\nFor IDE hooks: agent-event.sh start > heartbeat (about once a minute) > waiting when a question needs you > done or failed; use one ID per session."
           }
         }
       }

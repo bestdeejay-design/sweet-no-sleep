@@ -134,6 +134,10 @@ struct PetSkinDefinition: Codable, Identifiable, Hashable {
     let subtitle: String
     let colors: PetSkinColors
     let animation: PetAnimationProfile
+    /// The persona the pet should be called by in the UI. Skins of the built-in
+    /// cat omit it (the app falls back to "Kiwi"); a character pack like
+    /// Kot-Arbuz declares its own name so the app never calls it "Kiwi".
+    var characterName: String? = nil
     /// Pack format version. 1 (default) is a palette/motion pack; 2 may add a
     /// `pet.json` character manifest and its sprite layers.
     var format: Int? = nil
@@ -144,6 +148,9 @@ struct PetSkinDefinition: Codable, Identifiable, Hashable {
 
     /// Declared pack format, defaulting to the original data-only packs.
     var formatVersion: Int { format ?? 1 }
+
+    /// Name the UI addresses this pet by: the pack's persona, else "Kiwi".
+    var personaName: String { characterName ?? "Kiwi" }
 
     /// The art this pack is drawn with (procedural unless `pet.json` says otherwise).
     var character: PetCharacterArt { art ?? .procedural }

@@ -62,6 +62,7 @@ Copy this template and change the values:
 | `id` | Stable pack identifier | 1–48 ASCII letters, digits, `-`, or `_` |
 | `name` | Name shown in Settings | Must not be empty |
 | `subtitle` | Short description | Any string |
+| `characterName` | Optional persona name the UI addresses the pet by (statuses, menus, Settings). Omit it for skins of the built-in cat — the app calls those "Kiwi"; a character pack like Kot-Arbuz sets its own name so it is never misnamed | Any string; recommended ≤ 24 chars |
 | `colors.fur` | Main fur color | Hex `#RRGGBB` |
 | `colors.furLight` | Light fur area | Hex `#RRGGBB` |
 | `colors.outline` | Outline and face details | Hex `#RRGGBB` |

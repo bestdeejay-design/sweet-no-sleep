@@ -62,12 +62,12 @@ enum SessionCompletionAction: String, CaseIterable, Identifiable, Hashable {
         }
     }
 
-    var detail: String {
+    func detail(persona: String) -> String {
         switch self {
         case .allowNormalSleep:
             L10n.text("Release the sleep assertion and let macOS use its normal energy settings.")
         case .sleepImmediately:
-            L10n.text("After a confirmed session, Kiwi will request immediate system sleep.")
+            L10n.format("After a confirmed session, %@ will request immediate system sleep.", persona)
         }
     }
 }
@@ -143,7 +143,7 @@ final class SweetNoSleepModel: ObservableObject {
     }
     @Published private(set) var remainingSeconds: Int?
     @Published private(set) var powerWarning: String?
-    @Published var statusMessage = L10n.text("Kiwi is ready to keep you company")
+    @Published var statusMessage = ""
     @Published private(set) var mood: KiwiMood = .idle
     @Published private(set) var diagnostics = PowerDiagnostics()
 
@@ -160,6 +160,11 @@ final class SweetNoSleepModel: ObservableObject {
     var activeSkin: PetSkinDefinition {
         availableSkins.first(where: { $0.id == selectedSkinID }) ?? availableSkins.first ?? .fallback
     }
+
+    /// The persona the active skin plays in the UI: "Kiwi" for the built-in
+    /// cat's skins, the pack's own `characterName` for character packs such as
+    /// Kot-Arbuz, so the app never calls a different cat "Kiwi".
+    var characterName: String { activeSkin.personaName }
 
     @Published var petSize: Double {
         didSet { defaults.set(petSize, forKey: Key.petSize) }
@@ -359,6 +364,10 @@ final class SweetNoSleepModel: ObservableObject {
             self?.statusMessage = message
             self?.updateDiagnostics()
         }
+
+        // The greeting needs the loaded skin, so it cannot live in the
+        // property initializer.
+        statusMessage = L10n.format("%@ is ready to keep you company", characterName)
         powerKeeper.onDiagnosticsChanged = { [weak self] in
             self?.updateDiagnostics()
         }
@@ -418,7 +427,7 @@ final class SweetNoSleepModel: ObservableObject {
         )
         guard isKeepingAwake else { return }
         if !isPausedByBatteryFloor {
-            statusMessage = L10n.text("Kiwi is keeping your Mac awake")
+            statusMessage = L10n.format("%@ is keeping your Mac awake", characterName)
             setMood(isBreakDue ? .breakReminder : .working)
         }
     }
@@ -485,7 +494,7 @@ final class SweetNoSleepModel: ObservableObject {
         updateDiagnostics()
 
         guard wasRunning else { return }
-        statusMessage = L10n.text("Kiwi's shift is over - your Mac is back to its normal sleep settings")
+        statusMessage = L10n.format("%@'s shift is over - your Mac is back to its normal sleep settings", characterName)
         setTemporaryMood(.resting, duration: 1.8, then: .idle)
     }
 
@@ -714,8 +723,8 @@ final class SweetNoSleepModel: ObservableObject {
         // not tapping the pet.
         if let lastWake = lastSystemWakeDate, Date().timeIntervalSince(lastWake) < 3.0 { return }
         statusMessage = isKeepingAwake
-            ? L10n.text("Kiwi is on duty and protecting this session.")
-            : L10n.text("Should Kiwi get to work too - or take a break?")
+            ? L10n.format("%@ is on duty and protecting this session.", characterName)
+            : L10n.format("Should %@ get to work too - or take a break?", characterName)
         setTemporaryMood(.celebrating, duration: 2.0, then: baseMood())
     }
 

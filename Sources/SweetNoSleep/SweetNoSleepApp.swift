@@ -226,8 +226,8 @@ private struct MenuBarDashboard: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 Text(model.hasWaitingAgent
-                    ? L10n.text("Kiwi needs your approval")
-                    : (model.activeAgentCount > 0 ? L10n.text("Kiwi is with your agent") : (model.isKeepingAwake ? L10n.text("Kiwi is on duty") : L10n.text("Kiwi is ready to help"))))
+                    ? L10n.format("%@ needs your approval", model.characterName)
+                    : (model.activeAgentCount > 0 ? L10n.format("%@ is with your agent", model.characterName) : (model.isKeepingAwake ? L10n.format("%@ is on duty", model.characterName) : L10n.format("%@ is ready to help", model.characterName))))
                     .font(.system(size: 17, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                     .fixedSize(horizontal: false, vertical: true)
@@ -378,7 +378,7 @@ private struct MenuBarDashboard: View {
                     }
                 }
             }
-            Text(L10n.text("Protection remains active while heartbeats arrive. After 3 minutes without a signal, Kiwi releases the assertion so the Mac is not kept awake indefinitely."))
+            Text(L10n.format("Protection remains active while heartbeats arrive. After 3 minutes without a signal, %@ releases the assertion so the Mac is not kept awake indefinitely.", model.characterName))
                 .font(.system(size: 10, design: .rounded))
                 .foregroundStyle(.white.opacity(0.58))
                 .fixedSize(horizontal: false, vertical: true)
@@ -555,7 +555,7 @@ private struct MenuBarDashboard: View {
             Button {
                 model.isPetVisible.toggle()
             } label: {
-                Label(model.isPetVisible ? L10n.text("Hide Kiwi") : L10n.text("Show Kiwi"), systemImage: model.isPetVisible ? "eye.slash" : "eye")
+                Label(model.isPetVisible ? L10n.format("Hide %@", model.characterName) : L10n.format("Show %@", model.characterName), systemImage: model.isPetVisible ? "eye.slash" : "eye")
             }
             .help(model.isPetVisible ? L10n.text("Hide the pet from the desktop") : L10n.text("Show the pet on the desktop"))
 
