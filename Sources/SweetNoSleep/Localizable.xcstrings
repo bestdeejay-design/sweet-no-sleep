@@ -781,6 +781,16 @@
         }
       }
     },
+    "Copy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy"
+          }
+        }
+      }
+    },
     "Could not connect to the macOS power management service.": {
       "localizations": {
         "en": {
@@ -1007,6 +1017,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "During an awake session, %@ gently suggests looking away from code and into the distance for about 20 seconds."
+          }
+        }
+      }
+    },
+    "Enable localhost webhook": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable localhost webhook"
           }
         }
       }
@@ -1321,12 +1341,32 @@
         }
       }
     },
+    "Local webhook": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local webhook"
+          }
+        }
+      }
+    },
     "Look away from your code and focus on something in the distance for about 20 seconds.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Look away from your code and focus on something in the distance for about 20 seconds."
+          }
+        }
+      }
+    },
+    "Loopback-only HTTP listener on 127.0.0.1:18290 for sandboxed runners that cannot open URL schemes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loopback-only HTTP listener on 127.0.0.1:18290 for sandboxed runners that cannot open URL schemes."
           }
         }
       }
@@ -1347,6 +1387,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mood weights - higher values make a mood more likely; 0 turns it off."
+          }
+        }
+      }
+    },
+    "New token": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New token"
           }
         }
       }
@@ -1461,6 +1511,16 @@
         }
       }
     },
+    "POST to http://127.0.0.1:18290/agent/<start|heartbeat|waiting|done|failed> with a JSON body {\"session\": \"id\", \"reason\": \"text\"} and the Authorization: Bearer header. Same 3-minute lease as the URL bridge.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "POST to http://127.0.0.1:18290/agent/<start|heartbeat|waiting|done|failed> with a JSON body {\"session\": \"id\", \"reason\": \"text\"} and the Authorization: Bearer header. Same 3-minute lease as the URL bridge."
+          }
+        }
+      }
+    },
     "Pause sleep protection when battery charge drops below a safe level. Protection resumes when plugged in.": {
       "localizations": {
         "en": {
@@ -1497,6 +1557,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Playful moment interval"
+          }
+        }
+      }
+    },
+    "Port 18290 is already in use": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Port 18290 is already in use"
           }
         }
       }
@@ -2137,6 +2207,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "We recommend the safer option: let macOS follow its normal sleep settings."
+          }
+        }
+      }
+    },
+    "Webhook listener failed: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Webhook listener failed: %@"
           }
         }
       }
