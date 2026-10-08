@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sweet No Sleep — ворк-ордеры и проверка (2026-10-08)</title>
+<style>
+  :root {
+    --paper: #f6f6f3;
+    --ink: #17181a;
+    --ink2: #5e6268;
+    --ink3: #8d9197;
+    --hair: rgba(23,24,26,.18);
+    --hair-soft: rgba(23,24,26,.10);
+    --accent: #9a5b12;
+    --ok: #3f7d4a;
+    --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+    font: 15.5px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Segoe UI", Roboto, sans-serif; }
+  .sheet { max-width: 1240px; margin: 0 auto; padding: 56px 48px 72px; }
+  .kicker { font-family: var(--mono); font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink2); }
+  h1 { font-size: clamp(28px, 3vw, 38px); line-height: 1.12; letter-spacing: -.02em; font-weight: 600; margin: 18px 0 12px; max-width: 30ch; }
+  .sub { font-size: 17px; line-height: 1.5; color: var(--ink2); max-width: 62ch; margin: 0 0 24px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px 32px; font-family: var(--mono); font-size: 12px; letter-spacing: .02em;
+    color: var(--ink2); border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); padding: 11px 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+  .chip { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px;
+    border: 1px solid var(--hair); border-radius: 3px; padding: 5px 12px; color: var(--ink); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+  .dot.ok { background: var(--ok); }
+  .dot.wait { background: transparent; border: 1.5px solid var(--accent); }
+  section { margin-top: 52px; }
+  h2 { display: flex; gap: 16px; align-items: baseline; font-size: 21px; font-weight: 600; letter-spacing: -.012em;
+    border-top: 1px solid var(--hair); margin: 0 0 20px; padding-top: 16px; }
+  h2 .no { font-family: var(--mono); font-size: 12px; color: var(--ink2); letter-spacing: .08em; }
+  p { margin: 0 0 14px; max-width: 78ch; }
+  a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--accent); }
+  a:hover { border-bottom-width: 2px; }
+  .mono { font-family: var(--mono); font-size: .92em; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 6px 0 18px; }
+  th { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink2);
+    text-align: left; font-weight: 500; border-bottom: 1px solid var(--hair); padding: 8px 16px 8px 0; white-space: nowrap; }
+  td { border-bottom: 1px solid var(--hair-soft); padding: 9px 16px 9px 0; vertical-align: top; }
+  td:last-child, th:last-child { padding-right: 0; }
+  ul.notes { list-style: none; margin: 4px 0 0; padding: 0; }
+  ul.notes li { border-top: 1px solid var(--hair-soft); padding: 11px 0; max-width: 88ch; }
+  ul.notes li:first-child { border-top: 0; padding-top: 0; }
+  .ordercards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 6px 0 6px; }
+  .ordercard { border: 1px solid var(--hair); padding: 16px 18px; }
+  .ordercard .oc-no { font-family: var(--mono); font-size: 12px; color: var(--ink2); letter-spacing: .06em; }
+  .ordercard .oc-title { font-size: 16px; font-weight: 600; margin: 6px 0 8px; letter-spacing: -.01em; }
+  .ordercard .oc-text { font-size: 13.5px; color: var(--ink2); margin: 0 0 10px; }
+  .ordercard a { font-family: var(--mono); font-size: 12px; }
+  pre { font-family: var(--mono); font-size: 12.5px; line-height: 1.6; background: rgba(23,24,26,.05);
+    border: 1px solid var(--hair-soft); border-radius: 3px; padding: 14px 16px; overflow-x: auto; margin: 6px 0 18px; }
+  .colophon { border-top: 1px solid var(--hair); margin-top: 64px; padding-top: 14px; font-family: var(--mono);
+    font-size: 11.5px; color: var(--ink3); display: flex; justify-content: space-between; gap: 10px 24px; flex-wrap: wrap; }
+  @media (max-width: 760px) { .sheet { padding: 32px 20px 48px; } .ordercards { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header>
+    <div class="kicker">Ворк-ордеры · Sweet No Sleep · 08.10.2026</div>
+    <h1>Что отправили арене и что проверили перед этим</h1>
+    <p class="sub">Сверка «заявлено в документах → есть ли в приложении», новый персонаж в репозитории и две задачи для арены: Kot-Arbuz и видимость агентов.</p>
+    <div class="meta">
+      <span>issues #14 · #15</span>
+      <span>база · arena/3331051a @ 412345e (PR #12)</span>
+      <span>арт · Resources/Characters/kot-arbuz · 076952a</span>
+    </div>
+    <div class="chips">
+      <span class="chip"><span class="dot ok"></span>Задачи отправлены на GitHub</span>
+      <span class="chip"><span class="dot wait"></span>Визуальная приёмка — на Маке</span>
+    </div>
+  </header>
+
+  <section>
+    <h2><span class="no">01</span>Проверка «заявлено → реализовано»</h2>
+    <table>
+      <thead><tr><th>Направление</th><th>Где заявлено</th><th>Факт на сегодня</th></tr></thead>
+      <tbody>
+        <tr><td>Индикатор на груди: агент работает (F0)</td><td><span class="mono">AGENT_INTEGRATIONS_PLAN</span>, <span class="mono">CODE_AUDIT</span></td><td>Код в ветке <span class="mono">arena/3331051a</span> (PR #12); в <span class="mono">main</span> нет; в свежей сборке (pr9) есть → усилить видимость в #15</td></tr>
+        <tr><td>Ожидание ввода: свет, <span class="mono">?/!</span>, пузырь y/n (F1)</td><td>те же</td><td>То же (PR #12) → приёмка «глазами» по шагам из #15</td></tr>
+        <tr><td>«Сколько агентов» на персонаже</td><td>нигде (счётчик только в дашборде)</td><td>На персонаже нет → новое требование в #15</td></tr>
+        <tr><td>Вебхук <span class="mono">POST /agent/*</span> (F3)</td><td>план F3</td><td>Проверен на сборке: 8/8 сценариев — ок</td></tr>
+        <tr><td>URL-схема <span class="mono">sweetnosleep://</span> (F5)</td><td><span class="mono">presets/</span>, <span class="mono">agent-event.sh</span></td><td>Схема зарегистрирована; визуальная доставка — приёмка на Маке</td></tr>
+        <tr><td>Пресеты хуков (F5)</td><td><span class="mono">presets/README.md</span></td><td>Лежат в ветке; на машине не установлены → <span class="mono">install-presets.sh</span></td></tr>
+        <tr><td>Персонаж «Коть-арбуз»</td><td>не было</td><td>Арт в репозитории (<span class="mono">076952a</span>) → ворк-ордер #14</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2><span class="no">02</span>Почему «в сборке не видно агентов»</h2>
+    <ul class="notes">
+      <li><strong>Golden-сборка старше фич.</strong> Копия на рабочем столе собрана 7 октября: в её бинаре 27 агентских строк против 64 в свежей, знаков ожидания там нет. Смотреть — на <span class="mono">sweet-no-sleep-pr9/dist/</span>.</li>
+      <li><strong>События нужно отправлять.</strong> Индикаторы появляются, только когда приходят события агента; хуки реальных агентов пока не установлены (см. <span class="mono">presets/</span>).</li>
+      <li><strong>Счётчика на персонаже нет</strong> — только в дашборде/настройках. Это добавляет #15.</li>
+      <li><strong>Два инстанса с одним bundle id</strong> — URL-событие может уйти не тому; отмечено в #15 для проверки.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span class="no">03</span>Отправлено арене</h2>
+    <div class="ordercards">
+      <div class="ordercard">
+        <div class="oc-no">ISSUE #14</div>
+        <div class="oc-title">Kot-Arbuz — оживить и добавить к выбору персонажа</div>
+        <p class="oc-text">P0: дыхание + idle-моушен в панели; P1: выбор в Settings → Skin library, персистентность, валидаторы; P2: агентские индикаторы на новом персонаже.</p>
+        <a href="https://github.com/bestdeejay-design/sweet-no-sleep/issues/14">github.com/…/issues/14</a>
+      </div>
+      <div class="ordercard">
+        <div class="oc-no">ISSUE #15</div>
+        <div class="oc-title">Видимость агентов: счётчик + явный waiting (y/n, ?)</div>
+        <p class="oc-text">P0: счётчик активных сессий на персонаже + микродинамика «в работе»; P1: усиленный waiting-cue (свет, знаки, пузырь) и секция «Agents» в дашборде; P2: демо-команда и доки.</p>
+        <a href="https://github.com/bestdeejay-design/sweet-no-sleep/issues/15">github.com/…/issues/15</a>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="no">04</span>Проверка за 30 секунд</h2>
+    <pre>cd ~/Projects/sweet-no-sleep-pr9
+./Scripts/agent-event.sh start demo-a                      # огонёк «в работе»
+./Scripts/agent-event.sh waiting demo-a "Approve deploy?"  # янтарный свет + ?/! + пузырь y/n
+./Scripts/agent-event.sh done demo-a                       # всё гаснет</pre>
+  </section>
+
+  <section>
+    <h2><span class="no">05</span>Следующему агенту</h2>
+    <ul class="notes">
+      <li>Незакоммиченные фиксы в <span class="mono">sweet-no-sleep-pr9</span> (вебхук stop/retry, кнопка Copy, фрейм панели) — коммит + цепочка PR.</li>
+      <li>Цепочка PR: #9 → #12; артефакты — папка <span class="mono">artifacts/</span>.</li>
+      <li>Новый персонаж: <span class="mono">Resources/Characters/kot-arbuz/</span> (PNG-мастер + SVG-обёртка, README внутри).</li>
+    </ul>
+  </section>
+
+  <footer class="colophon">
+    <span>Собрано 08.10.2026 · Sweet No Sleep</span>
+    <span>источники: issues #14/#15 · репозиторий · локальные проверки сборки pr9</span>
+  </footer>
+
+</div>
+</body>
+</html>
