@@ -8,7 +8,9 @@ struct SweetNoSleepApp: App {
     @StateObject private var model = SweetNoSleepModel.shared
 
     var body: some Scene {
-        MenuBarExtra(L10n.text("Kiwi"), systemImage: "leaf.fill") {
+        // The persona, not a hardcoded cat: a character pack such as Kot-Arbuz
+        // must never be addressed as Kiwi (issue #21 audit).
+        MenuBarExtra(model.characterName, systemImage: "leaf.fill") {
             MenuBarDashboard(model: model)
         }
         .menuBarExtraStyle(.window)
@@ -110,9 +112,12 @@ private struct MenuBarDashboard: View {
 
     private let durations = [25, 50, 90, 120]
 
-    /// Extra height for the per-session rows in the agents card.
+    /// Extra height for the per-session rows in the agents card. Only counted
+    /// while that card is actually on screen: during a focus session the
+    /// running-session card replaces it, so the rows would add empty space
+    /// (issue #21 audit). Longer lists and wrapped reasons scroll (issue #19).
     private var agentRowsHeight: CGFloat {
-        guard model.activeAgentCount > 0 else { return 0 }
+        guard model.activeAgentCount > 0, !model.isFocusSession else { return 0 }
         return 24 + CGFloat(min(model.activeAgentCount, 4)) * 18
     }
 

@@ -13,6 +13,10 @@ final class AgentWebhookServer: @unchecked Sendable {
     private let onError: @MainActor @Sendable (String?) -> Void
     private let queue = DispatchQueue(label: "SweetNoSleep.AgentWebhookServer")
     private var listener: NWListener?
+    /// Connections still being served; cancelled on stop() so toggling the
+    /// bridge off never lets an in-flight request deliver an event afterwards
+    /// (issue #21 audit).
+    private var connections: [NWConnection] = []
     private var isRunning = false
     private var wantsRunning = false
     private var bindRetries = 0
@@ -20,6 +24,10 @@ final class AgentWebhookServer: @unchecked Sendable {
     private static let maxBindRetries = 5
     private static let bindRetryDelay: TimeInterval = 0.1
 
+    /// A connection that neither completes a request nor errors is dropped
+    /// after this long, so a stalled or slow-loris client cannot park a
+    /// listener queue slot forever.
+    private static let connectionTimeout: TimeInterval = 15
     private static let maxHeadersBytes = 8 * 1024
     private static let maxBodyBytes = 4 * 1024
     private static let expectedHost = "127.0.0.1:18290"
@@ -61,6 +69,10 @@ final class AgentWebhookServer: @unchecked Sendable {
             bindRetries = 0
             listener?.cancel()
             listener = nil
+            for connection in connections {
+                connection.cancel()
+            }
+            connections.removeAll()
         }
     }
 
@@ -143,8 +155,19 @@ final class AgentWebhookServer: @unchecked Sendable {
     // MARK: Connections (one request per connection)
 
     private func accept(connection: NWConnection) {
+        connections.append(connection)
+        queue.asyncAfter(deadline: .now() + Self.connectionTimeout) { [weak self] in
+            guard let self, self.connections.contains(where: { $0 === connection }) else { return }
+            self.drop(connection)
+        }
         connection.start(queue: queue)
         receiveRequest(on: connection, accumulated: Data())
+    }
+
+    /// Cancels a connection and forgets it. Only call on `queue`.
+    private func drop(_ connection: NWConnection) {
+        connections.removeAll { $0 === connection }
+        connection.cancel()
     }
 
     private func receiveRequest(on connection: NWConnection, accumulated: Data) {
@@ -154,7 +177,7 @@ final class AgentWebhookServer: @unchecked Sendable {
                 return
             }
             if error != nil {
-                connection.cancel()
+                self.drop(connection)
                 return
             }
             var buffer = accumulated
@@ -309,7 +332,7 @@ final class AgentWebhookServer: @unchecked Sendable {
                 return
             }
             if error != nil {
-                connection.cancel()
+                self.drop(connection)
                 return
             }
             var next = accumulated
@@ -404,11 +427,15 @@ final class AgentWebhookServer: @unchecked Sendable {
         let header = "HTTP/1.1 \(status) \(phrase)\r\nContent-Type: application/json\r\nContent-Length: \(body.count)\r\nConnection: close\r\n\r\n"
         var payload = Data(header.utf8)
         payload.append(body)
-        connection.send(content: payload, completion: .contentProcessed { _ in
-            connection.cancel()
+        connection.send(content: payload, completion: .contentProcessed { [weak self] _ in
+            self?.drop(connection)
         })
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-            connection.cancel()
+        queue.asyncAfter(deadline: .now() + 5) { [weak self] in
+            guard let self else {
+                connection.cancel()
+                return
+            }
+            self.drop(connection)
         }
     }
 }

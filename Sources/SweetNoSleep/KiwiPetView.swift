@@ -50,21 +50,23 @@ struct PetDesktopView: View {
     @ObservedObject var model: SweetNoSleepModel
     var onDragChanged: ((CGSize) -> Void)?
     var onDragEnded: (() -> Void)?
+    /// Reports the laid-out content size so the panel can resize in the same
+    /// SwiftUI update that added or removed a bubble (issue #21 P0: resizing
+    /// the panel from the model's willSet left one frame where the bubble was
+    /// still laid out inside the shrunken panel, clipping the pet).
+    var onContentSize: ((NSSize) -> Void)?
 
-    private var petSide: CGFloat { CGFloat(model.petSize) + 48 }
+    private var petSide: CGFloat { PetPanelLayout.petSide(petSize: CGFloat(model.petSize)) }
     private var bubbleHeight: CGFloat {
-        // Waiting for an agent decision takes precedence over the break reminder.
-        if model.hasWaitingAgent { return PetWaitingBubble.height }
-        return model.isBreakDue ? PetBreakReminderBubble.height : 0
+        PetPanelLayout.bubbleHeight(showsWaitingBubble: model.showsWaitingBubble, isBreakDue: model.isBreakDue)
     }
     private var bubbleWidth: CGFloat {
-        if model.hasWaitingAgent { return max(petSide, PetWaitingBubble.width) }
-        return model.isBreakDue ? max(petSide, PetBreakReminderBubble.width) : petSide
+        PetPanelLayout.contentWidth(petSize: CGFloat(model.petSize), showsWaitingBubble: model.showsWaitingBubble, isBreakDue: model.isBreakDue)
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            if model.hasWaitingAgent {
+            if model.showsWaitingBubble {
                 PetWaitingBubble(model: model)
             } else if model.isBreakDue {
                 PetBreakReminderBubble(model: model)
@@ -73,6 +75,43 @@ struct PetDesktopView: View {
         }
         .frame(width: bubbleWidth, height: petSide + bubbleHeight, alignment: .top)
         .background(Color.clear)
+        .background(
+            PanelContentSizeReporter(
+                size: PetPanelLayout.contentSize(
+                    petSize: CGFloat(model.petSize),
+                    showsWaitingBubble: model.showsWaitingBubble,
+                    isBreakDue: model.isBreakDue
+                ),
+                onChange: onContentSize
+            )
+        )
+    }
+}
+
+/// Fires `onChange` from `updateNSView`, i.e. inside the SwiftUI update
+/// transaction that changed the content size, so the panel's AppKit frame and
+/// the SwiftUI layout move together and the sprite never draws outside the
+/// panel bounds for a frame.
+private struct PanelContentSizeReporter: NSViewRepresentable {
+    let size: NSSize
+    let onChange: ((NSSize) -> Void)?
+
+    final class View: NSView {
+        var onChange: ((NSSize) -> Void)?
+        private(set) var reportedSize: NSSize = .zero
+    }
+
+    func makeNSView(context: Context) -> View {
+        let view = View()
+        view.onChange = onChange
+        return view
+    }
+
+    func updateNSView(_ nsView: View, context: Context) {
+        nsView.onChange = onChange
+        guard nsView.reportedSize != size else { return }
+        nsView.reportedSize = size
+        onChange?(size)
     }
 }
 
@@ -80,8 +119,8 @@ struct PetDesktopView: View {
 /// The buttons only close the bubble - the agent keeps waiting in its own
 /// window, so nothing here claims to answer for it.
 struct PetWaitingBubble: View {
-    static let width: CGFloat = 228
-    static let height: CGFloat = 92
+    static let width: CGFloat = PetPanelLayout.waitingBubbleWidth
+    static let height: CGFloat = PetPanelLayout.waitingBubbleHeight
 
     @ObservedObject var model: SweetNoSleepModel
 
@@ -134,8 +173,8 @@ struct PetWaitingBubble: View {
 }
 
 struct PetBreakReminderBubble: View {
-    static let width: CGFloat = 228
-    static let height: CGFloat = 88
+    static let width: CGFloat = PetPanelLayout.breakBubbleWidth
+    static let height: CGFloat = PetPanelLayout.breakBubbleHeight
 
     @ObservedObject var model: SweetNoSleepModel
 
@@ -210,6 +249,31 @@ private final class WindowTrackingView: NSView {
     }
 }
 
+/// Smoothed frame-rate probe behind the hidden debug FPS overlay
+/// (`defaults write <bundle> SNSDebugFPSOverlay -bool true`). The Canvas closure
+/// is a pure function of the timeline date, so the probe keeps its own state.
+final class FrameRateProbe {
+    static let shared = FrameRateProbe()
+
+    private let lock = NSLock()
+    private var lastTime: Double = 0
+    private var framesPerSecond: Double = 0
+
+    func sample(_ time: Double) -> Double {
+        lock.lock()
+        defer { lock.unlock() }
+        if lastTime > 0 {
+            let delta = time - lastTime
+            if delta > 0, delta < 0.5 {
+                let instant = 1.0 / delta
+                framesPerSecond = framesPerSecond == 0 ? instant : framesPerSecond * 0.9 + instant * 0.1
+            }
+        }
+        lastTime = time
+        return framesPerSecond
+    }
+}
+
 /// A tiny, asset-free cat character drawn in SwiftUI Canvas.
 /// Its idle loop uses restrained secondary motion: breathing, blinks, a soft tail
 /// sway and small expression changes. It follows Reduce Motion and can be dragged.
@@ -226,6 +290,9 @@ struct KiwiPetView: View {
     @State private var isDragging = false
     @State private var trackedWindow: NSWindow?
 
+    /// Defaults key of the hidden FPS overlay used for 60 fps acceptance.
+    static let debugFPSKey = "SNSDebugFPSOverlay"
+
     private var renderedSize: CGFloat {
         sizeOverride ?? CGFloat(model.petSize)
     }
@@ -234,25 +301,29 @@ struct KiwiPetView: View {
     private var reduceMotion: Bool { systemReduceMotion || !model.animationsEnabled }
 
     /// Extra space above the pet when a bubble is visible, so the eyes keep
-    /// tracking the pointer from the right place.
+    /// tracking the pointer from the right place. Must match the bubble the
+    /// layout actually shows (a dismissed cue occupies no space).
     private var topInset: CGFloat {
-        if model.hasWaitingAgent { return PetWaitingBubble.height }
-        return model.isBreakDue ? PetBreakReminderBubble.height : 0
+        PetPanelLayout.topInset(showsWaitingBubble: model.showsWaitingBubble, isBreakDue: model.isBreakDue)
     }
 
     var body: some View {
         TimelineView(
             .animation(
-                minimumInterval: reduceMotion ? 0.12 : 1.0 / 24.0,
+                // The display-refresh schedule: 60 fps while animated, so the
+                // walk cycle, gaze and particles never step; Reduce Motion keeps
+                // the slow static-pose cadence.
+                minimumInterval: reduceMotion ? 0.12 : 1.0 / 60.0,
                 paused: !model.isPetVisible
             )
         ) { timeline in
             Canvas { context, size in
                 let skin = model.activeSkin
+                let time = timeline.date.timeIntervalSinceReferenceDate
                 Self.drawPet(
                     in: &context,
                     size: size,
-                    time: timeline.date.timeIntervalSinceReferenceDate,
+                    time: time,
                     mood: model.mood,
                     palette: .palette(for: skin),
                     gaze: tracksCursor ? cursorGaze(canvasSize: canvasSize, topInset: topInset) : .zero,
@@ -262,6 +333,18 @@ struct KiwiPetView: View {
                     attention: model.hasWaitingAgent ? .question : nil,
                     sprite: CharacterSpriteStore.shared.sprite(for: skin)
                 )
+                if UserDefaults.standard.bool(forKey: Self.debugFPSKey) {
+                    let fps = FrameRateProbe.shared.sample(time)
+                    if fps > 1 {
+                        context.draw(
+                            Text("\(Int(fps)) fps")
+                                .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                                .foregroundStyle(Color.green),
+                            at: CGPoint(x: 6, y: 4),
+                            anchor: .topLeading
+                        )
+                    }
+                }
             }
             .frame(width: canvasSize, height: canvasSize)
         }
@@ -340,6 +423,7 @@ struct KiwiPetView: View {
                 light: agentLight,
                 agentCount: agentCount,
                 attention: attention,
+                gaze: gaze,
                 animated: !reducedMotion
             )
             return

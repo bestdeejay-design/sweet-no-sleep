@@ -2,14 +2,19 @@ import AppKit
 import CoreGraphics
 import Foundation
 
-/// A loaded sprite character: the body and tail layers of a `pet.json` pack.
+/// A loaded sprite character: the layers of a `pet.json` pack.
 ///
-/// Both layers are square and share one canvas, so drawing them into the same
-/// rect restores the master artwork; the tail rotates around the pivot from the
-/// manifest.
+/// All layers are square and share one canvas, so drawing them into the same
+/// rect (legs, tail, body, head) restores the master artwork; each layer then
+/// rotates around the pivot the manifest declares. Format 1 packs ship body and
+/// tail only, and the head/leg layers stay nil.
 struct CharacterSprite {
     let body: CGImage
     let tail: CGImage
+    let head: CGImage?
+    let legsA: CGImage?
+    let legsB: CGImage?
+    let legsC: CGImage?
     let art: PetCharacterArt
 
     var canvasSide: CGFloat { CGFloat(art.canvas) }
@@ -19,6 +24,12 @@ struct CharacterSprite {
 
     var tailPivot: CGPoint {
         CGPoint(x: CGFloat(art.tailPivotX), y: CGFloat(art.tailPivotY))
+    }
+
+    /// The layered rig, when every rig layer loaded successfully.
+    var rig: PetCharacterRig? {
+        guard let rig = art.rig, head != nil, legsA != nil, legsB != nil, legsC != nil else { return nil }
+        return rig
     }
 }
 
@@ -50,11 +61,29 @@ final class CharacterSpriteStore {
         guard let data = try? Data(contentsOf: manifestURL),
               let manifest = try? JSONDecoder().decode(PetCharacterManifest.self, from: data),
               manifest.art.isValid,
-              let body = Self.cgImage(at: folder.appendingPathComponent(manifest.bodyLayerName)),
-              let tail = Self.cgImage(at: folder.appendingPathComponent(manifest.tailLayerName))
+              let body = Self.cgImage(at: folder.appendingPathComponent(manifest.bodyLayerName), canvas: manifest.art.canvas),
+              let tail = Self.cgImage(at: folder.appendingPathComponent(manifest.tailLayerName), canvas: manifest.art.canvas)
         else { return nil }
 
-        let sprite = CharacterSprite(body: body, tail: tail, art: manifest.art)
+        // A format 2 pack that lost one rig layer is refused wholesale, exactly
+        // as Scripts/validate-skins.py does, instead of drawing a headless cat.
+        var head: CGImage?
+        var legsA: CGImage?
+        var legsB: CGImage?
+        var legsC: CGImage?
+        if manifest.isRigged {
+            guard let loadedHead = Self.cgImage(at: folder.appendingPathComponent(manifest.headLayerName), canvas: manifest.art.canvas),
+                  let loadedLegsA = Self.cgImage(at: folder.appendingPathComponent(manifest.legsALayerName), canvas: manifest.art.canvas),
+                  let loadedLegsB = Self.cgImage(at: folder.appendingPathComponent(manifest.legsBLayerName), canvas: manifest.art.canvas),
+                  let loadedLegsC = Self.cgImage(at: folder.appendingPathComponent(manifest.legsCLayerName), canvas: manifest.art.canvas)
+            else { return nil }
+            head = loadedHead
+            legsA = loadedLegsA
+            legsB = loadedLegsB
+            legsC = loadedLegsC
+        }
+
+        let sprite = CharacterSprite(body: body, tail: tail, head: head, legsA: legsA, legsB: legsB, legsC: legsC, art: manifest.art)
         lock.lock()
         cache[key] = sprite
         lock.unlock()
@@ -68,9 +97,15 @@ final class CharacterSpriteStore {
         lock.unlock()
     }
 
-    private static func cgImage(at url: URL) -> CGImage? {
+    /// Loads a layer and verifies it is a square of exactly `canvas` pixels.
+    /// A corrupt, truncated or wrong-sized PNG is refused here as well as in
+    /// `Scripts/validate-skins.py`, so a broken user pack can never draw a
+    /// stretched character (issue #21 audit).
+    private static func cgImage(at url: URL, canvas: Int) -> CGImage? {
         guard let image = NSImage(contentsOf: url) else { return nil }
         var rect = CGRect(origin: .zero, size: image.size)
-        return image.cgImage(forProposedRect: &rect, context: nil, hints: nil)
+        guard let cgImage = image.cgImage(forProposedRect: &rect, context: nil, hints: nil) else { return nil }
+        guard cgImage.width == canvas, cgImage.height == canvas else { return nil }
+        return cgImage
     }
 }

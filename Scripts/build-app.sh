@@ -43,7 +43,9 @@ for media in \
   preview-kiwi.png preview-kiwi@2x.png \
   preview-moonlight.png preview-moonlight@2x.png \
   preview-strawberry.png preview-strawberry@2x.png \
-  preview-kot-arbuz.png preview-kot-arbuz@2x.png; do
+  preview-kot-arbuz.png preview-kot-arbuz@2x.png \
+  preview-kot-arbuz-moonlight.png preview-kot-arbuz-moonlight@2x.png \
+  preview-kot-arbuz-strawberry.png preview-kot-arbuz-strawberry@2x.png; do
   if [[ ! -s "$MEDIA_DIR/$media" ]]; then
     echo "Rendered app media is missing: $MEDIA_DIR/$media" >&2
     exit 1

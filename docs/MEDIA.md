@@ -43,9 +43,13 @@ python3 Scripts/prepare-character-assets.py          # layers, previews, anchors
 ```
 
 The script writes `preview-kot-arbuz.png` (240 × 160) and
-`preview-kot-arbuz@2x.png` (480 × 320) into `Resources/Art/Rendered/`, and
-`Scripts/build-app.sh` copies both into `Contents/Resources/Media`, so
-`MediaAssets.skinPreview(for:)` finds them at runtime.
+`preview-kot-arbuz@2x.png` (480 × 320) into `Resources/Art/Rendered/`, plus the
+same pair for the recolored variant packs `kot-arbuz-moonlight` and
+`kot-arbuz-strawberry`, and `Scripts/build-app.sh` copies all of them into
+`Contents/Resources/Media`, so `MediaAssets.skinPreview(for:)` finds them at
+runtime. Each preview composes that pack's own sprite layers (legs, tail, body,
+head) and draws the rig's vector eyes at their socket anchors, so the card
+shows exactly what the desktop pet draws.
 
 ## Design guidance
 

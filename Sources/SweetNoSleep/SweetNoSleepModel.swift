@@ -99,6 +99,11 @@ final class SweetNoSleepModel: ObservableObject {
     private var hasCapTripped = false
     private var isPausedByBatteryFloor = false
     private static let agentLeaseTimeout: TimeInterval = 180
+    /// A session that asked for a human answer keeps its lease longer: the
+    /// agent process is blocked on the answer and cannot heartbeat, so the
+    /// working lease would drop the cue - and the sleep protection - while the
+    /// question is still open (issue #21 audit).
+    private static let waitingLeaseTimeout: TimeInterval = 600
 
     @Published private(set) var isKeepingAwake = false {
         didSet {
@@ -586,6 +591,11 @@ final class SweetNoSleepModel: ObservableObject {
 
     func regenerateWebhookToken() {
         agentWebhookToken = Self.makeWebhookToken()
+        // A running listener still holds the previous token; bounce it so the
+        // token shown in Settings is the one it validates (issue #21 audit).
+        if agentWebhookEnabled {
+            startWebhookServer()
+        }
     }
 
     private static func makeWebhookToken() -> String {
@@ -648,11 +658,12 @@ final class SweetNoSleepModel: ObservableObject {
         let now = Date()
         let startedAt = agentSessions[sessionID]?.startedAt ?? now
         let wasWaiting = agentSessions[sessionID]?.isWaiting ?? false
+        let lease = status == .waiting ? Self.waitingLeaseTimeout : Self.agentLeaseTimeout
         agentSessions[sessionID] = AgentSessionState(
             status: status,
             startedAt: startedAt,
             lastActivityAt: now,
-            expiry: now.addingTimeInterval(Self.agentLeaseTimeout),
+            expiry: now.addingTimeInterval(lease),
             reason: status == .waiting ? reason : nil
         )
         if status == .working {
