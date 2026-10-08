@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sweet No Sleep — разбор инцидента и дособранная сборка</title>
+<style>
+  :root {
+    --paper: #f6f6f3;
+    --ink: #17181a;
+    --ink2: #5e6268;
+    --ink3: #8d9197;
+    --hair: rgba(23,24,26,.18);
+    --hair-soft: rgba(23,24,26,.10);
+    --accent: #9a5b12;
+    --ok: #3f7d4a;
+    --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font: 15.5px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Segoe UI", Roboto, sans-serif;
+  }
+  .sheet { max-width: 1240px; margin: 0 auto; padding: 56px 48px 72px; }
+
+  /* header */
+  .kicker {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink2);
+  }
+  h1 {
+    font-size: clamp(30px, 3.2vw, 40px);
+    line-height: 1.1;
+    letter-spacing: -.021em;
+    font-weight: 600;
+    margin: 18px 0 12px;
+    max-width: 24ch;
+  }
+  .sub { font-size: 17px; line-height: 1.5; color: var(--ink2); max-width: 62ch; margin: 0 0 24px; }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 32px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: .02em;
+    color: var(--ink2);
+    border-top: 1px solid var(--hair);
+    border-bottom: 1px solid var(--hair);
+    padding: 11px 0;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 12px;
+    border: 1px solid var(--hair);
+    border-radius: 3px;
+    padding: 5px 12px;
+    color: var(--ink);
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+  .dot.ok { background: var(--ok); }
+  .dot.wait { background: transparent; border: 1.5px solid var(--accent); }
+
+  /* sections */
+  section { margin-top: 56px; }
+  h2 {
+    display: flex;
+    gap: 16px;
+    align-items: baseline;
+    font-size: 21px;
+    font-weight: 600;
+    letter-spacing: -.012em;
+    border-top: 1px solid var(--hair);
+    margin: 0 0 20px;
+    padding-top: 16px;
+  }
+  h2 .no { font-family: var(--mono); font-size: 12px; color: var(--ink2); letter-spacing: .08em; }
+  p { margin: 0 0 14px; max-width: 74ch; }
+  .mono { font-family: var(--mono); font-size: .92em; }
+
+  /* log strip */
+  ol.log { list-style: none; margin: 4px 0 18px; padding: 2px 0 2px 30px; position: relative; }
+  ol.log::before { content: ""; position: absolute; left: 7px; top: 12px; bottom: 12px; width: 1px; background: var(--hair); }
+  ol.log li { position: relative; display: grid; grid-template-columns: 108px 1fr; gap: 18px; padding: 6px 0; }
+  ol.log li::before {
+    content: "";
+    position: absolute;
+    left: -26px;
+    top: .55em;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 1px solid var(--ink3);
+  }
+  ol.log li.pivot::before { background: var(--accent); border-color: var(--accent); }
+  .lt { font-family: var(--mono); font-size: 12px; color: var(--ink2); padding-top: 3px; letter-spacing: .02em; }
+  ol.log p { margin: 0; font-size: 14.5px; max-width: none; }
+
+  /* tables */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 6px 0 18px; }
+  th {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink2);
+    text-align: left;
+    font-weight: 500;
+    border-bottom: 1px solid var(--hair);
+    padding: 8px 16px 8px 0;
+    white-space: nowrap;
+  }
+  td { border-bottom: 1px solid var(--hair-soft); padding: 9px 16px 9px 0; vertical-align: top; }
+  td:last-child, th:last-child { padding-right: 0; }
+  td.v { font-family: var(--mono); font-size: 12.5px; white-space: nowrap; }
+  .st { font-family: var(--mono); font-size: 12px; white-space: nowrap; }
+  .st.done { color: var(--ink); }
+  .st.none { color: var(--ink3); }
+
+  /* metrics strip */
+  .metrics { display: flex; flex-wrap: wrap; border: 1px solid var(--hair); margin: 4px 0 18px; }
+  .metric { flex: 1 1 200px; padding: 14px 18px; border-left: 1px solid var(--hair); }
+  .metric:first-child { border-left: 0; }
+  .metric .mv { font-family: var(--mono); font-size: 18px; letter-spacing: -.01em; display: block; }
+  .metric .ml { font-family: var(--mono); font-size: 11px; color: var(--ink2); letter-spacing: .03em; display: block; margin-top: 4px; }
+
+  /* lists */
+  ol.todo { margin: 4px 0 18px; padding: 0 0 0 22px; }
+  ol.todo li { margin: 0 0 12px; max-width: 80ch; }
+  ul.notes { list-style: none; margin: 4px 0 0; padding: 0; }
+  ul.notes li { border-top: 1px solid var(--hair-soft); padding: 11px 0; max-width: 84ch; }
+  ul.notes li:first-child { border-top: 0; padding-top: 0; }
+
+  /* colophon */
+  .colophon {
+    border-top: 1px solid var(--hair);
+    margin-top: 64px;
+    padding-top: 14px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink3);
+    display: flex;
+    justify-content: space-between;
+    gap: 10px 24px;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 720px) {
+    .sheet { padding: 32px 20px 48px; }
+    ol.log li { grid-template-columns: 82px 1fr; gap: 12px; }
+    .metric { border-left: 0; border-top: 1px solid var(--hair); }
+    .metric:first-child { border-top: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header>
+    <div class="kicker">Разбор инцидента · Sweet No Sleep · 08.10.2026</div>
+    <h1>Агент упал, сборка оборвалась — что случилось и что уже починено</h1>
+    <p class="sub">Сессия «SNS» в OpenCode остановилась за шаг до финальной упаковки приложения. Причина — не краш: у ротации кончились все бесплатные модели.</p>
+    <div class="meta">
+      <span>окно 19:42–20:05 МСК</span>
+      <span>worktree · sweet-no-sleep-pr9 (tmp-build)</span>
+      <span>агент · OpenCode, «Sisyphus»</span>
+    </div>
+    <div class="chips">
+      <span class="chip"><span class="dot ok"></span>Сборка собрана и проверена</span>
+      <span class="chip"><span class="dot wait"></span>Сессия ждёт разблокировки моделей</span>
+    </div>
+  </header>
+
+  <section>
+    <h2><span class="no">01</span>Хронология</h2>
+    <ol class="log">
+      <li>
+        <span class="lt">17:30–17:35</span>
+        <p>Агент латает три места: зависший вебхук-сервер (зомби-слушатель порта), фрейм менюбар-панели, кнопка Copy в настройках. Пересборка release — успех.</p>
+      </li>
+      <li>
+        <span class="lt">17:35:40</span>
+        <p><span class="mono">check-project.sh</span> → EXIT=0: 238 ключей локализации, скины, медиа, 9 hook-тестов, panel-smoke.</p>
+      </li>
+      <li>
+        <span class="lt">17:36–19:24</span>
+        <p>Каждый следующий запрос отклонён — «Rate limit exceeded» на всех моделях ротации (big-pickle, mimo-v2.6-flash-free и др.). Работа стоит.</p>
+      </li>
+      <li>
+        <span class="lt">17:51–19:41</span>
+        <p>«что делать?» → «??» → «продолжай»: агент пытается снова и снова упирается в лимит.</p>
+      </li>
+      <li class="pivot">
+        <span class="lt">19:41:11–17</span>
+        <p>Последняя попытка — снова лимит. Через шесть секунд внутренний сервер приложения (sidecar) завершается — сессия «падает».</p>
+      </li>
+      <li>
+        <span class="lt">19:42 →</span>
+        <p>Разбор: приложение живо, база сессий цела (<span class="mono">quick_check: ok</span>), причина остановки — модели.</p>
+      </li>
+    </ol>
+    <p>За день сессия собрала <strong>16</strong> отказов «Rate limit exceeded», <strong>2</strong> — «модель недоступна в регионе» и <strong>1</strong> — «недостаточно средств». Живых моделей в ротации не осталось — вот почему «не поднимается»: не приложение, а сессия.</p>
+  </section>
+
+  <section>
+    <h2><span class="no">02</span>План агента: что сделано, что нет</h2>
+    <table>
+      <thead>
+        <tr><th>Пункт</th><th>Статус</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Вебхук-сервер: синхронный <span class="mono">stop()</span> + ретраи на <span class="mono">EADDRINUSE</span></td><td class="st done">сделано агентом (в дереве)</td></tr>
+        <tr><td>Фрейм менюбар-панели (<span class="mono">fixedSize</span>)</td><td class="st done">сделано агентом</td></tr>
+        <tr><td>Кнопка Copy для hook-команд в настройках</td><td class="st done">сделано агентом</td></tr>
+        <tr><td>Сборка: release + check + упаковка <span class="mono">.app</span></td><td class="st done">дособрано и проверено</td></tr>
+        <tr><td>MCP-запись <span class="mono">sweet-no-sleep</span> в <span class="mono">opencode.jsonc</span></td><td class="st none">не начато</td></tr>
+        <tr><td>Реленч + curl-сьют (200/401/403/404/405/413)</td><td class="st done">выполнено, всё совпало</td></tr>
+        <tr><td>UI-проверка: футер панели (скриншот)</td><td class="st none">не начато</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2><span class="no">03</span>Сборка и проверки</h2>
+    <div class="metrics">
+      <div class="metric"><span class="mv">EXIT 0</span><span class="ml">build-app.sh · 19:51:53</span></div>
+      <div class="metric"><span class="mv">pid 34836</span><span class="ml">новый инстанс · вебхук :18290</span></div>
+      <div class="metric"><span class="mv">8 / 8</span><span class="ml">curl-проверок совпало</span></div>
+    </div>
+    <p>Сборка дособрана из текущих правок: свежий «Sweet No Sleep — Kiwi Cat.app», ad-hoc подпись. Старый тестовый инстанс (pid 13915) остановлен, «золотой» (pid 18180) не тронут; новый слушает <span class="mono">127.0.0.1:18290</span>.</p>
+    <table>
+      <thead>
+        <tr><th>Проверка</th><th>Ожидали</th><th>Ответ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>start с валидным токеном</td><td class="v">200</td><td class="v">200</td></tr>
+        <tr><td>неверный токен</td><td class="v">401</td><td class="v">401</td></tr>
+        <tr><td>неверный Host</td><td class="v">403</td><td class="v">403</td></tr>
+        <tr><td>сторонний Origin</td><td class="v">403</td><td class="v">403</td></tr>
+        <tr><td>неизвестный путь</td><td class="v">404</td><td class="v">404</td></tr>
+        <tr><td>GET вместо POST</td><td class="v">405</td><td class="v">405</td></tr>
+        <tr><td>тело 5 КБ</td><td class="v">413</td><td class="v">413</td></tr>
+        <tr><td>done (завершение сессии)</td><td class="v">200</td><td class="v">200</td></tr>
+      </tbody>
+    </table>
+    <p>Отдельно подтверждена та самая возвратная проблема, из-за которой всё это чинилось: старый инстанс принимал соединения, но не отвечал (HTTP 000 — зомби-слушатель). На свежем билде сервер отвечает штатно во всех сценариях — последние правки рабочие.</p>
+    <p>OpenCode поднят заново: приложение работает (pid 31199), sidecar запущен. Для разблокировки сессии проверены альтернативы из конфига: llm7 отвечает; ovhcloud сейчас throttled.</p>
+  </section>
+
+  <section>
+    <h2><span class="no">04</span>Что осталось</h2>
+    <ol class="todo">
+      <li><strong>Разбудить сессию.</strong> Либо дождаться сброса лимитов zen-free, либо переключить модели ротации на другого провайдера (например, llm7 — проверен). Перенастройка конфига — с бэкапом.</li>
+      <li><strong>MCP-запись</strong> <span class="mono">sweet-no-sleep</span> в <span class="mono">~/.config/opencode/opencode.jsonc</span> — по плану агента (сессии увидят tools hold/waiting/release).</li>
+      <li><strong>UI-чек:</strong> футер Settings/Quit в менюбар-панели — скриншот и проверка, что помещается.</li>
+      <li><strong>Коммит и пуш</strong> правок: PR-цепочка #9 → #12 (head — <span class="mono">arena/3331051a</span>). В pr9 лежат незакоммиченными 3 файла.</li>
+    </ol>
+    <p>Не потерять: в основном репо <span class="mono">~/Projects/sweet-no-sleep</span> тоже есть незакоммиченные изменения (hook-«waiting» и др.) и новые папки <span class="mono">new-character/</span>, <span class="mono">presets/</span>, <span class="mono">Media-compare/</span>.</p>
+  </section>
+
+  <section>
+    <h2><span class="no">05</span>На заметку</h2>
+    <ul class="notes">
+      <li><strong>Краш-репорт от 11:04.</strong> Приложение падало в сеттере <span class="mono">agentCooldownMinutes</span> (цепочка Combine → инвалидация SwiftUI). На свежем билде воспроизводимость не проверена — если повторится, разбирать отдельно.</li>
+      <li><strong>og-image.png.</strong> Локальный рендер слегка отличается от закоммиченного файла — известное поведение проекта; после сборки файл восстановлен до закоммиченного состояния.</li>
+      <li><strong>Фикс вебхука теперь в сборке.</strong> Рабочее дерево pr9: 3 изменённых Swift-файла поверх ветки tmp-build.</li>
+    </ul>
+  </section>
+
+  <footer class="colophon">
+    <span>Отчёт собран 08.10.2026, 20:05 МСК</span>
+    <span>источники: opencode.log · opencode.db · Crashpad · runtime-проверки</span>
+  </footer>
+
+</div>
+</body>
+</html>
