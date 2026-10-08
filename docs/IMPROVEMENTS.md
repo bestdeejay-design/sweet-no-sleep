@@ -14,7 +14,7 @@ claimed and agreed on.
 - Existing behavior must not regress: a focus session still holds
   `PreventUserIdleSystemSleep`, the optional display assertion still works,
   and `Scripts/check-project.sh` plus CI stay green.
-- No new runtime dependencies. Frameworks allowed: IOKit, AppKit, ServiceManagement, Foundation.
+- No new runtime dependencies. Frameworks allowed: IOKit, AppKit, ServiceManagement, Foundation, Network.
 - Every item ships with the Mac acceptance note appended to `docs/CODE_AUDIT.md`.
 
 ---
@@ -48,13 +48,13 @@ forever.
 
 **Acceptance criteria.**
 
-- [ ] During an active session, `pmset -g assertions | grep -i "sweet no sleep"`
+- [x] During an active session, `pmset -g assertions | grep -i "sweet no sleep"`
       shows a `Timeout` value that never reaches 0 while the app is alive.
-- [ ] `kill -9` the app mid-session → within ~120 s the assertion disappears
+- [x] `kill -9` the app mid-session → within ~120 s the assertion disappears
       from `pmset -g assertions` with no cleanup code involved.
-- [ ] Display and system assertions are tracked independently; a failure
+- [x] Display and system assertions are tracked independently; a failure
       handling one does not release the other.
-- [ ] Hold reason shown in `pmset -g assertions` updates when the reason changes.
+- [x] Hold reason shown in `pmset -g assertions` updates when the reason changes.
 
 ---
 
@@ -75,10 +75,10 @@ battery) never trigger the floor.
 
 **Acceptance criteria.**
 
-- [ ] Unplug below the threshold → assertions release, panel explains the
+- [x] Unplug below the threshold → assertions release, panel explains the
       reason ("Battery below 20%").
-- [ ] Plug back in during the same session → hold resumes automatically.
-- [ ] No visible polling cost: timer uses leeway, publishes on change only.
+- [x] Plug back in during the same session → hold resumes automatically.
+- [x] No visible polling cost: timer uses leeway, publishes on change only.
 
 ### Idea: hard cap on continuous awake time
 
@@ -94,9 +94,9 @@ the user starts a new session, so it cannot flap.
 
 **Acceptance criteria.**
 
-- [ ] Cap reached → assertions release, notification fired, panel state updates.
-- [ ] Moving the system clock forward does not shorten the remaining cap time.
-- [ ] Starting a fresh session resets the cap.
+- [x] Cap reached → assertions release, notification fired, panel state updates.
+- [x] Moving the system clock forward does not shorten the remaining cap time.
+- [x] Starting a fresh session resets the cap.
 
 ### Idea: release on sleep and on termination signals
 
@@ -116,10 +116,10 @@ until wake, and SIGTERM/SIGINT bypass `shutdown()` entirely.
 
 **Acceptance criteria.**
 
-- [ ] Apple menu → Sleep mid-session: assertions gone before sleep completes;
+- [x] Apple menu → Sleep mid-session: assertions gone before sleep completes;
       after wake the session resumes protection automatically.
-- [ ] `kill <pid>` (SIGTERM) mid-session: assertions released, `pmset` clean.
-- [ ] Normal quit and app update flows unchanged.
+- [x] `kill <pid>` (SIGTERM) mid-session: assertions released, `pmset` clean.
+- [x] Normal quit and app update flows unchanged.
 
 ---
 
@@ -137,8 +137,8 @@ session label (e.g. "Sweet No Sleep — focus session 'Deep work'").
 
 **Acceptance criteria.**
 
-- [ ] `pmset -g assertions` shows the localized, per-session reason.
-- [ ] Changing the reason mid-hold updates the existing assertion without
+- [x] `pmset -g assertions` shows the localized, per-session reason.
+- [x] Changing the reason mid-hold updates the existing assertion without
       creating a second one.
 
 ### Idea: hold diagnostics in the panel
@@ -154,8 +154,8 @@ can verify independently of the app.
 
 **Acceptance criteria.**
 
-- [ ] Diagnostics reflect live state with ≤1 s staleness.
-- [ ] Hidden by default; no new permissions or strings beyond the localization
+- [x] Diagnostics reflect live state with ≤1 s staleness.
+- [x] Hidden by default; no new permissions or strings beyond the localization
       catalog.
 
 ---

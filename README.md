@@ -87,7 +87,8 @@ a macOS system pane). Three sections:
   screen roaming (off by default; first stroll about 3 seconds
   after enabling, then roughly every 28 seconds), animation,
   playful moments, and break reminders. Drag Kiwi to reposition.
-- **Power.** Display sleep control, opt-in agent hooks
+- **Power.** Display sleep control, battery safety floor, continuous
+  awake cap, hold diagnostics, opt-in agent hooks
   (**Settings -> Power -> Allow events from local hooks**), and
   launch at login.
 
@@ -100,12 +101,20 @@ and pick its card.
 Start manual awake mode or a focus session, then run:
 
 ```bash
+pmset -g assertions | grep "pid $(pgrep -x SweetNoSleep)"
+```
+
+or:
+
+```bash
 pmset -g assertions | grep -A4 -B2 -i "Sweet No Sleep"
 ```
 
 You should see the app's `PreventUserIdleSystemSleep` assertion,
 plus a display assertion if **Keep the display on during a session**
-is enabled. Stop the session and confirm the entries disappear.
+is enabled. Note the `Timeout` field (assertions are created with
+a 120-second fail-safe kernel timeout and automatically re-armed at
+~90 seconds). Stop the session and confirm the entries disappear.
 
 ## AI agents and sleep
 

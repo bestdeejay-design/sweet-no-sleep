@@ -365,6 +365,85 @@ private struct PowerSettingsPane: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
+            SettingsCard(title: L10n.text("Battery safety floor"), subtitle: L10n.text("Pause sleep protection when battery charge drops below a safe level. Protection resumes when plugged in.")) {
+                HStack(spacing: 10) {
+                    Text(model.batteryFloorPercent == 0 ? L10n.text("Disabled (0%)") : L10n.format("%d%% (pause below)", model.batteryFloorPercent))
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .frame(width: 140, alignment: .leading)
+                    Slider(value: Binding(
+                        get: { Double(model.batteryFloorPercent) },
+                        set: { model.batteryFloorPercent = Int($0) }
+                    ), in: 0...50, step: 5)
+                    .tint(Color(hex: 0x74C987))
+                    .accessibilityLabel(L10n.text("Battery safety floor percentage"))
+                }
+                HStack {
+                    Text(L10n.text("0% (Disabled)"))
+                    Spacer()
+                    Text(L10n.text("50%"))
+                }
+                .font(.system(size: 10, design: .rounded))
+                .foregroundStyle(.secondary)
+                Text(L10n.text("Desktops and plugged-in MacBooks are not affected."))
+                    .font(.system(size: 10, design: .rounded))
+                    .foregroundStyle(.secondary)
+            }
+
+            SettingsCard(title: L10n.text("Continuous awake cap"), subtitle: L10n.text("Automatically release assertions after continuous awake time to prevent battery drain from forgotten sessions.")) {
+                HStack(spacing: 10) {
+                    Text(model.continuousAwakeCapHours == 0 ? L10n.text("Disabled") : L10n.format("%d hours", model.continuousAwakeCapHours))
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .frame(width: 140, alignment: .leading)
+                    Slider(value: Binding(
+                        get: { Double(model.continuousAwakeCapHours) },
+                        set: { model.continuousAwakeCapHours = Int($0) }
+                    ), in: 0...12, step: 1)
+                    .tint(Color(hex: 0x74C987))
+                    .accessibilityLabel(L10n.text("Continuous awake cap in hours"))
+                }
+                HStack {
+                    Text(L10n.text("Disabled (0h)"))
+                    Spacer()
+                    Text(L10n.text("12 hours"))
+                }
+                .font(.system(size: 10, design: .rounded))
+                .foregroundStyle(.secondary)
+                Text(L10n.text("Uses monotonic system uptime; pauses while the Mac is asleep."))
+                    .font(.system(size: 10, design: .rounded))
+                    .foregroundStyle(.secondary)
+            }
+
+            SettingsCard(title: L10n.text("Hold diagnostics"), subtitle: L10n.text("Live status of power assertions, battery polling, and kernel timers.")) {
+                VStack(alignment: .leading, spacing: 6) {
+                    diagnosticSettingsRow(
+                        label: L10n.text("System assertion"),
+                        value: model.diagnostics.isSystemActive
+                            ? L10n.format("Active (ID: %u)", model.diagnostics.systemAssertionID)
+                            : L10n.text("Inactive")
+                    )
+                    diagnosticSettingsRow(
+                        label: L10n.text("Display assertion"),
+                        value: model.diagnostics.isDisplayActive
+                            ? L10n.format("Active (ID: %u)", model.diagnostics.displayAssertionID)
+                            : L10n.text("Inactive")
+                    )
+                    if model.diagnostics.isSystemActive || model.diagnostics.isDisplayActive {
+                        diagnosticSettingsRow(
+                            label: L10n.text("Next re-arm"),
+                            value: L10n.format("%d s", model.diagnostics.secondsUntilRearm)
+                        )
+                    }
+                    diagnosticSettingsRow(
+                        label: L10n.text("Power source"),
+                        value: model.diagnostics.batteryDescription
+                    )
+                    diagnosticSettingsRow(
+                        label: L10n.text("Last power event"),
+                        value: model.diagnostics.lastPowerEvent
+                    )
+                }
+            }
+
             SettingsCard(title: L10n.text("AI agent connection"), subtitle: L10n.text("Local hooks can tell Kiwi when work starts, send heartbeats, and report completion.")) {
                 Toggle(L10n.text("Allow events from local hooks"), isOn: $model.agentBridgeEnabled)
                 Text(L10n.text("The bridge is off by default. Only trust installed hooks: any local process that can open the URL scheme can send an event. Without a heartbeat, a session expires after 3 minutes. Agent events never trigger immediate sleep."))
@@ -421,6 +500,19 @@ private struct PowerSettingsPane: View {
             }
         }
         .onAppear(perform: refreshLoginItemState)
+    }
+
+    private func diagnosticSettingsRow(label: String, value: String) -> some View {
+        HStack(alignment: .top) {
+            Text(label)
+                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 8)
+            Text(value)
+                .font(.system(size: 11, weight: .regular, design: .rounded).monospacedDigit())
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.trailing)
+        }
     }
 
     private func refreshLoginItemState() {
