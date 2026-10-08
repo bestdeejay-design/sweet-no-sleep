@@ -33,6 +33,9 @@ The current workspace is Linux and does not provide Swift/Xcode or the macOS SDK
 21. **Human-readable localized assertion reasons (P2).** Assertions pass `kIOPMAssertionHumanReadableReasonKey` and `kIOPMAssertionLocalizationBundlePathKey` for localized display in `pmset` and macOS system menus. Dynamic reason updates modify existing assertion properties via `IOPMAssertionSetProperty` without creating redundant assertions.
 22. **Hold diagnostics in the menu bar dashboard and settings (P2).** Added live diagnostics displaying system and display assertion IDs, re-arm countdown timer, power source status, and the most recent power lifecycle event.
 
+23. **Agent awareness was too subtle and the count lived only in the dashboard (#15).** The chest badge now carries the status light (green while sessions work, amber while one waits) plus a pip row with one filled dot per active session (a capped `5+` row past that), which stays readable at the 45 pt minimum pet size without covering the face. Working sessions also breathe slightly quicker with a small work bob. Waiting sessions raise a paw on the procedural cat, lean and lift the tail on sprite characters, show a double-stroked `?` glyph and the y/n bubble, and suppress playful moments and roaming until the answer arrives. Everything freezes to a static, readable state under Reduce Motion or with animations disabled, and the light plus count follow the new **Settings -> Power -> AI agent connection** toggle.
+24. **The pet could only ever be Kiwi (#14).** Packs gained a format version: format 2 adds `pet.json` and the layer images of a character. The new **Kot-Arbuz** watermelon cat is drawn from `body.png` + `tail.png` derived from the maintainer's master art; the body breathes, the tail wags around its pivot, and every agent detail (light, count, waiting glyph) works identically on it. An invalid or incomplete character pack is skipped instead of rendering a broken pet, and `Scripts/validate-skins.py` validates both formats, the manifest ranges, and the layer canvases.
+
 ## Checks run locally and on GitHub
 
 `./Scripts/check-project.sh` completed successfully in the current Linux checkout:
@@ -91,6 +94,9 @@ On a Mac, run `./Scripts/check-project.sh`, then `./Scripts/build-app.sh release
 
 - Manually launch the CI-built `.app`, confirm the menu-bar Settings action opens the Settings scene, and run the power, skin, and roaming scenarios above on macOS 14+.
 - Record results on Apple Silicon/Intel, single/multiple displays, and across Spaces.
+- Compare the live pet against `docs/images/agent-awareness-states.png` and
+  `docs/images/agent-awareness-min-size.png`: those images are an offline
+  mock-up built from the same drawing constants, not a screen capture.
 - Add Swift unit tests for pure model/validation components once a macOS test environment is available.
 
 ### Priority 1 — Agent workflow reliability

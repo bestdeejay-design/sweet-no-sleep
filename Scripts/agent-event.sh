@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ $# -ne 2 ]]; then
-  echo "Usage: $0 <start|heartbeat|done|failed> <session-id>" >&2
+if [[ $# -lt 2 || $# -gt 3 ]]; then
+  echo "Usage: $0 <start|heartbeat|waiting|done|failed> <session-id> [reason]" >&2
   exit 64
 fi
 
 ACTION="$1"
 SESSION_ID="$2"
+REASON="${3:-}"
 case "$ACTION" in
-  start|heartbeat|done|failed) ;;
+  start|heartbeat|waiting|done|failed) ;;
   *) echo "Unsupported event: $ACTION" >&2; exit 64 ;;
 esac
 
@@ -18,5 +19,14 @@ if [[ ! "$SESSION_ID" =~ ^[A-Za-z0-9._-]{1,120}$ ]]; then
   exit 64
 fi
 
+url_encode() {
+  python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$1"
+}
+
+TARGET="sweetnosleep://agent/$ACTION?session=$SESSION_ID"
+if [[ -n "$REASON" ]]; then
+  TARGET="$TARGET&reason=$(url_encode "${REASON:0:200}")"
+fi
+
 # 'open -g' sends the local custom URL event without bringing the menu app forward.
-open -g "sweetnosleep://agent/$ACTION?session=$SESSION_ID"
+open -g "$TARGET"

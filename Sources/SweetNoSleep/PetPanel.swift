@@ -33,6 +33,7 @@ final class PetPanel: NSPanel {
 final class PetLayerHitTestView: NSView {
     var petSize: CGFloat = 132
     var showsBreakReminder = false
+    var showsWaitingBubble = false
 
     override func hitTest(_ point: NSPoint) -> NSView? {
         guard containsPet(at: point) else { return nil }
@@ -44,7 +45,13 @@ final class PetLayerHitTestView: NSView {
         let yInPanel = bounds.height - point.y // Convert AppKit's bottom-left origin to SwiftUI's top-left origin.
         let petSide = petSize + 48
         let petInsetX = (bounds.width - petSide) / 2
-        let petInsetY = showsBreakReminder ? PetBreakReminderBubble.height : 0
+        let petInsetY = bubbleHeight
+
+        if showsWaitingBubble,
+           yInPanel <= PetWaitingBubble.height,
+           abs(xInPanel - bounds.midX) <= PetWaitingBubble.width / 2 {
+            return true
+        }
 
         if showsBreakReminder,
            yInPanel <= PetBreakReminderBubble.height,
@@ -86,6 +93,12 @@ final class PetLayerHitTestView: NSView {
         return distance(from: CGPoint(x: x, y: y), toSegmentFrom: tailStart, to: tailEnd) <= radius * 0.18
     }
 
+    /// Space the visible bubble occupies above the pet.
+    private var bubbleHeight: CGFloat {
+        if showsWaitingBubble { return PetWaitingBubble.height }
+        return showsBreakReminder ? PetBreakReminderBubble.height : 0
+    }
+
     private func triangleContains(_ point: CGPoint, a: CGPoint, b: CGPoint, c: CGPoint) -> Bool {
         let area = abs((a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y)) / 2)
         guard area > 0 else { return false }
@@ -116,6 +129,9 @@ final class PetPanelController {
     private var dragOrigin: NSPoint?
     private var wanderTimer: Timer?
     private var wanderAnimator: PanelOriginAnimator?
+    /// Bubbles currently on screen; they decide the panel's top inset.
+    private var showsWaitingBubble = false
+    private var showsBreakReminder = false
     // Validity flag for the current two-leg stroll. Set false by cancellation
     // so a leg-1 completion never starts leg 2 after the trip was killed.
     private var wanderTripValid = false
@@ -126,12 +142,19 @@ final class PetPanelController {
         model.$petSize.dropFirst().sink { [weak self] size in
             self?.updateSize(CGFloat(size))
         }.store(in: &cancellables)
-        model.$isBreakDue.dropFirst().sink { [weak self] isDue in
-            guard let self else { return }
-            // @Published emits from willSet, so use the emitted value instead of
-            // re-reading model.isBreakDue before Swift has assigned it.
-            self.updateSize(CGFloat(self.model.petSize), showsBreakReminder: isDue)
-        }.store(in: &cancellables)
+        // @Published emits from willSet, so the visible bubble is derived from
+        // the emitted values instead of re-reading the model here.
+        Publishers.CombineLatest3(model.$agentSessions, model.$dismissedWaitingIDs, model.$isBreakDue)
+            .dropFirst()
+            .sink { [weak self] sessions, dismissed, isBreakDue in
+                guard let self else { return }
+                self.showsWaitingBubble = sessions.contains { session in
+                    session.value.isWaiting && !dismissed.contains(session.key)
+                }
+                self.showsBreakReminder = isBreakDue
+                self.updateSize(CGFloat(self.model.petSize))
+            }
+            .store(in: &cancellables)
         model.$alwaysOnTop.dropFirst().sink { [weak self] isPinned in
             self?.updateLevel(isPinned: isPinned)
         }.store(in: &cancellables)
@@ -147,7 +170,9 @@ final class PetPanelController {
             return
         }
 
-        let size = panelSize(for: CGFloat(model.petSize), showsBreakReminder: model.isBreakDue)
+        showsWaitingBubble = model.showsWaitingBubble
+        showsBreakReminder = model.isBreakDue
+        let size = panelSize(for: CGFloat(model.petSize))
         let rootView = PetDesktopView(
             model: model,
             onDragChanged: { [weak self] translation in self?.movePanel(by: translation) },
@@ -155,7 +180,8 @@ final class PetPanelController {
         )
         let layerView = PetLayerHitTestView(frame: NSRect(origin: .zero, size: size))
         layerView.petSize = CGFloat(model.petSize)
-        layerView.showsBreakReminder = model.isBreakDue
+        layerView.showsBreakReminder = showsBreakReminder
+        layerView.showsWaitingBubble = showsWaitingBubble
         layerView.autoresizingMask = [.width, .height]
         layerView.wantsLayer = true
         layerView.layer?.backgroundColor = NSColor.clear.cgColor
@@ -210,10 +236,9 @@ final class PetPanelController {
         PetPanelPosition.store(panel.frame.origin)
     }
 
-    private func updateSize(_ petSize: CGFloat, showsBreakReminder override: Bool? = nil) {
+    private func updateSize(_ petSize: CGFloat) {
         guard let panel else { return }
-        let showsReminder = override ?? model.isBreakDue
-        let size = panelSize(for: petSize, showsBreakReminder: showsReminder)
+        let size = panelSize(for: petSize)
         let previousFrame = panel.frame
         let visibleFrame = (NSScreen.screens.first(where: { $0.frame.intersects(previousFrame) }) ?? NSScreen.main)?.visibleFrame
         var origin = NSPoint(x: previousFrame.midX - size.width / 2, y: previousFrame.minY)
@@ -227,7 +252,8 @@ final class PetPanelController {
         )
         if let layerView = panel.contentView as? PetLayerHitTestView {
             layerView.petSize = petSize
-            layerView.showsBreakReminder = showsReminder
+            layerView.showsBreakReminder = showsBreakReminder
+            layerView.showsWaitingBubble = showsWaitingBubble
             layerView.frame = NSRect(origin: .zero, size: size)
         }
     }
@@ -238,11 +264,17 @@ final class PetPanelController {
         panel.level = isPinned ? .floating : .normal
     }
 
-    private func panelSize(for petSize: CGFloat, showsBreakReminder: Bool) -> NSSize {
+    private func panelSize(for petSize: CGFloat) -> NSSize {
         let petSide = petSize + 48
-        let width = showsBreakReminder ? max(petSide, PetBreakReminderBubble.width) : petSide
-        let height = petSide + (showsBreakReminder ? PetBreakReminderBubble.height : 0)
-        return NSSize(width: width, height: height)
+        // Waiting for an agent answer wins over the break reminder, exactly as
+        // in PetDesktopView.
+        if showsWaitingBubble {
+            return NSSize(width: max(petSide, PetWaitingBubble.width), height: petSide + PetWaitingBubble.height)
+        }
+        if showsBreakReminder {
+            return NSSize(width: max(petSide, PetBreakReminderBubble.width), height: petSide + PetBreakReminderBubble.height)
+        }
+        return NSSize(width: petSide, height: petSide)
     }
 
     private func restoredOrigin(for size: NSSize) -> NSPoint {
@@ -299,6 +331,7 @@ final class PetPanelController {
               model.roamingEnabled,
               model.animationsEnabled,
               !model.isBreakDue,
+              !model.hasWaitingAgent,
               !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion,
               model.mood != .dragging
         else { return }

@@ -14,6 +14,7 @@ This layout follows the final media pack decision recorded in issue #5: the gold
 | `preview-kiwi.svg` | 240 × 160 | Kiwi silhouette and palette swatches (adopted pack-leaf source) | 240 × 160 px and 480 × 320 px PNGs |
 | `preview-moonlight.svg` | 240 × 160 | Moonlight silhouette and palette swatches (adopted pack-leaf source) | 240 × 160 px and 480 × 320 px PNGs |
 | `preview-strawberry.svg` | 240 × 160 | Strawberry silhouette and palette swatches (adopted pack-leaf source) | 240 × 160 px and 480 × 320 px PNGs |
+| `preview-kot-arbuz.png` / `preview-kot-arbuz@2x.png` | 240 × 160 (and 480 × 320) | Kot-Arbuz character card, composed from the pack's own sprite layers so the card always matches the desktop pet | Generated directly by `Scripts/prepare-character-assets.py`, not by `render-media.sh` |
 | `banner.svg` | 1280 × 640 | README hero: the pack-cat base layout with the golden build's cat at `translate(707.1 88.7) scale(0.49)` | `Rendered/banner.png` (1280 × 640 px) |
 | `og-image.svg` | 1200 × 630 | Social/Open Graph card: the pack-leaf base with a mini app icon at `translate(67 65) scale(0.04296875)` | `Rendered/og-image.png` (1200 × 630 px) |
 
@@ -29,6 +30,22 @@ The rendering script uses only macOS stock tools (`sips` and `iconutil`) and is 
 ```
 
 On Linux, `render-media.sh` prints a skip message and exits successfully; raster rendering is reserved for macOS CI. The portable checks still parse every SVG, verify dimensions and self-contained references, enforce the final decision (byte-identical app icon and reserve menu-bar renders, SF Symbol menu bar, banner and Open Graph composition anchors), reject Cyrillic source text, and check generated PNG dimensions if CI-rendered outputs are present. The macOS check additionally rebuilds and validates the complete iconset and both 1x/2x menu-bar images.
+
+## Character previews
+
+Preview art for the three built-in palette packs is a self-contained 3:2 SVG per
+pack. A **character** pack has no SVG: its preview is composed from the same
+layered sprites the pet renderer draws, which guarantees the Settings card never
+drifts from the live character. Regenerate it with the pack:
+
+```bash
+python3 Scripts/prepare-character-assets.py          # layers, previews, anchors
+```
+
+The script writes `preview-kot-arbuz.png` (240 × 160) and
+`preview-kot-arbuz@2x.png` (480 × 320) into `Resources/Art/Rendered/`, and
+`Scripts/build-app.sh` copies both into `Contents/Resources/Media`, so
+`MediaAssets.skinPreview(for:)` finds them at runtime.
 
 ## Design guidance
 

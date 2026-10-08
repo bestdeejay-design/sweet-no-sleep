@@ -110,6 +110,12 @@ private struct MenuBarDashboard: View {
 
     private let durations = [25, 50, 90, 120]
 
+    /// Extra height for the per-session rows in the agents card.
+    private var agentRowsHeight: CGFloat {
+        guard model.activeAgentCount > 0 else { return 0 }
+        return 24 + CGFloat(min(model.activeAgentCount, 4)) * 18
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
@@ -147,7 +153,7 @@ private struct MenuBarDashboard: View {
                 .padding(.horizontal, 19)
                 .padding(.bottom, 17)
         }
-        .frame(width: 362, height: (model.isFocusSession ? 660 : 640) + (showDiagnostics ? 110 : 0))
+        .frame(width: 362, height: (model.isFocusSession ? 660 : 640) + agentRowsHeight + (showDiagnostics ? 110 : 0))
         .animation(.easeInOut(duration: 0.18), value: showDiagnostics)
         .background {
             ZStack(alignment: .topTrailing) {
@@ -219,7 +225,9 @@ private struct MenuBarDashboard: View {
                 )
 
             VStack(alignment: .leading, spacing: 8) {
-                Text(model.activeAgentCount > 0 ? L10n.text("Kiwi is with your agent") : (model.isKeepingAwake ? L10n.text("Kiwi is on duty") : L10n.text("Kiwi is ready to help")))
+                Text(model.hasWaitingAgent
+                    ? L10n.text("Kiwi needs your approval")
+                    : (model.activeAgentCount > 0 ? L10n.text("Kiwi is with your agent") : (model.isKeepingAwake ? L10n.text("Kiwi is on duty") : L10n.text("Kiwi is ready to help"))))
                     .font(.system(size: 17, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                     .fixedSize(horizontal: false, vertical: true)
@@ -347,13 +355,29 @@ private struct MenuBarDashboard: View {
 
     private var agentSessionCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label(L10n.text("AGENT AT WORK"), systemImage: "cpu")
-                .font(.system(size: 10, weight: .bold, design: .rounded))
-                .tracking(1.0)
-                .foregroundStyle(Color(hex: 0xA9D8B0))
-            Text(L10n.format("%d active connections", model.activeAgentCount))
+            Label(
+                model.hasWaitingAgent ? L10n.text("AGENT NEEDS APPROVAL") : L10n.text("AGENTS AT WORK"),
+                systemImage: model.hasWaitingAgent ? "questionmark.circle.fill" : "cpu"
+            )
+            .font(.system(size: 10, weight: .bold, design: .rounded))
+            .tracking(1.0)
+            .foregroundStyle(model.hasWaitingAgent ? AgentIndicator.waitingColor : Color(hex: 0xA9D8B0))
+            Text(L10n.format("%d active agents", model.activeAgentCount))
                 .font(.system(size: 17, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
+            if let reason = model.agentWaitingReason {
+                Text(L10n.format("Agent question: %@", reason))
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .foregroundStyle(AgentIndicator.waitingColor)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            TimelineView(.periodic(from: .now, by: 5)) { timeline in
+                VStack(alignment: .leading, spacing: 5) {
+                    ForEach(model.agentSessionSummaries) { session in
+                        agentRow(session, now: timeline.date)
+                    }
+                }
+            }
             Text(L10n.text("Protection remains active while heartbeats arrive. After 3 minutes without a signal, Kiwi releases the assertion so the Mac is not kept awake indefinitely."))
                 .font(.system(size: 10, design: .rounded))
                 .foregroundStyle(.white.opacity(0.58))
@@ -380,6 +404,28 @@ private struct MenuBarDashboard: View {
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(Color(hex: 0x82D28E, opacity: 0.22), lineWidth: 1)
+        }
+    }
+
+    private func agentRow(_ session: AgentSessionSummary, now: Date) -> some View {
+        let minutes = max(1, Int(now.timeIntervalSince(session.startedAt) / 60))
+        let age = minutes < 60
+            ? L10n.format("%d min", minutes)
+            : L10n.format("%d h %d min", minutes / 60, minutes % 60)
+        return HStack(spacing: 8) {
+            Circle()
+                .fill(session.isWaiting ? AgentIndicator.waitingColor : Color(hex: 0x7ED18A))
+                .frame(width: 7, height: 7)
+            Text(session.shortID)
+                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.86))
+            Text(session.isWaiting ? L10n.text("Waiting for your answer") : L10n.text("Working"))
+                .font(.system(size: 10, design: .rounded))
+                .foregroundStyle(session.isWaiting ? AgentIndicator.waitingColor : .white.opacity(0.60))
+            Spacer(minLength: 6)
+            Text(age)
+                .font(.system(size: 9, design: .rounded).monospacedDigit())
+                .foregroundStyle(.white.opacity(0.45))
         }
     }
 
