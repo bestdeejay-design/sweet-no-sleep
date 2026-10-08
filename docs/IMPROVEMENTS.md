@@ -14,7 +14,7 @@ claimed and agreed on.
 - Existing behavior must not regress: a focus session still holds
   `PreventUserIdleSystemSleep`, the optional display assertion still works,
   and `Scripts/check-project.sh` plus CI stay green.
-- No new runtime dependencies. Frameworks allowed: IOKit, AppKit, ServiceManagement, Foundation.
+- No new runtime dependencies. Frameworks allowed: IOKit, AppKit, ServiceManagement, Foundation, Network.
 - Every item ships with the Mac acceptance note appended to `docs/CODE_AUDIT.md`.
 
 ---
