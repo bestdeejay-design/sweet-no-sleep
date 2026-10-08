@@ -18,6 +18,11 @@ else
   python3 Scripts/validate-media.py
 fi
 python3 Scripts/validate-skins.py
+if python3 -c 'import PIL, numpy' >/dev/null 2>&1; then
+  python3 Scripts/prepare-character-assets.py --check
+else
+  printf 'SKIP character layer check: Pillow and NumPy are not installed.\n'
+fi
 Scripts/test-agent-hooks.sh
 
 if [[ "${SWEET_NO_SLEEP_SKIP_SWIFT_BUILD:-0}" == "1" ]]; then

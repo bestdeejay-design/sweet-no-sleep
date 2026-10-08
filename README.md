@@ -27,19 +27,28 @@ watches over your focus time.
   On completion, either release the assertion and let macOS resume
   its normal sleep settings, or put the Mac to sleep immediately
   (with per-session confirmation).
-- **Three built-in skins.** Kiwi, Moonlight, and Strawberry ship as
-  JSON packs with their own palettes, motion profiles, and
-  celebration effects. Add your own packs without touching app
-  source; see `docs/SKIN_AUTHORING.md`.
+- **Four built-in characters.** Kiwi, Moonlight, and Strawberry are
+  palette packs for the procedural cat; **Kot-Arbuz** ("Watermelon
+  cat") is a layered sprite character with its own breathing body and
+  wagging tail. All four keep the same panel behaviour, moods, and
+  agent cues. Add your own packs without touching app source; see
+  `docs/SKIN_AUTHORING.md`.
 - **Emotions and playful moments.** Kiwi dances, stretches, and gets
   curious roughly every 3.5-6.5 minutes during a session. Gentle
   break reminders arrive every 25 minutes by default (snooze,
   dismiss, or disable). Respects system Reduce Motion.
 - **Agent bridge (opt-in, local only).** An off-by-default URL-scheme
   bridge (`sweetnosleep://`) lets coding agents and IDE hooks hold
-  awake with `start`, minute-interval `heartbeat`, and terminal
-  `done` / `failed` events. A 3-minute heartbeat lease means a lost
-  hook never keeps the Mac awake forever.
+  awake with `start`, minute-interval `heartbeat`, a `waiting` event
+  when approval is needed, and terminal `done` / `failed` events. A
+  3-minute heartbeat lease means a lost hook never keeps the Mac
+  awake forever.
+- **Agent awareness on the pet.** A light and an active-session pip row
+  sit on the chest badge, the pet breathes quicker while agents work,
+  and a waiting agent raises a paw with an amber `?` glyph and a y/n
+  bubble. The menu-bar dashboard lists every session with its state
+  and age. See `docs/images/agent-awareness-states.png` for the three
+  states side by side.
 - **Power done right.** App Nap friendly activity plus
   `PreventUserIdleSystemSleep` assertions. Optional separate display
   control: keep the Mac awake while allowing the display to sleep.
@@ -94,7 +103,8 @@ a macOS system pane). Three sections:
 
 To install a custom skin: **Settings -> Pet -> Open skins folder**,
 copy in a directory containing `skin.json`, press **Refresh list**,
-and pick its card.
+and pick its card. Kot-Arbuz ships inside the app bundle, so it is
+selectable from the same **Pet** grid with no extra downloads.
 
 ## Verify sleep protection
 
@@ -137,9 +147,67 @@ while waiting for approval):
 ```bash
 ./Scripts/agent-event.sh start "$SESSION_ID"
 ./Scripts/agent-event.sh heartbeat "$SESSION_ID"
+./Scripts/agent-event.sh waiting "$SESSION_ID" "Approve deploy?"  # needs you
 ./Scripts/agent-event.sh done "$SESSION_ID"    # success
 ./Scripts/agent-event.sh failed "$SESSION_ID"  # error or cancellation
 ```
+
+### See agent awareness in one command
+
+Enable **Settings → Power → AI agent connection**, then run the demo
+against the bundled hooks (it only opens `sweetnosleep://` URLs, so the app
+must be running):
+
+```bash
+./Scripts/agent-event.sh start a1                    # green light + count 1
+./Scripts/agent-event.sh start a2                    # count 2
+./Scripts/agent-event.sh waiting a1 "Approve deploy?"   # amber light, paw up, ? glyph, y/n bubble
+./Scripts/agent-event.sh done a1                     # count back to 1, light green
+./Scripts/agent-event.sh done a2                     # idle, light off
+```
+
+What to watch, in order:
+
+- **Count.** A pip appears under the chest badge (tinted by state) the moment
+  the first event arrives, and one more per active session ID; past five it
+  becomes a capped `5+` row, so it can never grow across the pet. Filled dots
+  stay legible at the 45 pt minimum pet size and sit below the face, never
+  over the eyes. The menu-bar dashboard grows an **AGENTS AT WORK** row per
+  session (waiting sessions first, amber) with a short ID and age.
+- **Waiting cue.** The badge turns amber, the pet raises a paw (the sprite
+  character leans and lifts its tail), a double-stroked `?` appears, and a
+  bubble offers **Approve** / **Not now**. Both buttons only close the bubble;
+  the agent still waits in its own window. The dashboard title switches to
+  **AGENT NEEDS APPROVAL** and repeats the question.
+- **Quiet cues.** Working sessions make the pet breathe a bit quicker with a
+  small work bob.
+
+Reduce Motion (system, or **Settings → Pet → Animations**) freezes all of the
+above into a static, still-readable state. Turning off **Show the status light
+and active-agent count on the pet** hides the light and the count; the waiting
+pose and bubble are driven by the waiting event itself.
+
+With two copies of the app installed under the same bundle identifier, a
+`sweetnosleep://` URL is delivered to one registered handler — whichever copy
+macOS considers current — so run the demo against a single instance.
+
+### Presets
+
+Drop-in hook and task presets live in `presets/` and are installed by
+`Scripts/install-presets.sh`:
+
+```bash
+./Scripts/install-presets.sh --list                    # show preset files
+./Scripts/install-presets.sh --claude-user             # ~/.claude/settings.json (merged)
+./Scripts/install-presets.sh --claude-project /path    # <dir>/.claude/settings.json
+./Scripts/install-presets.sh --tasks /path             # <dir>/.vscode/tasks.json
+```
+
+The Claude Code presets (`presets/claude-code.settings.json`,
+`presets/claude-code-hooks.settings.json`) map session start/stop, waiting for
+approval, and tool errors onto `agent-event.sh`; `presets/tasks.json` does the
+same for Cursor/VS Code tasks. All of them use one `$SESSION_ID` per task, so
+the pet shows one session per running agent.
 
 The bridge is unauthenticated local IPC: any local process that can
 open the URL scheme may send events. Enable it only for trusted
@@ -165,7 +233,8 @@ English source strings only.
 
 - `docs/RESEARCH.md` — design notes, power-management limits,
   agent integration guidance, roadmap.
-- `docs/SKIN_AUTHORING.md` — skin pack schema and installation.
+- `docs/SKIN_AUTHORING.md` — skin pack schema, character packs (format 2),
+  and installation.
 - `docs/PET_DRAWING_GUIDE.md` — how the pet is drawn.
 - `docs/CODE_AUDIT.md` — audit findings and Mac acceptance
   checklist.
@@ -186,12 +255,19 @@ Sources/SweetNoSleep/
   SettingsView.swift         # Focus, Pet, Power settings
   Localization.swift         # NSLocalizedString access
   Localizable.xcstrings      # English source strings
-Resources/PetSkins/          # kiwi, moonlight, strawberry packs
+  AgentIndicator.swift       # badge light, session count, waiting glyph
+  CharacterSprite.swift      # decoded sprite layers for a character pack
+  SpriteCharacterRenderer.swift # breathing/wag draw path for characters
+  PetShapes.swift            # shared path helpers (leaves, stars, hearts)
+Resources/PetSkins/          # kiwi, moonlight, strawberry, kot-arbuz packs
 Resources/Art/               # pet-template.svg, banner art slot
 Scripts/build-app.sh         # .app bundle assembly
 Scripts/check-project.sh     # portable checks + swift build on Mac
 Scripts/agent-event.sh       # single agent lifecycle event
 Scripts/agent-session.sh     # wrapped command with heartbeat
+Scripts/install-presets.sh   # install Claude Code / VS Code hook presets
+Scripts/prepare-character-assets.py # derive sprite layers + preview from art
+presets/                     # Claude Code hooks, VS Code tasks
 ```
 
 ---

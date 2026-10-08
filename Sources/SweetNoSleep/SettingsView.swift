@@ -444,21 +444,52 @@ private struct PowerSettingsPane: View {
                 }
             }
 
-            SettingsCard(title: L10n.text("AI agent connection"), subtitle: L10n.text("Local hooks can tell Kiwi when work starts, send heartbeats, and report completion.")) {
+            SettingsCard(title: L10n.text("AI agent connection"), subtitle: L10n.text("Local hooks can tell Kiwi when work starts, send heartbeats, report completion, or ask for your approval.")) {
                 Toggle(L10n.text("Allow events from local hooks"), isOn: $model.agentBridgeEnabled)
                 Text(L10n.text("The bridge is off by default. Only trust installed hooks: any local process that can open the URL scheme can send an event. Without a heartbeat, a session expires after 3 minutes. Agent events never trigger immediate sleep."))
                     .font(.system(size: 11, design: .rounded))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                Text(L10n.text("From the repository root: ./Scripts/agent-session.sh my-agent-1 -- ./run-agent.sh\nFor IDE hooks: agent-event.sh start > heartbeat (about once a minute) > done or failed; use one ID per session."))
+                Text(L10n.text("From the repository root: ./Scripts/agent-session.sh my-agent-1 -- ./run-agent.sh\nFor IDE hooks: agent-event.sh start > heartbeat (about once a minute) > waiting when a question needs you > done or failed; use one ID per session."))
                     .font(.system(size: 10, design: .monospaced))
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
                     .fixedSize(horizontal: false, vertical: true)
+                Toggle(L10n.text("Show the status light and active-agent count on the pet"), isOn: $model.agentIndicatorEnabled)
+                    .disabled(!model.agentBridgeEnabled)
+                Text(L10n.text("The chest badge shows a green light while agents work, an amber light when one waits for your answer, and the number of active sessions right below it."))
+                    .font(.system(size: 11, design: .rounded))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if model.hasWaitingAgent {
+                    Label(
+                        model.agentWaitingReason.map { L10n.format("Waiting for your answer: %@", $0) }
+                            ?? L10n.text("An agent is waiting for your answer (y/n)."),
+                        systemImage: "questionmark.circle.fill"
+                    )
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .foregroundStyle(AgentIndicator.waitingColor)
+                    .fixedSize(horizontal: false, vertical: true)
+                }
+
                 if model.activeAgentCount > 0 {
                     Label(L10n.format("Active now: %d", model.activeAgentCount), systemImage: "cpu")
                         .font(.system(size: 11, weight: .medium, design: .rounded))
                         .foregroundStyle(Color(hex: 0x5EAC70))
+                    ForEach(model.agentSessionSummaries) { session in
+                        HStack(spacing: 7) {
+                            Circle()
+                                .fill(session.isWaiting ? AgentIndicator.waitingColor : Color(hex: 0x7ED18A))
+                                .frame(width: 6, height: 6)
+                            Text(session.shortID)
+                                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                            Text(session.isWaiting ? L10n.text("Waiting for your answer") : L10n.text("Working"))
+                                .font(.system(size: 10, design: .rounded))
+                                .foregroundStyle(.secondary)
+                            Spacer(minLength: 0)
+                        }
+                    }
                 }
             }
 

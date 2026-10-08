@@ -52,18 +52,84 @@ struct PetDesktopView: View {
     var onDragEnded: (() -> Void)?
 
     private var petSide: CGFloat { CGFloat(model.petSize) + 48 }
-    private var panelWidth: CGFloat { model.isBreakDue ? max(petSide, PetBreakReminderBubble.width) : petSide }
-    private var panelHeight: CGFloat { petSide + (model.isBreakDue ? PetBreakReminderBubble.height : 0) }
+    private var bubbleHeight: CGFloat {
+        // Waiting for an agent decision takes precedence over the break reminder.
+        if model.hasWaitingAgent { return PetWaitingBubble.height }
+        return model.isBreakDue ? PetBreakReminderBubble.height : 0
+    }
+    private var bubbleWidth: CGFloat {
+        if model.hasWaitingAgent { return max(petSide, PetWaitingBubble.width) }
+        return model.isBreakDue ? max(petSide, PetBreakReminderBubble.width) : petSide
+    }
 
     var body: some View {
         VStack(spacing: 0) {
-            if model.isBreakDue {
+            if model.hasWaitingAgent {
+                PetWaitingBubble(model: model)
+            } else if model.isBreakDue {
                 PetBreakReminderBubble(model: model)
             }
             KiwiPetView(model: model, onDragChanged: onDragChanged, onDragEnded: onDragEnded)
         }
-        .frame(width: panelWidth, height: panelHeight, alignment: .top)
+        .frame(width: bubbleWidth, height: petSide + bubbleHeight, alignment: .top)
         .background(Color.clear)
+    }
+}
+
+/// The waiting cue: the agent asked a question and needs a human answer.
+/// The buttons only close the bubble - the agent keeps waiting in its own
+/// window, so nothing here claims to answer for it.
+struct PetWaitingBubble: View {
+    static let width: CGFloat = 228
+    static let height: CGFloat = 92
+
+    @ObservedObject var model: SweetNoSleepModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 6) {
+                Image(systemName: "questionmark.circle.fill")
+                    .foregroundStyle(AgentIndicator.waitingColor)
+                Text(L10n.text("Agent is waiting"))
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                Spacer(minLength: 0)
+            }
+            Text(L10n.text("Your approval is needed (y/n)."))
+                .font(.system(size: 9, design: .rounded))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+            if let reason = model.agentWaitingReason {
+                Text(reason)
+                    .font(.system(size: 9, design: .rounded))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            HStack(spacing: 6) {
+                Button(L10n.text("Approve")) {
+                    model.dismissWaitingCue()
+                }
+                .buttonStyle(.borderless)
+                .font(.system(size: 9, weight: .medium, design: .rounded))
+
+                Spacer(minLength: 0)
+
+                Button(L10n.text("Not now")) {
+                    model.dismissWaitingCue()
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(AgentIndicator.waitingColor)
+                .font(.system(size: 9, weight: .semibold, design: .rounded))
+            }
+        }
+        .padding(.horizontal, 10)
+        .frame(width: Self.width, height: Self.height)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(AgentIndicator.waitingColor.opacity(0.34), lineWidth: 1)
+        }
     }
 }
 
@@ -167,6 +233,13 @@ struct KiwiPetView: View {
     private var canvasSize: CGFloat { renderedSize + 48 }
     private var reduceMotion: Bool { systemReduceMotion || !model.animationsEnabled }
 
+    /// Extra space above the pet when a bubble is visible, so the eyes keep
+    /// tracking the pointer from the right place.
+    private var topInset: CGFloat {
+        if model.hasWaitingAgent { return PetWaitingBubble.height }
+        return model.isBreakDue ? PetBreakReminderBubble.height : 0
+    }
+
     var body: some View {
         TimelineView(
             .animation(
@@ -175,14 +248,19 @@ struct KiwiPetView: View {
             )
         ) { timeline in
             Canvas { context, size in
+                let skin = model.activeSkin
                 Self.drawPet(
                     in: &context,
                     size: size,
                     time: timeline.date.timeIntervalSinceReferenceDate,
                     mood: model.mood,
-                    palette: .palette(for: model.activeSkin),
-                    gaze: tracksCursor ? cursorGaze(canvasSize: canvasSize, topInset: model.isBreakDue ? PetBreakReminderBubble.height : 0) : .zero,
-                    reducedMotion: reduceMotion
+                    palette: .palette(for: skin),
+                    gaze: tracksCursor ? cursorGaze(canvasSize: canvasSize, topInset: topInset) : .zero,
+                    reducedMotion: reduceMotion,
+                    agentLight: model.agentIndicatorEnabled ? model.agentLightState : .off,
+                    agentCount: model.agentIndicatorEnabled ? model.activeAgentCount : 0,
+                    attention: model.hasWaitingAgent ? .question : nil,
+                    sprite: CharacterSpriteStore.shared.sprite(for: skin)
                 )
             }
             .frame(width: canvasSize, height: canvasSize)
@@ -200,7 +278,7 @@ struct KiwiPetView: View {
         .gesture(dragGesture)
         .onTapGesture { model.poke() }
         .accessibilityElement()
-        .accessibilityLabel(L10n.text("Kiwi, the Sweet No Sleep pet"))
+        .accessibilityLabel(L10n.format("%@, the Sweet No Sleep pet", model.activeSkin.name))
         .accessibilityHint(allowsDragging
             ? L10n.text("Click to say hello, or drag the pet to move it.")
             : L10n.text("Click to say hello."))
@@ -245,32 +323,59 @@ struct KiwiPetView: View {
         mood: KiwiMood,
         palette: PetPalette,
         gaze: CGPoint,
-        reducedMotion: Bool
+        reducedMotion: Bool,
+        agentLight: AgentLightState,
+        agentCount: Int,
+        attention: AttentionSymbol?,
+        sprite: CharacterSprite?
     ) {
+        if let sprite {
+            SpriteCharacterRenderer.draw(
+                in: &context,
+                size: size,
+                time: time,
+                mood: mood,
+                palette: palette,
+                sprite: sprite,
+                light: agentLight,
+                agentCount: agentCount,
+                attention: attention,
+                animated: !reducedMotion
+            )
+            return
+        }
+
         let radius = min(size.width, size.height) * 0.335
         let center = CGPoint(x: size.width * 0.50, y: size.height * 0.55)
         let headCenter = CGPoint(x: center.x, y: center.y - radius * 0.23)
         let profile = palette.animation
         let isDancing = mood == .dancing && !reducedMotion
         let isStretching = mood == .stretching
+        let isWaiting = mood == .waitingForApproval
         let danceSway = isDancing ? CGFloat(sin(time * 6.2)) * radius * 0.055 : 0
         let danceBounce = isDancing ? CGFloat(abs(sin(time * 6.2))) * radius * 0.075 : 0
         let stretchLift = isStretching ? radius * 0.035 : 0
-        let breath: CGFloat = reducedMotion ? 0 : CGFloat(sin(time * profile.breathingFrequency)) * CGFloat(profile.breathingAmplitude)
+        // A working agent makes the pet breathe a little quicker: a cheap
+        // "I can see the work" cue that costs nothing and respects Reduce Motion.
+        let feedBounce = agentLight == .working
+        let breathFrequency = profile.breathingFrequency * (feedBounce ? 1.25 : 1.0)
+        let breath: CGFloat = reducedMotion ? 0 : CGFloat(sin(time * breathFrequency)) * CGFloat(profile.breathingAmplitude)
+        let workBob: CGFloat = (feedBounce && !reducedMotion) ? CGFloat(abs(sin(time * 2.4))) * radius * 0.012 : 0
         let bob: CGFloat = reducedMotion ? 0 : CGFloat(sin(time * 1.45)) * radius * 0.018
-        let bodyCenter = CGPoint(x: center.x + danceSway, y: center.y + bob - danceBounce)
-        let headBob = CGPoint(x: headCenter.x + danceSway * 0.32, y: headCenter.y + bob - danceBounce * 0.42 - stretchLift)
+        let bodyCenter = CGPoint(x: center.x + danceSway, y: center.y + bob - danceBounce - workBob)
+        let headBob = CGPoint(x: headCenter.x + danceSway * 0.32, y: headCenter.y + bob - danceBounce * 0.42 - stretchLift - workBob)
         let posedBreath = breath + (isStretching ? 0.045 : 0)
 
-        if mood == .working || mood == .celebrating || mood == .dancing || mood == .breakReminder {
+        if mood == .working || mood == .celebrating || mood == .dancing || mood == .breakReminder || isWaiting {
             let haloRect = CGRect(
                 x: center.x - radius * 1.16,
                 y: center.y - radius * 0.98,
                 width: radius * 2.32,
                 height: radius * 2.32
             )
-            let haloOpacity = mood == .celebrating || mood == .dancing ? 0.15 : (mood == .breakReminder ? 0.13 : 0.08)
-            context.fill(Path(ellipseIn: haloRect), with: .color(palette.accent.opacity(haloOpacity)))
+            let haloOpacity = mood == .celebrating || mood == .dancing ? 0.15 : ((mood == .breakReminder || isWaiting) ? 0.13 : 0.08)
+            let haloColor = isWaiting ? AgentIndicator.waitingColor : palette.accent
+            context.fill(Path(ellipseIn: haloRect), with: .color(haloColor.opacity(haloOpacity)))
         }
 
         drawTail(in: &context, center: bodyCenter, radius: radius, time: time, palette: palette, mood: mood, reducedMotion: reducedMotion)
@@ -291,7 +396,17 @@ struct KiwiPetView: View {
             context.concatenate(CGAffineTransform(translationX: -headBob.x, y: -headBob.y))
         }
         drawPaws(in: &context, center: bodyCenter, radius: radius, palette: palette, time: time, mood: mood, reducedMotion: reducedMotion)
-        drawKiwiBadge(in: &context, center: CGPoint(x: center.x + danceSway * 0.45, y: center.y + radius * 0.40 + bob - danceBounce), radius: radius, palette: palette, time: time, mood: mood, reducedMotion: reducedMotion)
+        drawKiwiBadge(
+            in: &context,
+            center: CGPoint(x: center.x + danceSway * 0.45, y: center.y + radius * 0.40 + bob - danceBounce - workBob),
+            radius: radius,
+            palette: palette,
+            time: time,
+            mood: mood,
+            reducedMotion: reducedMotion,
+            agentLight: agentLight,
+            agentCount: agentCount
+        )
 
         if mood == .celebrating || mood == .dancing {
             drawCelebrationEffect(
@@ -304,9 +419,18 @@ struct KiwiPetView: View {
                 reducedMotion: reducedMotion
             )
         }
-        if mood == .curious || mood == .breakReminder {
+        if mood == .curious || mood == .breakReminder || isWaiting {
             let sparkle = CGPoint(x: center.x + radius * 0.83, y: center.y - radius * 0.82)
-            context.fill(starPath(center: sparkle, outerRadius: radius * 0.11, innerRadius: radius * 0.045), with: .color(palette.accent.opacity(0.90)))
+            let sparkleColor = isWaiting ? AgentIndicator.waitingColor : palette.accent
+            context.fill(PetShapes.star(center: sparkle, outerRadius: radius * 0.11, innerRadius: radius * 0.045), with: .color(sparkleColor.opacity(0.90)))
+        }
+        if let attention {
+            AgentIndicator.drawGlyphBadge(
+                in: &context,
+                center: AgentIndicator.attentionGlyphCenter(in: size),
+                height: AgentIndicator.attentionGlyphHeight(in: size),
+                symbol: attention
+            )
         }
     }
 
@@ -352,15 +476,16 @@ struct KiwiPetView: View {
 
         // Three tiny leaves make the Kiwi identity readable without a bitmap.
         let leafBase = CGPoint(x: center.x, y: center.y - radius * 0.76)
-        drawLeaf(in: &context, from: leafBase, to: CGPoint(x: center.x - radius * 0.17, y: center.y - radius * 1.00), radius: radius * 0.105, color: palette.accent)
-        drawLeaf(in: &context, from: leafBase, to: CGPoint(x: center.x + radius * 0.16, y: center.y - radius * 1.02), radius: radius * 0.105, color: palette.accent.opacity(0.9))
-        drawLeaf(in: &context, from: leafBase, to: CGPoint(x: center.x, y: center.y - radius * 1.08), radius: radius * 0.11, color: palette.accent)
+        PetShapes.leaf(in: &context, from: leafBase, to: CGPoint(x: center.x - radius * 0.17, y: center.y - radius * 1.00), radius: radius * 0.105, color: palette.accent)
+        PetShapes.leaf(in: &context, from: leafBase, to: CGPoint(x: center.x + radius * 0.16, y: center.y - radius * 1.02), radius: radius * 0.105, color: palette.accent.opacity(0.9))
+        PetShapes.leaf(in: &context, from: leafBase, to: CGPoint(x: center.x, y: center.y - radius * 1.08), radius: radius * 0.11, color: palette.accent)
     }
 
     private static func drawFace(in context: inout GraphicsContext, center: CGPoint, radius: CGFloat, time: Double, palette: PetPalette, mood: KiwiMood, gaze: CGPoint, reducedMotion: Bool) {
         let isHappy = mood == .celebrating || mood == .dancing
         let isResting = mood == .resting || mood == .stretching
-        let eyesWide = mood == .curious || mood == .breakReminder
+        // Wide eyes and an open mouth read as "I have a question" while waiting.
+        let eyesWide = mood == .curious || mood == .breakReminder || mood == .waitingForApproval
         let blinkCycle = time.truncatingRemainder(dividingBy: 4.6)
         let isBlinking = !reducedMotion && blinkCycle < 0.14
         let eyeY = center.y + radius * 0.06
@@ -435,13 +560,20 @@ struct KiwiPetView: View {
 
     private static func drawPaws(in context: inout GraphicsContext, center: CGPoint, radius: CGFloat, palette: PetPalette, time: Double, mood: KiwiMood, reducedMotion: Bool) {
         let isMoving = mood == .walking || mood == .dancing
+        let isWaiting = mood == .waitingForApproval
         let step: CGFloat = isMoving && !reducedMotion ? CGFloat(sin(time * (mood == .dancing ? 6.2 : 8))) * radius * 0.065 : 0
         let lift: CGFloat = reducedMotion ? 0 : (mood == .stretching ? radius * 0.11 : (mood == .dancing ? CGFloat(abs(sin(time * 6.2))) * radius * 0.12 : 0))
+        // Attention pose: the right front paw stays raised while the agent waits.
+        // The raise is static (visible with animations off) and only the small
+        // wave depends on motion.
+        let raisedPaw: CGFloat = isWaiting ? radius * 0.30 : 0
+        let wave: CGFloat = (isWaiting && !reducedMotion) ? CGFloat(sin(time * 3.0)) * radius * 0.035 : 0
         for (index, side) in [-1.0, 1.0].enumerated() {
             let offset = index == 0 ? step : -step
+            let isRaisedPaw = isWaiting && index == 1
             let paw = CGRect(
-                x: center.x + CGFloat(side) * radius * 0.30 - radius * 0.20,
-                y: center.y + radius * 0.70 + offset - lift,
+                x: center.x + CGFloat(side) * radius * 0.30 - radius * 0.20 + (isRaisedPaw ? -wave * 0.4 : 0),
+                y: center.y + radius * 0.70 + offset - lift - (isRaisedPaw ? raisedPaw + wave : 0),
                 width: radius * 0.40,
                 height: radius * 0.20
             )
@@ -450,7 +582,7 @@ struct KiwiPetView: View {
         }
     }
 
-    private static func drawKiwiBadge(in context: inout GraphicsContext, center: CGPoint, radius: CGFloat, palette: PetPalette, time: Double, mood: KiwiMood, reducedMotion: Bool) {
+    private static func drawKiwiBadge(in context: inout GraphicsContext, center: CGPoint, radius: CGFloat, palette: PetPalette, time: Double, mood: KiwiMood, reducedMotion: Bool, agentLight: AgentLightState = .off, agentCount: Int = 0) {
         let pulse: CGFloat
         if !reducedMotion && mood == .working {
             pulse = 1 + CGFloat(sin(time * 2.8)) * 0.035
@@ -463,6 +595,22 @@ struct KiwiPetView: View {
         let badge = CGRect(x: center.x - badgeRadius, y: center.y - badgeRadius, width: badgeRadius * 2, height: badgeRadius * 2)
         context.fill(Path(ellipseIn: badge), with: .color(palette.accent))
         context.stroke(Path(ellipseIn: badge), with: .color(palette.outline.opacity(0.76)), style: StrokeStyle(lineWidth: max(radius * 0.028, 1)))
+
+        // While agents are connected the badge core becomes the status light,
+        // and the active-session count sits just below it.
+        if agentLight != .off {
+            AgentIndicator.drawBadge(
+                in: &context,
+                center: center,
+                radius: radius,
+                palette: palette,
+                light: agentLight,
+                count: agentCount,
+                animated: !reducedMotion,
+                time: time
+            )
+            return
+        }
 
         let coreRadius = badgeRadius * 0.58
         let core = CGRect(x: center.x - coreRadius, y: center.y - coreRadius, width: coreRadius * 2, height: coreRadius * 2)
@@ -536,38 +684,7 @@ struct KiwiPetView: View {
         let pulse = reducedMotion ? 1.0 : 1.0 + 0.08 * sin(time * 6.0)
         let heartSize = radius * 0.16 * CGFloat(pulse)
         let heartCenter = CGPoint(x: headCenter.x + radius * 0.52, y: headCenter.y + radius * 0.33)
-        context.fill(heartPath(center: heartCenter, size: heartSize), with: .color(palette.cheek.opacity(0.85)))
-    }
-
-    // Master opacity envelope over the ~2.0s celebration window (poke duration upstream).
-    // Ease-in over first 20%, full hold, ease-out over last 40%. Peak ~0.9.
-    // Reduced motion freezes at 0.8 with no drift.
-    private static func celebrationAlpha(time: Double, reducedMotion: Bool) -> CGFloat {
-        if reducedMotion { return 0.8 }
-        let window = 2.0
-        var progress = (time.truncatingRemainder(dividingBy: window)) / window
-        if progress < 0 { progress += 1 }
-        func smoothstep(_ edge0: Double, _ edge1: Double, _ x: Double) -> Double {
-            let clamped = min(max((x - edge0) / (edge1 - edge0), 0), 1)
-            return clamped * clamped * (3 - 2 * clamped)
-        }
-        let fadeIn = smoothstep(0, 0.2, progress)
-        let fadeOut = 1 - smoothstep(0.6, 1.0, progress)
-        return CGFloat(0.9 * fadeIn * fadeOut)
-    }
-
-    // Plus-shaped sparkle path (rounded cross), filled for blink sparkles.
-    private static func plusSparkPath(center: CGPoint, arm: CGFloat, thickness: CGFloat) -> Path {
-        var path = Path()
-        path.addRoundedRect(
-            in: CGRect(x: center.x - arm, y: center.y - thickness / 2, width: arm * 2, height: thickness),
-            cornerSize: CGSize(width: thickness / 2, height: thickness / 2)
-        )
-        path.addRoundedRect(
-            in: CGRect(x: center.x - thickness / 2, y: center.y - arm, width: thickness, height: arm * 2),
-            cornerSize: CGSize(width: thickness / 2, height: thickness / 2)
-        )
-        return path
+        context.fill(PetShapes.heart(center: heartCenter, size: heartSize), with: .color(palette.cheek.opacity(0.85)))
     }
 
     private static func drawCelebrationEffect(
@@ -580,42 +697,21 @@ struct KiwiPetView: View {
         reducedMotion: Bool
     ) {
         // Global envelope: ultra-smooth fades across the celebration window.
-        let alpha = celebrationAlpha(time: time, reducedMotion: reducedMotion)
+        let alpha = PetShapes.celebrationAlpha(time: time, reducedMotion: reducedMotion)
         guard alpha > 0.01 else { return }
         // Normalized fade factor (1.0 at envelope peak) so base opacities keep
         // their designed visibility while still fading smoothly in/out.
         let fade = alpha / 0.9
 
-        // Pulsating halo ring shared by all celebration effects:
-        // radius breathes +-6%, opacity sweeps 0.10-0.22.
-        let haloPulse: CGFloat = reducedMotion ? 1.0 : 1.0 + 0.06 * CGFloat(sin(time * 5.0))
-        let haloBase: CGFloat = reducedMotion ? 0.16 : 0.10 + 0.12 * CGFloat(0.5 + 0.5 * sin(time * 5.0))
-        let haloRect = CGRect(
-            x: center.x - radius * 1.16 * haloPulse,
-            y: center.y - radius * 0.98 * haloPulse,
-            width: radius * 2.32 * haloPulse,
-            height: radius * 2.32 * haloPulse
+        PetShapes.celebrationBase(
+            in: &context,
+            center: center,
+            radius: radius,
+            time: time,
+            palette: palette,
+            fade: fade,
+            reducedMotion: reducedMotion
         )
-        context.stroke(
-            Path(ellipseIn: haloRect),
-            with: .color(palette.accent.opacity(min(haloBase * fade, 1.0))),
-            style: StrokeStyle(lineWidth: max(radius * 0.05, 1), lineCap: .round)
-        )
-
-        // Plus-shaped blink sparkles shared by all celebration effects (0 -> 1 -> 0).
-        let blinkers: [(CGFloat, CGFloat, Double)] = [
-            (-1.12, -0.78, 0.0), (1.12, -0.82, 2.1), (-1.06, 0.44, 4.2), (1.04, 0.48, 1.05)
-        ]
-        for (x, y, phase) in blinkers {
-            let point = CGPoint(x: center.x + x * radius, y: center.y + y * radius)
-            let blink: CGFloat = reducedMotion ? 0.7 : CGFloat(pow(max(0, sin(time * 3.0 + phase)), 2.0))
-            guard blink > 0.02 else { continue }
-            let arm = radius * 0.09 * (reducedMotion ? 1.0 : (0.85 + 0.15 * blink))
-            context.fill(
-                plusSparkPath(center: point, arm: arm, thickness: max(arm * 0.38, 0.8)),
-                with: .color(palette.furLight.opacity(min(blink * fade, 1.0)))
-            )
-        }
 
         let twinkle = reducedMotion ? 0.86 : CGFloat(0.72 + (sin(time * 7) + 1) * 0.14)
         switch effect {
@@ -636,7 +732,7 @@ struct KiwiPetView: View {
                 let from = CGPoint(x: center.x + ax * radius, y: center.y + ay * radius + drift)
                 let to = CGPoint(x: from.x + dx * radius, y: from.y + dy * radius + drift * 0.5)
                 let shimmer: CGFloat = reducedMotion ? 1.0 : 0.82 + 0.18 * CGFloat(0.5 + 0.5 * sin(time * 7 + phase))
-                drawLeaf(
+                PetShapes.leaf(
                     in: &context,
                     from: from,
                     to: to,
@@ -650,7 +746,7 @@ struct KiwiPetView: View {
             let crescentRadius = radius * 0.17 * 1.5
             let moonPulse: CGFloat = reducedMotion ? 1.0 : 1.0 + 0.05 * CGFloat(sin(time * 5.0 + 0.7))
             context.fill(
-                crescentPath(center: moonCenter, radius: crescentRadius * moonPulse),
+                PetShapes.crescent(center: moonCenter, radius: crescentRadius * moonPulse),
                 with: .color(palette.accent.opacity(min(0.92 * fade, 1.0)))
             )
             for i in 0..<12 {
@@ -664,7 +760,7 @@ struct KiwiPetView: View {
                 let flicker: CGFloat = reducedMotion ? 1.0 : 0.55 + 0.45 * CGFloat(0.5 + 0.5 * sin(time * 6.0 + phase * 1.7))
                 let scale: CGFloat = 0.055 + 0.03 * CGFloat(0.5 + 0.5 * sin(phase * 2.3))
                 context.fill(
-                    starPath(center: point, outerRadius: radius * scale * flicker, innerRadius: radius * scale * 0.30),
+                    PetShapes.star(center: point, outerRadius: radius * scale * flicker, innerRadius: radius * scale * 0.30),
                     with: .color(palette.furLight.opacity(min(0.95 * flicker * fade, 1.0)))
                 )
             }
@@ -677,7 +773,7 @@ struct KiwiPetView: View {
                 let point = CGPoint(x: center.x + x * radius, y: center.y + y * radius)
                 let beat: CGFloat = reducedMotion ? 1.0 : 1.0 + 0.10 * CGFloat(sin(time * 6.0 + phase))
                 context.fill(
-                    heartPath(center: point, size: radius * scale * twinkle * beat),
+                    PetShapes.heart(center: point, size: radius * scale * twinkle * beat),
                     with: .color(palette.cheek.opacity(min(0.92 * fade, 1.0)))
                 )
             }
@@ -685,51 +781,9 @@ struct KiwiPetView: View {
             let stars: [(CGFloat, CGFloat, CGFloat)] = [(-1.00, -0.48, 0.11), (0.98, -0.53, 0.14), (-0.94, 0.25, 0.085), (0.88, 0.28, 0.09)]
             for (x, y, scale) in stars {
                 let point = CGPoint(x: center.x + x * radius, y: center.y + y * radius)
-                context.fill(starPath(center: point, outerRadius: radius * scale * twinkle, innerRadius: radius * scale * 0.32), with: .color(palette.accent.opacity(min(0.95 * fade, 1.0))))
+                context.fill(PetShapes.star(center: point, outerRadius: radius * scale * twinkle, innerRadius: radius * scale * 0.32), with: .color(palette.accent.opacity(min(0.95 * fade, 1.0))))
             }
         }
-    }
-
-    private static func heartPath(center: CGPoint, size: CGFloat) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: center.x, y: center.y + size * 0.78))
-        path.addCurve(
-            to: CGPoint(x: center.x - size, y: center.y - size * 0.08),
-            control1: CGPoint(x: center.x - size * 1.15, y: center.y + size * 0.40),
-            control2: CGPoint(x: center.x - size, y: center.y + size * 0.33)
-        )
-        path.addCurve(
-            to: CGPoint(x: center.x, y: center.y - size * 0.18),
-            control1: CGPoint(x: center.x - size * 0.90, y: center.y - size * 0.70),
-            control2: CGPoint(x: center.x - size * 0.25, y: center.y - size * 0.82)
-        )
-        path.addCurve(
-            to: CGPoint(x: center.x + size, y: center.y - size * 0.08),
-            control1: CGPoint(x: center.x + size * 0.25, y: center.y - size * 0.82),
-            control2: CGPoint(x: center.x + size * 0.90, y: center.y - size * 0.70)
-        )
-        path.addCurve(
-            to: CGPoint(x: center.x, y: center.y + size * 0.78),
-            control1: CGPoint(x: center.x + size, y: center.y + size * 0.33),
-            control2: CGPoint(x: center.x + size * 1.15, y: center.y + size * 0.40)
-        )
-        path.closeSubpath()
-        return path
-    }
-
-    private static func crescentPath(center: CGPoint, radius: CGFloat) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: center.x, y: center.y - radius))
-        path.addQuadCurve(
-            to: CGPoint(x: center.x, y: center.y + radius),
-            control: CGPoint(x: center.x + radius * 1.35, y: center.y)
-        )
-        path.addQuadCurve(
-            to: CGPoint(x: center.x, y: center.y - radius),
-            control: CGPoint(x: center.x - radius * 0.30, y: center.y + radius * 0.15)
-        )
-        path.closeSubpath()
-        return path
     }
 
     private static func catHeadPath(center: CGPoint, radius: CGFloat) -> Path {
@@ -789,31 +843,6 @@ struct KiwiPetView: View {
             to: CGPoint(x: center.x + radius, y: center.y),
             control: CGPoint(x: center.x, y: center.y + radius * (happy ? 1.22 : 0.72))
         )
-        return path
-    }
-
-    private static func drawLeaf(in context: inout GraphicsContext, from start: CGPoint, to end: CGPoint, radius: CGFloat, color: Color) {
-        let midpoint = CGPoint(x: (start.x + end.x) / 2, y: (start.y + end.y) / 2)
-        var leaf = Path()
-        leaf.move(to: start)
-        leaf.addQuadCurve(to: end, control: CGPoint(x: midpoint.x - radius * 0.42, y: midpoint.y))
-        leaf.addQuadCurve(to: start, control: CGPoint(x: midpoint.x + radius * 0.42, y: midpoint.y + radius * 0.25))
-        context.fill(leaf, with: .color(color))
-        var vein = Path()
-        vein.move(to: start)
-        vein.addLine(to: end)
-        context.stroke(vein, with: .color(Color.white.opacity(0.38)), style: StrokeStyle(lineWidth: max(radius * 0.10, 0.6), lineCap: .round))
-    }
-
-    private static func starPath(center: CGPoint, outerRadius: CGFloat, innerRadius: CGFloat) -> Path {
-        var path = Path()
-        for point in 0..<8 {
-            let angle = Double(point) * .pi / 4 - .pi / 2
-            let radius = point.isMultiple(of: 2) ? outerRadius : innerRadius
-            let next = CGPoint(x: center.x + CGFloat(cos(angle)) * radius, y: center.y + CGFloat(sin(angle)) * radius)
-            if point == 0 { path.move(to: next) } else { path.addLine(to: next) }
-        }
-        path.closeSubpath()
         return path
     }
 }

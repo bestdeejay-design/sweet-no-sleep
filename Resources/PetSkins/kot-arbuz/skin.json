@@ -1,0 +1,22 @@
+{
+  "format": 2,
+  "id": "kot-arbuz",
+  "name": "Kot-Arbuz",
+  "subtitle": "Watermelon cat",
+  "colors": {
+    "fur": "#7FAF5E",
+    "furLight": "#F3FFDE",
+    "outline": "#2A3D1F",
+    "innerEar": "#F79EA0",
+    "iris": "#3F5A2E",
+    "accent": "#93BE6E",
+    "cheek": "#FD9D9A"
+  },
+  "animation": {
+    "breathingFrequency": 2.0,
+    "breathingAmplitude": 0.022,
+    "tailFrequency": 2.6,
+    "tailAmplitude": 0.10,
+    "celebrationEffect": "leaves"
+  }
+}

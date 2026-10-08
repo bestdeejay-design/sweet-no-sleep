@@ -64,6 +64,10 @@ jobs:
           test -s "$APP/Contents/Resources/Media/menubar-awake.png"
           test -s "$APP/Contents/Resources/Media/menubar-asleep.png"
           test -s "$APP/Contents/Resources/Media/preview-kiwi.png"
+          test -s "$APP/Contents/Resources/Media/preview-kot-arbuz.png"
+          test -s "$APP/Contents/Resources/PetSkins/kot-arbuz/body.png"
+          test -s "$APP/Contents/Resources/PetSkins/kot-arbuz/tail.png"
+          test -s "$APP/Contents/Resources/PetSkins/kot-arbuz/pet.json"
           find "$APP/Contents/Resources" -maxdepth 1 -name '*.bundle' -print -quit | grep -q .
           /usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$APP/Contents/Info.plist" | grep -q 'SweetNoSleep.icns'
           codesign --verify --deep --strict "$APP"

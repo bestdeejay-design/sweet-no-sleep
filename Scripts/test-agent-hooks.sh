@@ -17,7 +17,10 @@ export PATH="$TEMP_DIR/bin:$PATH"
 
 "$ROOT_DIR/Scripts/agent-event.sh" start smoke-1
 "$ROOT_DIR/Scripts/agent-event.sh" heartbeat smoke-1
+"$ROOT_DIR/Scripts/agent-event.sh" waiting smoke-1 "Approve deploy?"
+"$ROOT_DIR/Scripts/agent-event.sh" heartbeat smoke-1
 "$ROOT_DIR/Scripts/agent-event.sh" done smoke-1
+"$ROOT_DIR/Scripts/agent-event.sh" failed smoke-2
 
 if "$ROOT_DIR/Scripts/agent-event.sh" start 'bad id' >/dev/null 2>&1; then
   echo "Invalid session ID unexpectedly passed validation." >&2
@@ -43,12 +46,22 @@ fi
 
 if ! grep -q 'sweetnosleep://agent/start?session=smoke-1' "$HOOK_LOG" \
   || ! grep -q 'sweetnosleep://agent/heartbeat?session=smoke-1' "$HOOK_LOG" \
+  || ! grep -q 'sweetnosleep://agent/waiting?session=smoke-1&reason=Approve%20deploy%3F' "$HOOK_LOG" \
   || ! grep -q 'sweetnosleep://agent/done?session=smoke-1' "$HOOK_LOG" \
+  || ! grep -q 'sweetnosleep://agent/failed?session=smoke-2' "$HOOK_LOG" \
   || ! grep -q 'sweetnosleep://agent/start?session=smoke-success' "$HOOK_LOG" \
   || ! grep -q 'sweetnosleep://agent/done?session=smoke-success' "$HOOK_LOG" \
   || ! grep -q 'sweetnosleep://agent/start?session=smoke-failure' "$HOOK_LOG" \
   || ! grep -q 'sweetnosleep://agent/failed?session=smoke-failure' "$HOOK_LOG"; then
-  echo "Agent hook events did not match expected start/heartbeat/terminal sequence:" >&2
+  echo "Agent hook events did not match the expected start/heartbeat/waiting/done sequence:" >&2
+  cat "$HOOK_LOG" >&2
+  exit 1
+fi
+
+# The heartbeat after the waiting event must be sent again, and the reason must
+# travel URL-encoded so the app can show it verbatim.
+if [[ "$(grep -c 'sweetnosleep://agent/heartbeat?session=smoke-1' "$HOOK_LOG")" -ne 2 ]]; then
+  echo "Expected two heartbeats around the waiting event:" >&2
   cat "$HOOK_LOG" >&2
   exit 1
 fi
