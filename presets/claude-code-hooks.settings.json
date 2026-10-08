@@ -1,0 +1,74 @@
+{
+  "$comment": "Sweet No Sleep preset for Claude Code hooks (Issue #11, F5). Copy the hooks below into ~/.claude/settings.json or your project's .claude/settings.json. Session ID is derived from the parent PID so all hooks in one Claude session share one lease.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "SESSION_ID=\"claude-${PPID}\"; open -g \"sweetnosleep://agent/start?session=$SESSION_ID\" >/dev/null 2>&1 || true"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "SESSION_ID=\"claude-${PPID}\"; open -g \"sweetnosleep://agent/heartbeat?session=$SESSION_ID\" >/dev/null 2>&1 || true"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "agent_needs_input|permission_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "SESSION_ID=\"claude-${PPID}\"; open -g \"sweetnosleep://agent/waiting?session=$SESSION_ID\" >/dev/null 2>&1 || true"
+          }
+        ]
+      },
+      {
+        "matcher": "agent_completed",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "SESSION_ID=\"claude-${PPID}\"; open -g \"sweetnosleep://agent/done?session=$SESSION_ID\" >/dev/null 2>&1 || true"
+          }
+        ]
+      },
+      {
+        "matcher": "agent_failed|agent_error",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "SESSION_ID=\"claude-${PPID}\"; open -g \"sweetnosleep://agent/failed?session=$SESSION_ID\" >/dev/null 2>&1 || true"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "SESSION_ID=\"claude-${PPID}\"; open -g \"sweetnosleep://agent/done?session=$SESSION_ID\" >/dev/null 2>&1 || true"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "SESSION_ID=\"claude-${PPID}\"; open -g \"sweetnosleep://agent/done?session=$SESSION_ID\" >/dev/null 2>&1 || true"
+          }
+        ]
+      }
+    ]
+  }
+}

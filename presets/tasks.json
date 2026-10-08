@@ -1,0 +1,65 @@
+{
+  "$comment": "Sweet No Sleep preset tasks for Cursor / VS Code (Issue #11, F5). Merge into .vscode/tasks.json. Uses the repository Scripts via workspaceFolder; adjust the path if you installed the scripts elsewhere.",
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Sweet No Sleep: Agent Start",
+      "type": "shell",
+      "command": "${workspaceFolder}/Scripts/agent-event.sh start \"${input:agentSessionId}\"",
+      "presentation": { "reveal": "silent", "close": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Sweet No Sleep: Agent Heartbeat",
+      "type": "shell",
+      "command": "${workspaceFolder}/Scripts/agent-event.sh heartbeat \"${input:agentSessionId}\"",
+      "presentation": { "reveal": "silent", "close": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Sweet No Sleep: Agent Waiting",
+      "type": "shell",
+      "command": "${workspaceFolder}/Scripts/agent-event.sh waiting \"${input:agentSessionId}\"",
+      "presentation": { "reveal": "silent", "close": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Sweet No Sleep: Agent Done",
+      "type": "shell",
+      "command": "${workspaceFolder}/Scripts/agent-event.sh done \"${input:agentSessionId}\"",
+      "presentation": { "reveal": "silent", "close": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Sweet No Sleep: Agent Failed",
+      "type": "shell",
+      "command": "${workspaceFolder}/Scripts/agent-event.sh failed \"${input:agentSessionId}\"",
+      "presentation": { "reveal": "silent", "close": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Build (with Sweet No Sleep hold)",
+      "type": "shell",
+      "command": "${workspaceFolder}/Scripts/agent-session.sh \"${input:agentSessionId}\" -- npm run build",
+      "group": "build",
+      "presentation": { "reveal": "always" },
+      "problemMatcher": "$tsc"
+    },
+    {
+      "label": "Test (with Sweet No Sleep hold)",
+      "type": "shell",
+      "command": "${workspaceFolder}/Scripts/agent-session.sh \"${input:agentSessionId}\" -- npm test",
+      "group": "test",
+      "presentation": { "reveal": "always" },
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "agentSessionId",
+      "type": "promptString",
+      "description": "Stable agent session ID (letters, numbers, dots, underscores, hyphens)",
+      "default": "vscode-task-1"
+    }
+  ]
+}
