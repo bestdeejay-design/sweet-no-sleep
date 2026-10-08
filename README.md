@@ -1,10 +1,10 @@
 # Sweet No Sleep — Kiwi Cat
 
 A native macOS companion that keeps your Mac awake during long work
-sessions and makes it pleasant to look at. A small floating pet,
-Kiwi, lives on your desktop, reacts to what you do, and holds a
-power assertion while you (or your coding agent) need the machine
-to stay awake.
+sessions and makes it pleasant to look at. A small floating cat —
+Kiwi or Kot-Arbuz, your pick — lives on your desktop, reacts to what
+you do, and holds a power assertion while you (or your coding agent)
+need the machine to stay awake.
 
 No menus to learn, no accounts, no network calls. Just a pet that
 watches over your focus time.
@@ -14,6 +14,27 @@ watches over your focus time.
 ![Sweet No Sleep release banner: Keep the Mac awake while the work finishes, with Kiwi beside a focus-session dashboard preview](Resources/Art/Rendered/banner.png)
 
 [Download the 1280 × 640 banner PNG](Resources/Art/Rendered/banner.png) · [editable banner SVG](Resources/Art/banner.svg) · [Open Graph SVG](Resources/Art/og-image.svg). The SVG files are the editable sources; `Scripts/render-media.sh` rebuilds raster assets on macOS. A successful macOS CI push commits the generated images to the task branch and uploads the media kit as an artifact.
+
+## The cats
+
+Two characters live in the app, and each one keeps its own name.
+
+**Kiwi** is the original — a warm-furred cat drawn procedurally on a
+Canvas, with breathing, blinking, a swaying tail, and eyes that follow
+your pointer. He comes in three looks — Kiwi, Moonlight, and
+Strawberry — each a palette pack over the same drawing, so switching
+looks changes the mood without changing the pet.
+
+**Kot-Arbuz** is the watermelon cat: a layered sprite character cut from
+his own artwork, with a striped rind, a red heart, and a palette that is
+his alone. He celebrates with leaves, sways his tail while agents run,
+and lights an amber question mark the moment one of them needs your
+approval — and he never answers to the name Kiwi.
+
+![Kot-Arbuz skin card: the watermelon cat on a mint-to-blush card with his palette swatches](Resources/Art/Rendered/preview-kot-arbuz.png)
+
+See the [Kot-Arbuz character case on dajet.ru](https://dajet.ru/#project-16)
+for the design, the sprite layers, and the app states side by side.
 
 ## Features
 
