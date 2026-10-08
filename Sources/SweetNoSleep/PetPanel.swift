@@ -43,7 +43,7 @@ final class PetLayerHitTestView: NSView {
     private func containsPet(at point: NSPoint) -> Bool {
         let xInPanel = point.x
         let yInPanel = bounds.height - point.y // Convert AppKit's bottom-left origin to SwiftUI's top-left origin.
-        let petSide = petSize + 48
+        let petSide = PetPanelLayout.petSide(petSize: petSize)
         let petInsetX = (bounds.width - petSide) / 2
         let petInsetY = bubbleHeight
 
@@ -95,8 +95,7 @@ final class PetLayerHitTestView: NSView {
 
     /// Space the visible bubble occupies above the pet.
     private var bubbleHeight: CGFloat {
-        if showsWaitingBubble { return PetWaitingBubble.height }
-        return showsBreakReminder ? PetBreakReminderBubble.height : 0
+        PetPanelLayout.bubbleHeight(showsWaitingBubble: showsWaitingBubble, isBreakDue: showsBreakReminder)
     }
 
     private func triangleContains(_ point: CGPoint, a: CGPoint, b: CGPoint, c: CGPoint) -> Bool {
@@ -139,11 +138,14 @@ final class PetPanelController {
 
     init(model: SweetNoSleepModel) {
         self.model = model
-        model.$petSize.dropFirst().sink { [weak self] size in
-            self?.updateSize(CGFloat(size))
+        model.$petSize.dropFirst().sink { [weak self] _ in
+            self?.syncHitTestFlags()
         }.store(in: &cancellables)
         // @Published emits from willSet, so the visible bubble is derived from
-        // the emitted values instead of re-reading the model here.
+        // the emitted values instead of re-reading the model here. The panel
+        // frame is NOT resized here: resizing from willSet races the SwiftUI
+        // update and clips the pet for a frame (issue #21 P0). The resize
+        // arrives with the laid-out content size from PetDesktopView instead.
         Publishers.CombineLatest3(model.$agentSessions, model.$dismissedWaitingIDs, model.$isBreakDue)
             .dropFirst()
             .sink { [weak self] sessions, dismissed, isBreakDue in
@@ -152,7 +154,7 @@ final class PetPanelController {
                     session.value.isWaiting && !dismissed.contains(session.key)
                 }
                 self.showsBreakReminder = isBreakDue
-                self.updateSize(CGFloat(self.model.petSize))
+                self.syncHitTestFlags()
             }
             .store(in: &cancellables)
         model.$alwaysOnTop.dropFirst().sink { [weak self] isPinned in
@@ -176,7 +178,8 @@ final class PetPanelController {
         let rootView = PetDesktopView(
             model: model,
             onDragChanged: { [weak self] translation in self?.movePanel(by: translation) },
-            onDragEnded: { [weak self] in self?.finishDragging() }
+            onDragEnded: { [weak self] in self?.finishDragging() },
+            onContentSize: { [weak self] size in self?.applyContentSize(size) }
         )
         let layerView = PetLayerHitTestView(frame: NSRect(origin: .zero, size: size))
         layerView.petSize = CGFloat(model.petSize)
@@ -236,9 +239,20 @@ final class PetPanelController {
         PetPanelPosition.store(panel.frame.origin)
     }
 
-    private func updateSize(_ petSize: CGFloat) {
-        guard let panel else { return }
-        let size = panelSize(for: petSize)
+    /// Keeps the hit-test layer's bubble/pet flags in sync without touching
+    /// frames; the frame follows the laid-out content size instead.
+    private func syncHitTestFlags() {
+        guard let panel, let layerView = panel.contentView as? PetLayerHitTestView else { return }
+        layerView.petSize = CGFloat(model.petSize)
+        layerView.showsBreakReminder = showsBreakReminder
+        layerView.showsWaitingBubble = showsWaitingBubble
+    }
+
+    /// Resizes the panel to the size SwiftUI just laid out, so the AppKit frame
+    /// and the content change in the same update and the sprite never draws
+    /// outside the panel bounds.
+    private func applyContentSize(_ size: NSSize) {
+        guard let panel, panel.frame.size != size else { return }
         let previousFrame = panel.frame
         let visibleFrame = (NSScreen.screens.first(where: { $0.frame.intersects(previousFrame) }) ?? NSScreen.main)?.visibleFrame
         var origin = NSPoint(x: previousFrame.midX - size.width / 2, y: previousFrame.minY)
@@ -251,7 +265,7 @@ final class PetPanelController {
             display: true
         )
         if let layerView = panel.contentView as? PetLayerHitTestView {
-            layerView.petSize = petSize
+            layerView.petSize = CGFloat(model.petSize)
             layerView.showsBreakReminder = showsBreakReminder
             layerView.showsWaitingBubble = showsWaitingBubble
             layerView.frame = NSRect(origin: .zero, size: size)
@@ -265,16 +279,12 @@ final class PetPanelController {
     }
 
     private func panelSize(for petSize: CGFloat) -> NSSize {
-        let petSide = petSize + 48
-        // Waiting for an agent answer wins over the break reminder, exactly as
-        // in PetDesktopView.
-        if showsWaitingBubble {
-            return NSSize(width: max(petSide, PetWaitingBubble.width), height: petSide + PetWaitingBubble.height)
-        }
-        if showsBreakReminder {
-            return NSSize(width: max(petSide, PetBreakReminderBubble.width), height: petSide + PetBreakReminderBubble.height)
-        }
-        return NSSize(width: petSide, height: petSide)
+        // Same formula the SwiftUI stack lays out, via PetPanelLayout.
+        PetPanelLayout.contentSize(
+            petSize: petSize,
+            showsWaitingBubble: showsWaitingBubble,
+            isBreakDue: showsBreakReminder
+        )
     }
 
     private func restoredOrigin(for size: NSSize) -> NSPoint {

@@ -61,8 +61,8 @@ final class CharacterSpriteStore {
         guard let data = try? Data(contentsOf: manifestURL),
               let manifest = try? JSONDecoder().decode(PetCharacterManifest.self, from: data),
               manifest.art.isValid,
-              let body = Self.cgImage(at: folder.appendingPathComponent(manifest.bodyLayerName)),
-              let tail = Self.cgImage(at: folder.appendingPathComponent(manifest.tailLayerName))
+              let body = Self.cgImage(at: folder.appendingPathComponent(manifest.bodyLayerName), canvas: manifest.art.canvas),
+              let tail = Self.cgImage(at: folder.appendingPathComponent(manifest.tailLayerName), canvas: manifest.art.canvas)
         else { return nil }
 
         // A format 2 pack that lost one rig layer is refused wholesale, exactly
@@ -72,10 +72,10 @@ final class CharacterSpriteStore {
         var legsB: CGImage?
         var legsC: CGImage?
         if manifest.isRigged {
-            guard let loadedHead = Self.cgImage(at: folder.appendingPathComponent(manifest.headLayerName)),
-                  let loadedLegsA = Self.cgImage(at: folder.appendingPathComponent(manifest.legsALayerName)),
-                  let loadedLegsB = Self.cgImage(at: folder.appendingPathComponent(manifest.legsBLayerName)),
-                  let loadedLegsC = Self.cgImage(at: folder.appendingPathComponent(manifest.legsCLayerName))
+            guard let loadedHead = Self.cgImage(at: folder.appendingPathComponent(manifest.headLayerName), canvas: manifest.art.canvas),
+                  let loadedLegsA = Self.cgImage(at: folder.appendingPathComponent(manifest.legsALayerName), canvas: manifest.art.canvas),
+                  let loadedLegsB = Self.cgImage(at: folder.appendingPathComponent(manifest.legsBLayerName), canvas: manifest.art.canvas),
+                  let loadedLegsC = Self.cgImage(at: folder.appendingPathComponent(manifest.legsCLayerName), canvas: manifest.art.canvas)
             else { return nil }
             head = loadedHead
             legsA = loadedLegsA
@@ -97,9 +97,15 @@ final class CharacterSpriteStore {
         lock.unlock()
     }
 
-    private static func cgImage(at url: URL) -> CGImage? {
+    /// Loads a layer and verifies it is a square of exactly `canvas` pixels.
+    /// A corrupt, truncated or wrong-sized PNG is refused here as well as in
+    /// `Scripts/validate-skins.py`, so a broken user pack can never draw a
+    /// stretched character (issue #21 audit).
+    private static func cgImage(at url: URL, canvas: Int) -> CGImage? {
         guard let image = NSImage(contentsOf: url) else { return nil }
         var rect = CGRect(origin: .zero, size: image.size)
-        return image.cgImage(forProposedRect: &rect, context: nil, hints: nil)
+        guard let cgImage = image.cgImage(forProposedRect: &rect, context: nil, hints: nil) else { return nil }
+        guard cgImage.width == canvas, cgImage.height == canvas else { return nil }
+        return cgImage
     }
 }
