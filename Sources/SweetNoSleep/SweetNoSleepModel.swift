@@ -13,9 +13,21 @@ enum KiwiMood: Equatable, Sendable {
     case stretching
     case curious
     case breakReminder
+    case waitingForApproval
     case resting
     case dragging
     case walking
+}
+
+enum AgentStatus: String, Codable, Sendable {
+    case working
+    case waiting
+}
+
+struct AgentSessionState: Equatable, Sendable {
+    var status: AgentStatus
+    var expiry: Date
+    var reason: String?
 }
 
 enum SessionCompletionAction: String, CaseIterable, Identifiable, Hashable {
@@ -58,12 +70,14 @@ final class SweetNoSleepModel: ObservableObject {
     private var sessionCompletionAction: SessionCompletionAction?
     private var pendingImmediateSleepToken: UUID?
     private var manualAwake = false
-    private var agentLeases: [String: Date] = [:]
     private var agentLeaseTimer: Timer?
+    private var agentGraceTimer: Timer?
+    private var agentWebhookServer: AgentWebhookServer?
     // Last system wake time. Taps within the grace window are ignored so a
     // click meant to wake the Mac does not accidentally poke the pet.
     private var lastSystemWakeDate: Date?
     private var wakeObserver: NSObjectProtocol?
+    private var willSleepObserver: NSObjectProtocol?
     private var holdStartUptime: TimeInterval?
     private var hasCapTripped = false
     private var isPausedByBatteryFloor = false
@@ -75,12 +89,21 @@ final class SweetNoSleepModel: ObservableObject {
         }
     }
     @Published private(set) var isFocusSession = false
-    @Published private(set) var activeAgentCount = 0
+    @Published private(set) var agentSessions: [String: AgentSessionState] = [:]
+    @Published private(set) var agentWebhookError: String?
     @Published private(set) var remainingSeconds: Int?
     @Published private(set) var powerWarning: String?
     @Published var statusMessage = L10n.text("Kiwi is ready to keep you company")
     @Published private(set) var mood: KiwiMood = .idle
     @Published private(set) var diagnostics = PowerDiagnostics()
+
+    var activeAgentCount: Int { agentSessions.count }
+    var hasWaitingAgent: Bool { agentSessions.values.contains { $0.status == .waiting } }
+    var isAgentActive: Bool { !agentSessions.isEmpty }
+    var agentLightState: AgentLightState {
+        guard agentBadgeLightEnabled, !agentSessions.isEmpty else { return .off }
+        return hasWaitingAgent ? .waiting : .working
+    }
 
     @Published var selectedMinutes: Int {
         didSet { defaults.set(selectedMinutes, forKey: Key.selectedMinutes) }
@@ -134,6 +157,35 @@ final class SweetNoSleepModel: ObservableObject {
         didSet {
             defaults.set(agentBridgeEnabled, forKey: Key.agentBridgeEnabled)
             if oldValue && !agentBridgeEnabled { endAgentSessions() }
+        }
+    }
+
+    @Published var agentBadgeLightEnabled: Bool {
+        didSet { defaults.set(agentBadgeLightEnabled, forKey: Key.agentBadgeLightEnabled) }
+    }
+
+    @Published var agentCooldownMinutes: Int {
+        didSet {
+            agentCooldownMinutes = min(max(agentCooldownMinutes, 0), 5)
+            defaults.set(agentCooldownMinutes, forKey: Key.agentCooldownMinutes)
+        }
+    }
+
+    @Published var agentWebhookEnabled: Bool {
+        didSet {
+            defaults.set(agentWebhookEnabled, forKey: Key.agentWebhookEnabled)
+            if oldValue != agentWebhookEnabled {
+                if agentWebhookEnabled { startWebhookServer() } else { stopWebhookServer() }
+            }
+        }
+    }
+
+    @Published var agentWebhookToken: String {
+        didSet {
+            defaults.set(agentWebhookToken, forKey: Key.agentWebhookToken)
+            if oldValue != agentWebhookToken, agentWebhookEnabled {
+                restartWebhookServer()
+            }
         }
     }
 
@@ -203,7 +255,7 @@ final class SweetNoSleepModel: ObservableObject {
                 breakTimer = nil
                 if isBreakDue {
                     isBreakDue = false
-                    setMood(isKeepingAwake ? .working : .idle)
+                    setMood(baseMood())
                 }
             }
             schedulePlayfulMoment()
@@ -239,6 +291,16 @@ final class SweetNoSleepModel: ObservableObject {
         continuousAwakeCapHours = min(max(defaults.object(forKey: Key.continuousAwakeCapHours) as? Int ?? 4, 0), 12)
         resumeKeepAwakeOnLaunch = defaults.object(forKey: Key.resumeOnLaunch) as? Bool ?? false
         agentBridgeEnabled = defaults.object(forKey: Key.agentBridgeEnabled) as? Bool ?? false
+        agentBadgeLightEnabled = defaults.object(forKey: Key.agentBadgeLightEnabled) as? Bool ?? true
+        agentCooldownMinutes = min(max(defaults.object(forKey: Key.agentCooldownMinutes) as? Int ?? 1, 0), 5)
+        agentWebhookEnabled = defaults.object(forKey: Key.agentWebhookEnabled) as? Bool ?? false
+        if let savedToken = defaults.string(forKey: Key.agentWebhookToken), Self.isValidWebhookToken(savedToken) {
+            agentWebhookToken = savedToken
+        } else {
+            let freshToken = Self.makeWebhookToken()
+            defaults.set(freshToken, forKey: Key.agentWebhookToken)
+            agentWebhookToken = freshToken
+        }
         isPetVisible = defaults.object(forKey: Key.petVisible) as? Bool ?? true
         alwaysOnTop = defaults.object(forKey: Key.alwaysOnTop) as? Bool ?? true
         roamingEnabled = defaults.object(forKey: Key.roamingEnabled) as? Bool ?? false
@@ -270,6 +332,7 @@ final class SweetNoSleepModel: ObservableObject {
             self.breakTimer?.invalidate()
             self.breakTimer = nil
             self.stopHeartbeatTimer()
+            self.cancelAgentGrace()
             self.isBreakDue = false
             self.sessionEndDate = nil
             self.sessionCompletionAction = nil
@@ -305,8 +368,27 @@ final class SweetNoSleepModel: ObservableObject {
                 self?.updateDiagnostics()
             }
         }
+        willSleepObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.willSleepNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.handleSystemWillSleep()
+            }
+        }
         updateDiagnostics()
         schedulePlayfulMoment()
+        if agentWebhookEnabled {
+            startWebhookServer()
+        }
+    }
+
+    func baseMood() -> KiwiMood {
+        if hasWaitingAgent { return .waitingForApproval }
+        if isBreakDue { return .breakReminder }
+        if isKeepingAwake { return .working }
+        return .idle
     }
 
     // MARK: Awake controls
@@ -347,7 +429,7 @@ final class SweetNoSleepModel: ObservableObject {
         guard isKeepingAwake else { return }
         if !isPausedByBatteryFloor {
             statusMessage = L10n.text("Kiwi is keeping your Mac awake")
-            setMood(isBreakDue ? .breakReminder : .working)
+            setMood(baseMood())
         }
     }
 
@@ -376,7 +458,7 @@ final class SweetNoSleepModel: ObservableObject {
         isFocusSession = true
         if !isPausedByBatteryFloor {
             statusMessage = L10n.format("Focus session started - %d min", minutes)
-            setMood(isBreakDue ? .breakReminder : .working)
+            setMood(baseMood())
         }
         updateCountdown()
         sessionTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
@@ -388,7 +470,8 @@ final class SweetNoSleepModel: ObservableObject {
 
     func stopKeepingAwake() {
         cancelPendingImmediateSleepRequest()
-        let wasRunning = isKeepingAwake || isFocusSession || manualAwake || !agentLeases.isEmpty
+        cancelAgentGrace()
+        let wasRunning = isKeepingAwake || isFocusSession || manualAwake || !agentSessions.isEmpty
         sessionTimer?.invalidate()
         sessionTimer = nil
         breakTimer?.invalidate()
@@ -397,8 +480,7 @@ final class SweetNoSleepModel: ObservableObject {
         stopHeartbeatTimer()
         agentLeaseTimer?.invalidate()
         agentLeaseTimer = nil
-        agentLeases.removeAll()
-        activeAgentCount = 0
+        agentSessions.removeAll()
         manualAwake = false
         sessionEndDate = nil
         sessionCompletionAction = nil
@@ -419,15 +501,24 @@ final class SweetNoSleepModel: ObservableObject {
 
     func shutdown() {
         stopKeepingAwake()
+        stopWebhookServer()
         powerKeeper.shutdown()
         powerSourceMonitor.shutdown()
         stopHeartbeatTimer()
+        if let wakeObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver)
+            self.wakeObserver = nil
+        }
+        if let willSleepObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(willSleepObserver)
+            self.willSleepObserver = nil
+        }
     }
 
     // MARK: Local agent bridge
 
     /// Accepts an opt-in local URL event from a CLI hook or companion script:
-    /// sweetnosleep://agent/start|heartbeat|done|failed?session=<stable-id>
+    /// sweetnosleep://agent/start|heartbeat|waiting|done|failed?session=<stable-id>&reason=<text>
     func handleAgentURL(_ url: URL) {
         guard agentBridgeEnabled,
               url.scheme?.lowercased() == "sweetnosleep",
@@ -440,14 +531,31 @@ final class SweetNoSleepModel: ObservableObject {
               !sessionID.isEmpty,
               sessionID.count <= 120
         else { return }
+        let reason = components?.queryItems?.first(where: { $0.name == "reason" })?.value
+        handleAgentEvent(action: action.lowercased(), sessionID: sessionID, reason: reason)
+    }
 
+    /// Shared entry point for URL-scheme and webhook agent events.
+    func handleAgentEvent(action: String, sessionID: String, reason: String?) {
+        let trimmedReason = reason?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanReason: String? = {
+            guard let value = trimmedReason, !value.isEmpty else { return nil }
+            return String(value.prefix(200))
+        }()
         switch action.lowercased() {
         case "start":
-            renewAgentLease(sessionID: sessionID)
+            renewAgentLease(sessionID: sessionID, status: .working, reason: cleanReason)
             statusMessage = L10n.text("An AI agent reported that work has started.")
         case "heartbeat":
-            guard agentLeases[sessionID] != nil else { return }
-            renewAgentLease(sessionID: sessionID)
+            guard agentSessions[sessionID] != nil else { return }
+            renewAgentLease(sessionID: sessionID, status: .working, reason: cleanReason)
+        case "waiting":
+            renewAgentLease(sessionID: sessionID, status: .waiting, reason: cleanReason)
+            if let waitingReason = cleanReason, !waitingReason.isEmpty {
+                statusMessage = L10n.format("Agent is waiting for approval: %@", waitingReason)
+            } else {
+                statusMessage = L10n.text("Agent is waiting for your approval.")
+            }
         case "done":
             finishAgentLease(sessionID: sessionID, failed: false)
         case "failed":
@@ -459,20 +567,27 @@ final class SweetNoSleepModel: ObservableObject {
 
     /// A local emergency action; other manual or timed sources remain active.
     func endAgentSessions() {
-        guard !agentLeases.isEmpty else { return }
-        agentLeases.removeAll()
+        guard !agentSessions.isEmpty else { return }
+        agentSessions.removeAll()
         agentLeaseTimer?.invalidate()
         agentLeaseTimer = nil
-        activeAgentCount = 0
+        if mood == .waitingForApproval {
+            setMood(baseMood())
+        }
         finishAwakeIfNoOtherSource(message: L10n.text("Agent sessions were stopped manually."))
     }
 
-    private func renewAgentLease(sessionID: String) {
+    private func renewAgentLease(sessionID: String, status: AgentStatus, reason: String?) {
         cancelPendingImmediateSleepRequest()
-        agentLeases[sessionID] = Date().addingTimeInterval(Self.agentLeaseTimeout)
-        if activeAgentCount != agentLeases.count {
-            activeAgentCount = agentLeases.count
-        }
+        cancelAgentGrace()
+        let wasWaiting = hasWaitingAgent
+        let previousReason = agentSessions[sessionID]?.reason
+        agentSessions[sessionID] = AgentSessionState(
+            status: status,
+            expiry: Date().addingTimeInterval(Self.agentLeaseTimeout),
+            reason: reason ?? previousReason
+        )
+        let nowWaiting = hasWaitingAgent
 
         if agentLeaseTimer == nil {
             agentLeaseTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
@@ -493,21 +608,39 @@ final class SweetNoSleepModel: ObservableObject {
                 humanReadableReason: L10n.text("Sweet No Sleep - AI agent work in progress")
             )
         }
-        if isKeepingAwake,
-           !isFocusSession,
-           !manualAwake,
-           !isPausedByBatteryFloor,
-           (mood == .idle || mood == .resting) {
-            setMood(isBreakDue ? .breakReminder : .working)
+
+        if nowWaiting, !wasWaiting {
+            playfulTimer?.invalidate()
+            playfulTimer = nil
+            if isKeepingAwake, !isPausedByBatteryFloor {
+                setMood(.waitingForApproval)
+            }
+        } else if !nowWaiting, wasWaiting {
+            if status == .working {
+                statusMessage = L10n.text("Agent resumed work.")
+            }
+            setMood(baseMood())
+        } else if isKeepingAwake,
+                  !isFocusSession,
+                  !manualAwake,
+                  !isPausedByBatteryFloor,
+                  (mood == .idle || mood == .resting) {
+            setMood(baseMood())
+        } else if nowWaiting, mood != .waitingForApproval, mood != .dragging, mood != .walking {
+            if isKeepingAwake, !isPausedByBatteryFloor {
+                setMood(.waitingForApproval)
+            }
         }
     }
 
     private func finishAgentLease(sessionID: String, failed: Bool) {
-        guard agentLeases.removeValue(forKey: sessionID) != nil else { return }
-        activeAgentCount = agentLeases.count
-        if agentLeases.isEmpty {
+        guard agentSessions.removeValue(forKey: sessionID) != nil else { return }
+        if agentSessions.isEmpty {
             agentLeaseTimer?.invalidate()
             agentLeaseTimer = nil
+        }
+        if !hasWaitingAgent, mood == .waitingForApproval {
+            setMood(baseMood())
         }
         let message = failed
             ? L10n.text("The AI agent failed.")
@@ -517,28 +650,46 @@ final class SweetNoSleepModel: ObservableObject {
 
     private func pruneExpiredAgentLeases() {
         let now = Date()
-        let expired = agentLeases.filter { $0.value <= now }.map(\.key)
+        let expired = agentSessions.filter { $0.value.expiry <= now }.map(\.key)
         guard !expired.isEmpty else { return }
 
-        for sessionID in expired { agentLeases.removeValue(forKey: sessionID) }
-        activeAgentCount = agentLeases.count
-        if agentLeases.isEmpty {
+        for sessionID in expired { agentSessions.removeValue(forKey: sessionID) }
+        if agentSessions.isEmpty {
             agentLeaseTimer?.invalidate()
             agentLeaseTimer = nil
         }
+        if !hasWaitingAgent, mood == .waitingForApproval {
+            setMood(baseMood())
+        }
 
-        let message = agentLeases.isEmpty
+        let message = agentSessions.isEmpty
             ? L10n.text("The AI agent connection was lost - sleep protection ended after timeout")
             : L10n.text("One agent heartbeat expired - other sessions are still active")
         finishAwakeIfNoOtherSource(message: message)
     }
 
     private func finishAwakeIfNoOtherSource(message: String) {
-        guard !manualAwake, !isFocusSession, agentLeases.isEmpty else {
+        guard !manualAwake, !isFocusSession, agentSessions.isEmpty else {
+            if !hasWaitingAgent, mood == .waitingForApproval {
+                setMood(baseMood())
+            }
             statusMessage = L10n.format("%@ - other sessions are still protected", message)
             return
         }
 
+        if completionAction == .allowNormalSleep, agentCooldownMinutes > 0 {
+            startAgentGrace(message: message)
+            return
+        }
+
+        tearDownAwakeHold()
+        powerWarning = nil
+        statusMessage = L10n.format("%@ - your Mac is back to its normal sleep settings", message)
+        setTemporaryMood(.celebrating, duration: 1.6, then: .idle)
+        updateDiagnostics()
+    }
+
+    private func tearDownAwakeHold() {
         sessionTimer?.invalidate()
         sessionTimer = nil
         breakTimer?.invalidate()
@@ -553,10 +704,105 @@ final class SweetNoSleepModel: ObservableObject {
         isPausedByBatteryFloor = false
         powerKeeper.end()
         isKeepingAwake = false
+    }
+
+    // MARK: Post-agent grace cooldown
+
+    private func startAgentGrace(message: String) {
+        let minutes = min(max(agentCooldownMinutes, 0), 5)
+        guard minutes > 0 else { return }
+        cancelAgentGrace()
+        breakTimer?.invalidate()
+        breakTimer = nil
+        isBreakDue = false
+        if mood == .waitingForApproval {
+            setMood(baseMood())
+        }
+        statusMessage = L10n.format("Agent finished - holding awake for %d min", minutes)
+        setTemporaryMood(.celebrating, duration: 1.6, then: .working)
+        agentGraceTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(minutes * 60), repeats: false) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.finishAgentGrace(originalMessage: message)
+            }
+        }
+    }
+
+    private func cancelAgentGrace() {
+        agentGraceTimer?.invalidate()
+        agentGraceTimer = nil
+    }
+
+    private func finishAgentGrace(originalMessage: String) {
+        agentGraceTimer?.invalidate()
+        agentGraceTimer = nil
+        guard !manualAwake, !isFocusSession, agentSessions.isEmpty else {
+            return
+        }
+        tearDownAwakeHold()
         powerWarning = nil
-        statusMessage = L10n.format("%@ - your Mac is back to its normal sleep settings", message)
-        setTemporaryMood(.celebrating, duration: 1.6, then: .idle)
+        statusMessage = L10n.format("%@ - your Mac is back to its normal sleep settings", originalMessage)
+        setTemporaryMood(.resting, duration: 1.8, then: .idle)
         updateDiagnostics()
+    }
+
+    private func handleSystemWillSleep() {
+        cancelAgentGrace()
+        if !manualAwake, !isFocusSession, agentSessions.isEmpty, isKeepingAwake {
+            tearDownAwakeHold()
+            statusMessage = L10n.text("System will sleep - sleep protection released.")
+            setMood(.idle)
+            updateDiagnostics()
+        }
+    }
+
+    // MARK: Localhost webhook server
+
+    func regenerateWebhookToken() {
+        agentWebhookToken = Self.makeWebhookToken()
+    }
+
+    private static func makeWebhookToken() -> String {
+        UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
+    }
+
+    private static func isValidWebhookToken(_ token: String) -> Bool {
+        guard token.count == 32 else { return false }
+        return token.allSatisfy { $0.isHexDigit }
+    }
+
+    private func startWebhookServer() {
+        stopWebhookServer()
+        agentWebhookError = nil
+        let token = agentWebhookToken
+        let server = AgentWebhookServer(
+            port: 18290,
+            token: token,
+            onEvent: { [weak self] action, sessionID, reason in
+                guard let self else { return }
+                guard self.agentBridgeEnabled else { return }
+                guard !sessionID.isEmpty, sessionID.count <= 120 else { return }
+                if action == "heartbeat", self.agentSessions[sessionID] == nil {
+                    return
+                }
+                self.handleAgentEvent(action: action, sessionID: sessionID, reason: reason)
+            },
+            onError: { [weak self] message in
+                self?.agentWebhookError = message
+            }
+        )
+        agentWebhookServer = server
+        server.start()
+    }
+
+    private func stopWebhookServer() {
+        agentWebhookServer?.stop()
+        agentWebhookServer = nil
+        agentWebhookError = nil
+    }
+
+    private func restartWebhookServer() {
+        guard agentWebhookEnabled else { return }
+        startWebhookServer()
     }
 
     // MARK: Pet interactions
@@ -569,7 +815,7 @@ final class SweetNoSleepModel: ObservableObject {
         statusMessage = isKeepingAwake
             ? L10n.text("Kiwi is on duty and protecting this session.")
             : L10n.text("Should Kiwi get to work too - or take a break?")
-        setTemporaryMood(.celebrating, duration: 2.0, then: isKeepingAwake ? .working : .idle)
+        setTemporaryMood(.celebrating, duration: 2.0, then: baseMood())
     }
 
     func beginDragging() {
@@ -578,7 +824,7 @@ final class SweetNoSleepModel: ObservableObject {
     }
 
     func endDragging() {
-        mood = isBreakDue ? .breakReminder : (isKeepingAwake ? .working : .idle)
+        mood = baseMood()
     }
 
     @discardableResult
@@ -587,6 +833,7 @@ final class SweetNoSleepModel: ObservableObject {
               roamingEnabled,
               animationsEnabled,
               !isBreakDue,
+              !hasWaitingAgent,
               (mood == .idle || mood == .working)
         else { return false }
         mood = .walking
@@ -595,13 +842,13 @@ final class SweetNoSleepModel: ObservableObject {
 
     func endWandering() {
         guard mood == .walking else { return }
-        mood = isBreakDue ? .breakReminder : (isKeepingAwake ? .working : .idle)
+        mood = baseMood()
     }
 
     func dismissBreakReminder(snoozeMinutes: Int? = nil) {
         guard isBreakDue else { return }
         isBreakDue = false
-        setMood(isKeepingAwake ? .working : .idle)
+        setMood(baseMood())
 
         let delayMinutes = max(snoozeMinutes ?? breakIntervalMinutes, 1)
         statusMessage = snoozeMinutes == nil
@@ -732,7 +979,7 @@ final class SweetNoSleepModel: ObservableObject {
                 )
                 if res.success {
                     statusMessage = L10n.text("Power restored - sleep protection resumed.")
-                    setMood(isBreakDue ? .breakReminder : .working)
+                    setMood(baseMood())
                 } else {
                     powerWarning = res.message
                 }
@@ -807,7 +1054,7 @@ final class SweetNoSleepModel: ObservableObject {
         sessionCompletionAction = nil
         remainingSeconds = nil
         isFocusSession = false
-        let otherWorkRemains = manualAwake || !agentLeases.isEmpty
+        let otherWorkRemains = manualAwake || !agentSessions.isEmpty
         if otherWorkRemains {
             isKeepingAwake = true
             statusMessage = activeAgentCount > 0
@@ -842,7 +1089,7 @@ final class SweetNoSleepModel: ObservableObject {
             guard !self.isKeepingAwake,
                   !self.isFocusSession,
                   !self.manualAwake,
-                  self.agentLeases.isEmpty
+                  self.agentSessions.isEmpty
             else { return }
             guard let error = self.powerKeeper.requestImmediateSleep() else { return }
             self.statusMessage = L10n.format("Session ended, but sleep did not start: %@", error)
@@ -859,6 +1106,7 @@ final class SweetNoSleepModel: ObservableObject {
               animationsEnabled,
               playfulMomentsEnabled,
               !isBreakDue,
+              !hasWaitingAgent,
               playfulDancingWeight + playfulStretchingWeight + playfulCuriousWeight > 0
         else { return }
 
@@ -875,6 +1123,7 @@ final class SweetNoSleepModel: ObservableObject {
                       self.animationsEnabled,
                       self.playfulMomentsEnabled,
                       !self.isBreakDue,
+                      !self.hasWaitingAgent,
                       (self.mood == .working || self.mood == .idle)
                 else {
                     self.schedulePlayfulMoment()
@@ -920,8 +1169,10 @@ final class SweetNoSleepModel: ObservableObject {
                 self.isBreakDue = true
                 self.playfulTimer?.invalidate()
                 self.playfulTimer = nil
-                self.statusMessage = L10n.text("Time to look away from the code for a moment.")
-                self.setMood(.breakReminder)
+                if !self.hasWaitingAgent {
+                    self.statusMessage = L10n.text("Time to look away from the code for a moment.")
+                }
+                self.setMood(self.baseMood())
             }
         }
     }
@@ -938,8 +1189,21 @@ final class SweetNoSleepModel: ObservableObject {
         moodTimer = Timer.scheduledTimer(withTimeInterval: duration, repeats: false) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                let fallback = self.isKeepingAwake && finalMood == .idle ? .working : finalMood
-                self.mood = self.isBreakDue ? .breakReminder : fallback
+                let adjusted: KiwiMood
+                if finalMood == .idle, self.isKeepingAwake {
+                    adjusted = .working
+                } else if finalMood == .working, !self.isKeepingAwake {
+                    adjusted = .idle
+                } else {
+                    adjusted = finalMood
+                }
+                if self.hasWaitingAgent {
+                    self.mood = .waitingForApproval
+                } else if self.isBreakDue {
+                    self.mood = .breakReminder
+                } else {
+                    self.mood = adjusted
+                }
             }
         }
     }
@@ -954,6 +1218,10 @@ final class SweetNoSleepModel: ObservableObject {
         static let completionAction = "session.completionAction"
         static let resumeOnLaunch = "power.resumeOnLaunch"
         static let agentBridgeEnabled = "agentBridge.enabled"
+        static let agentBadgeLightEnabled = "agent.badgeLightEnabled"
+        static let agentCooldownMinutes = "agent.cooldownMinutes"
+        static let agentWebhookEnabled = "agent.webhookEnabled"
+        static let agentWebhookToken = "agent.webhookToken"
         static let petVisible = "pet.visible"
         static let alwaysOnTop = "pet.alwaysOnTop"
         static let roamingEnabled = "pet.roamingEnabled"
