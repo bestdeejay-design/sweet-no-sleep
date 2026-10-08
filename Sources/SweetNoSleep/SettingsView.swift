@@ -455,6 +455,16 @@ private struct PowerSettingsPane: View {
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
                     .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 8) {
+                    Spacer(minLength: 4)
+                    Button(L10n.text("Copy")) {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(L10n.text("From the repository root: ./Scripts/agent-session.sh my-agent-1 -- ./run-agent.sh\nFor IDE hooks: agent-event.sh start > heartbeat (about once a minute) > waiting when a question needs you > done or failed; use one ID per session."), forType: .string)
+                    }
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                }
                 Toggle(L10n.text("Show the status light and active-agent count on the pet"), isOn: $model.agentIndicatorEnabled)
                     .disabled(!model.agentBridgeEnabled)
                 Text(L10n.text("The chest badge shows a green light while agents work, an amber light when one waits for your answer, and the number of active sessions right below it."))
@@ -490,6 +500,44 @@ private struct PowerSettingsPane: View {
                             Spacer(minLength: 0)
                         }
                     }
+                }
+            }
+
+            SettingsCard(title: L10n.text("Local webhook"), subtitle: L10n.text("Loopback-only HTTP listener on 127.0.0.1:18290 for sandboxed runners that cannot open URL schemes.")) {
+                Toggle(L10n.text("Enable localhost webhook"), isOn: $model.agentWebhookEnabled)
+                    .disabled(!model.agentBridgeEnabled)
+                HStack(spacing: 8) {
+                    Text(model.agentWebhookToken)
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .textSelection(.enabled)
+                    Spacer(minLength: 4)
+                    Button(L10n.text("Copy")) {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(model.agentWebhookToken, forType: .string)
+                    }
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                    Button(L10n.text("New token")) {
+                        model.regenerateWebhookToken()
+                    }
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                }
+                Text(L10n.text("POST to http://127.0.0.1:18290/agent/<start|heartbeat|waiting|done|failed> with a JSON body {\"session\": \"id\", \"reason\": \"text\"} and the Authorization: Bearer header. Same 3-minute lease as the URL bridge."))
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let webhookError = model.agentWebhookError {
+                    Label(webhookError, systemImage: "exclamationmark.triangle.fill")
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundStyle(Color(hex: 0xD99142))
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
 
