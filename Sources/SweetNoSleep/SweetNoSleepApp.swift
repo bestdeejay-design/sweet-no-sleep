@@ -122,31 +122,38 @@ private struct MenuBarDashboard: View {
                 .padding(.horizontal, 22)
                 .padding(.top, 22)
 
-            companionCard
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
+            // The middle cards scroll when they outgrow the panel (long agent
+            // questions, several sessions, expanded diagnostics), so the footer
+            // with Settings / Quit can never be pushed off the bottom edge.
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    companionCard
+                        .padding(.horizontal, 16)
+                        .padding(.top, 16)
 
-            powerCard
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
+                    powerCard
+                        .padding(.horizontal, 16)
+                        .padding(.top, 12)
 
-            if model.isFocusSession {
-                runningSessionCard
-                    .padding(.horizontal, 16)
-                    .padding(.top, 12)
-            } else if model.activeAgentCount > 0 {
-                agentSessionCard
-                    .padding(.horizontal, 16)
-                    .padding(.top, 12)
-            } else {
-                focusCard
-                    .padding(.horizontal, 16)
-                    .padding(.top, 12)
+                    if model.isFocusSession {
+                        runningSessionCard
+                            .padding(.horizontal, 16)
+                            .padding(.top, 12)
+                    } else if model.activeAgentCount > 0 {
+                        agentSessionCard
+                            .padding(.horizontal, 16)
+                            .padding(.top, 12)
+                    } else {
+                        focusCard
+                            .padding(.horizontal, 16)
+                            .padding(.top, 12)
+                    }
+
+                    diagnosticsCard
+                        .padding(.horizontal, 16)
+                        .padding(.top, 10)
+                }
             }
-
-            diagnosticsCard
-                .padding(.horizontal, 16)
-                .padding(.top, 10)
 
             Spacer(minLength: 12)
             footer
