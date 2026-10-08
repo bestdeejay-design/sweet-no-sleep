@@ -6,6 +6,9 @@ Two pack formats are supported:
 * format 1 (default) - palette and motion data for the procedural cat;
 * format 2 - additionally ships `pet.json` and the sprite layers of a character.
 
+`pet.json` itself has two formats: 1 ships the body and tail layers, 2 adds the
+layered rig (head, one layer per leg, eye sockets). Format 1 packs keep loading.
+
 Format 2 packs are checked here as well: the manifest ranges, the declared layer
 files, and the square PNG canvases must all line up, so a broken character pack
 is caught before it reaches the app.
@@ -26,7 +29,8 @@ HEX_COLOR = re.compile(r"^#?[0-9a-fA-F]{6}$")
 SAFE_ID = re.compile(r"^[A-Za-z0-9_-]{1,48}$")
 EFFECTS = {"leaves", "moonDust", "berryHearts", "starburst"}
 SUPPORTED_FORMATS = {1, 2}
-PET_FORMAT = 1
+# pet.json formats: 1 = body/tail sprite, 2 = layered rig (head, legs, eyes).
+PET_FORMATS = {1, 2}
 SAFE_LAYER = re.compile(r"^[A-Za-z0-9_-]{1,64}\.png$")
 PET_RANGES = {
     "canvas": (64, 4096),
@@ -34,6 +38,30 @@ PET_RANGES = {
     "tailPivotX": (0.0, 1.0),
     "tailPivotY": (0.0, 1.0),
     "tailSwingDegrees": (0.0, 30.0),
+}
+# Format 2 rig anchors: normalized canvas coordinates, plus eye radii.
+PET_RIG_RANGES = {
+    "headPivotX": (0.0, 1.0),
+    "headPivotY": (0.0, 1.0),
+    "legPivotAX": (0.0, 1.0),
+    "legPivotAY": (0.0, 1.0),
+    "legPivotBX": (0.0, 1.0),
+    "legPivotBY": (0.0, 1.0),
+    "legPivotCX": (0.0, 1.0),
+    "legPivotCY": (0.0, 1.0),
+    "eyeLeftX": (0.0, 1.0),
+    "eyeLeftY": (0.0, 1.0),
+    "eyeRightX": (0.0, 1.0),
+    "eyeRightY": (0.0, 1.0),
+    "eyeRadiusX": (0.004, 0.2),
+    "eyeRadiusY": (0.004, 0.2),
+}
+RIG_LAYERS = ("headLayer", "legsALayer", "legsBLayer", "legsCLayer")
+RIG_LAYER_DEFAULTS = {
+    "headLayer": "head.png",
+    "legsALayer": "legs-a.png",
+    "legsBLayer": "legs-b.png",
+    "legsCLayer": "legs-c.png",
 }
 COLOR_KEYS = {"fur", "furLight", "outline", "innerEar", "iris", "accent", "cheek"}
 ANIMATION_RANGES = {
@@ -89,8 +117,9 @@ def validate_character(pack: Path, format_version: int, problems: list[str]) -> 
     if not isinstance(manifest, dict):
         problems.append("pet.json root must be an object")
         return
-    if manifest.get("format") != PET_FORMAT:
-        problems.append(f"pet.json format must be {PET_FORMAT}")
+    pet_format = manifest.get("format")
+    if pet_format not in PET_FORMATS:
+        problems.append(f"pet.json format must be one of: {', '.join(str(value) for value in sorted(PET_FORMATS))}")
     if manifest.get("kind") != "sprite":
         problems.append("pet.json kind must be \"sprite\"")
 
@@ -104,9 +133,24 @@ def validate_character(pack: Path, format_version: int, problems: list[str]) -> 
         if not math.isfinite(value) or not minimum <= value <= maximum:
             problems.append(f"pet.json {key} must be in the range {minimum}…{maximum}")
 
+    if pet_format == 2:
+        for key, (minimum, maximum) in PET_RIG_RANGES.items():
+            value = manifest.get(key)
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                problems.append(f"pet.json {key} must be a number (format 2 rig)")
+                continue
+            if not math.isfinite(value) or not minimum <= value <= maximum:
+                problems.append(f"pet.json {key} must be in the range {minimum}…{maximum}")
+    else:
+        for key in PET_RIG_RANGES:
+            if key in manifest:
+                problems.append(f"pet.json {key} requires format 2")
+
     canvas = manifest.get("canvas")
-    for key in ("bodyLayer", "tailLayer"):
-        name = manifest.get(key, "body.png" if key == "bodyLayer" else "tail.png")
+    layer_keys = ("bodyLayer", "tailLayer") + (RIG_LAYERS if pet_format == 2 else ())
+    for key in layer_keys:
+        default = RIG_LAYER_DEFAULTS.get(key, "body.png" if key == "bodyLayer" else "tail.png")
+        name = manifest.get(key, default)
         if not isinstance(name, str) or not SAFE_LAYER.fullmatch(name):
             problems.append(f"pet.json {key} must be a plain .png file name")
             continue

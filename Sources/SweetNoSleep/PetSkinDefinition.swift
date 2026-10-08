@@ -35,12 +35,47 @@ enum PetCharacterKind: String, Codable, Hashable {
     case sprite
 }
 
-/// Character anchors and motion values from `pet.json` (format 1).
+/// The layered rig of a `pet.json` format 2 character pack.
+///
+/// All coordinates are normalized to the shared square layer canvas. The head
+/// rotates and bobs around `headPivot`, each leg layer swings around its own
+/// hip pivot, and the eye sockets anchor the vector eyes the renderer draws on
+/// top of the head layer (the painted eyes are inpainted out of the artwork).
+struct PetCharacterRig: Codable, Hashable {
+    let headPivotX: Double
+    let headPivotY: Double
+    let legPivotAX: Double
+    let legPivotAY: Double
+    let legPivotBX: Double
+    let legPivotBY: Double
+    let legPivotCX: Double
+    let legPivotCY: Double
+    let eyeLeftX: Double
+    let eyeLeftY: Double
+    let eyeRightX: Double
+    let eyeRightY: Double
+    let eyeRadiusX: Double
+    let eyeRadiusY: Double
+
+    var isValid: Bool {
+        let points = [
+            headPivotX, headPivotY, legPivotAX, legPivotAY,
+            legPivotBX, legPivotBY, legPivotCX, legPivotCY,
+            eyeLeftX, eyeLeftY, eyeRightX, eyeRightY
+        ]
+        return points.allSatisfy { $0.isFinite && (0...1).contains($0) }
+            && eyeRadiusX.isFinite && (0.004...0.2).contains(eyeRadiusX)
+            && eyeRadiusY.isFinite && (0.004...0.2).contains(eyeRadiusY)
+    }
+}
+
+/// Character anchors and motion values from `pet.json`.
 ///
 /// The sprite layers share one square canvas. `heightRatio` is how much of that
 /// canvas the character's height occupies, `tailPivot*` are normalized canvas
 /// coordinates of the tail rotation point, and `tailSwingDegrees` is the calm
-/// idle amplitude of the tail wag.
+/// idle amplitude of the tail wag. Format 2 packs additionally carry `rig`:
+/// head/leg pivots and eye sockets for the layered animation.
 struct PetCharacterArt: Codable, Hashable {
     let kind: PetCharacterKind
     let canvas: Int
@@ -48,6 +83,7 @@ struct PetCharacterArt: Codable, Hashable {
     let tailPivotX: Double
     let tailPivotY: Double
     let tailSwingDegrees: Double
+    let rig: PetCharacterRig?
 
     static let procedural = PetCharacterArt(
         kind: .procedural,
@@ -55,10 +91,14 @@ struct PetCharacterArt: Codable, Hashable {
         heightRatio: 0,
         tailPivotX: 0,
         tailPivotY: 0,
-        tailSwingDegrees: 0
+        tailSwingDegrees: 0,
+        rig: nil
     )
 
     var isSprite: Bool { kind == .sprite }
+
+    /// True when the pack ships the head/leg/eye layers of format 2.
+    var isRigged: Bool { rig != nil }
 
     var isValid: Bool {
         guard kind == .sprite else { return true }
@@ -71,15 +111,26 @@ struct PetCharacterArt: Codable, Hashable {
             && (0...1).contains(tailPivotY)
             && tailSwingDegrees.isFinite
             && (0...30).contains(tailSwingDegrees)
+            && (rig?.isValid ?? true)
     }
 }
 
 /// `pet.json` switches a pack from the procedural cat to a sprite character.
+///
+/// Format 1 ships the body and tail layers; format 2 adds the layered rig
+/// (head, one layer per leg, eye sockets). Older format 1 packs keep loading:
+/// the renderer falls back to the body/tail-only pose for them.
 struct PetCharacterManifest: Decodable {
-    static let supportedFormat = 1
+    static let supportedFormats: Set<Int> = [1, 2]
     let art: PetCharacterArt
     let bodyLayerName: String
     let tailLayerName: String
+    let headLayerName: String
+    let legsALayerName: String
+    let legsBLayerName: String
+    let legsCLayerName: String
+    /// True when the manifest promises the format 2 rig layers.
+    let isRigged: Bool
 
     private enum CodingKeys: String, CodingKey {
         case format
@@ -89,15 +140,53 @@ struct PetCharacterManifest: Decodable {
         case tailPivotX
         case tailPivotY
         case tailSwingDegrees
+        case headPivotX
+        case headPivotY
+        case legPivotAX
+        case legPivotAY
+        case legPivotBX
+        case legPivotBY
+        case legPivotCX
+        case legPivotCY
+        case eyeLeftX
+        case eyeLeftY
+        case eyeRightX
+        case eyeRightY
+        case eyeRadiusX
+        case eyeRadiusY
         case bodyLayer
         case tailLayer
+        case headLayer
+        case legsALayer
+        case legsBLayer
+        case legsCLayer
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let format = try container.decode(Int.self, forKey: .format)
-        guard format == Self.supportedFormat else {
+        guard Self.supportedFormats.contains(format) else {
             throw PetCharacterManifestError.unsupportedFormat(format)
+        }
+        isRigged = format >= 2
+        var rig: PetCharacterRig?
+        if isRigged {
+            rig = PetCharacterRig(
+                headPivotX: try container.decode(Double.self, forKey: .headPivotX),
+                headPivotY: try container.decode(Double.self, forKey: .headPivotY),
+                legPivotAX: try container.decode(Double.self, forKey: .legPivotAX),
+                legPivotAY: try container.decode(Double.self, forKey: .legPivotAY),
+                legPivotBX: try container.decode(Double.self, forKey: .legPivotBX),
+                legPivotBY: try container.decode(Double.self, forKey: .legPivotBY),
+                legPivotCX: try container.decode(Double.self, forKey: .legPivotCX),
+                legPivotCY: try container.decode(Double.self, forKey: .legPivotCY),
+                eyeLeftX: try container.decode(Double.self, forKey: .eyeLeftX),
+                eyeLeftY: try container.decode(Double.self, forKey: .eyeLeftY),
+                eyeRightX: try container.decode(Double.self, forKey: .eyeRightX),
+                eyeRightY: try container.decode(Double.self, forKey: .eyeRightY),
+                eyeRadiusX: try container.decode(Double.self, forKey: .eyeRadiusX),
+                eyeRadiusY: try container.decode(Double.self, forKey: .eyeRadiusY)
+            )
         }
         art = PetCharacterArt(
             kind: try container.decode(PetCharacterKind.self, forKey: .kind),
@@ -105,11 +194,17 @@ struct PetCharacterManifest: Decodable {
             heightRatio: try container.decode(Double.self, forKey: .heightRatio),
             tailPivotX: try container.decode(Double.self, forKey: .tailPivotX),
             tailPivotY: try container.decode(Double.self, forKey: .tailPivotY),
-            tailSwingDegrees: try container.decodeIfPresent(Double.self, forKey: .tailSwingDegrees) ?? 3.5
+            tailSwingDegrees: try container.decodeIfPresent(Double.self, forKey: .tailSwingDegrees) ?? 3.5,
+            rig: rig
         )
         bodyLayerName = try container.decodeIfPresent(String.self, forKey: .bodyLayer) ?? "body.png"
         tailLayerName = try container.decodeIfPresent(String.self, forKey: .tailLayer) ?? "tail.png"
-        guard art.isValid, PetCharacterManifest.isSafeLayerName(bodyLayerName), PetCharacterManifest.isSafeLayerName(tailLayerName) else {
+        headLayerName = try container.decodeIfPresent(String.self, forKey: .headLayer) ?? "head.png"
+        legsALayerName = try container.decodeIfPresent(String.self, forKey: .legsALayer) ?? "legs-a.png"
+        legsBLayerName = try container.decodeIfPresent(String.self, forKey: .legsBLayer) ?? "legs-b.png"
+        legsCLayerName = try container.decodeIfPresent(String.self, forKey: .legsCLayer) ?? "legs-c.png"
+        let layerNames = [bodyLayerName, tailLayerName] + (isRigged ? [headLayerName, legsALayerName, legsBLayerName, legsCLayerName] : [])
+        guard art.isValid, layerNames.allSatisfy(PetCharacterManifest.isSafeLayerName) else {
             throw PetCharacterManifestError.invalidArt
         }
     }

@@ -89,34 +89,60 @@ the app theme.
 Resources/PetSkins/kot-arbuz/
   skin.json     # format 2, palette and motion
   pet.json      # character anchors
-  body.png      # the character without the far part of the tail
+  body.png      # torso, without tail, head and legs
   tail.png      # the tail crescent alone, same canvas
+  head.png      # hood, ears and face; painted eyes inpainted out
+  legs-a.png    # left outer leg (tripod pair A)
+  legs-b.png    # middle leg (pair B)
+  legs-c.png    # right outer leg (tripod pair A)
 ```
 
 `pet.json` fields:
 
 | Field | Purpose | Constraints |
 | --- | --- | --- |
-| `format` | Manifest format | `1` |
+| `format` | Manifest format: `1` body + tail sprite, `2` layered rig | `1` or `2` |
 | `kind` | Character kind | `sprite` |
-| `canvas` | Layer canvas, square | Integer 64…4096, must match both PNGs |
+| `canvas` | Layer canvas, square | Integer 64…4096, must match every PNG |
 | `heightRatio` | How much of the layer canvas the character's height fills | Number 0.2…1.0 |
 | `tailPivotX`, `tailPivotY` | Rotation point of the tail, normalized to the canvas | Number 0…1 |
 | `tailSwingDegrees` | Calm idle tail amplitude (optional, default 3.5) | Number 0…30 |
 | `bodyLayer`, `tailLayer` | Layer file names (optional, default `body.png` / `tail.png`) | Plain `.png` names |
+| `headPivotX`, `headPivotY` | Format 2: neck pivot the head bobs and tilts around | Number 0…1 |
+| `legPivotAX`, `legPivotAY` | Format 2: hip pivot of `legsALayer` | Number 0…1 |
+| `legPivotBX`, `legPivotBY` | Format 2: hip pivot of `legsBLayer` | Number 0…1 |
+| `eyeLeftX`, `eyeLeftY` | Format 2: socket anchor of the left vector eye | Number 0…1 |
+| `eyeRightX`, `eyeRightY` | Format 2: socket anchor of the right vector eye | Number 0…1 |
+| `eyeRadiusX`, `eyeRadiusY` | Format 2: half width / half height of the vector eyes | Number 0.004…0.2 |
+| `headLayer`, `legsALayer`, `legsBLayer` | Format 2: layer file names (optional, default `head.png` / `legs-a.png` / `legs-b.png`) | Plain `.png` names |
+
+Format 1 packs keep loading unchanged: the renderer draws them with the
+body/tail pose and their painted face. A format 2 pack must ship every rig
+layer (`head`, `legs-a`, `legs-b`) or it is refused wholesale, exactly as a pack
+with a missing `body.png` is.
 
 Authoring rules that matter for the animation:
 
-1. **One square canvas, identical for both layers.** Draw the tail first and the
-   body over it; the two images must line up pixel-perfectly, because that is
-   how the renderer restores the original artwork at rest.
-2. **The body must overlap the tail root** by a few pixels, so the rotation never
-   shows a seam. Aim for 1–2% of the canvas.
+1. **One square canvas, identical for every layer.** Draw order at rest is
+   legs-a, legs-b, tail, body, head, then the vector eyes; together they must
+   restore the master artwork pixel-for-pixel.
+2. **Every cut keeps a static overlap band** (~2% of the canvas) inside the
+   layer drawn later, so a rotating layer never shows a seam: the body keeps a
+   band of tail and of hip pixels, the head keeps the neck band.
 3. **The tail must be a separate part of the drawing**, not painted over the
    body, otherwise it cannot move.
 4. **`tailPivotX/Y` is where the tail disappears behind the body**, normally the
    inner edge of its root.
-5. **Keep a margin around the artwork.** The app scales the square canvas to
+5. **Cuts are straight rows placed where another layer covers them at rest:**
+   the neck cut where the hood is as wide as the shoulders, the hip cut inside
+   the torso. `headPivot*` is the centre of the neck cut; each leg layer gets
+   its own `legPivot*` at its hip. Give every leg its own layer - Kot-Arbuz
+   ships three - so the walk cycle can phase the outer pair against the
+   middle leg.
+6. **The painted eyes belong to no layer:** they are inpainted out of the head
+   and replaced by vector eyes at `eyeLeft*` / `eyeRight*`. Keep seeds,
+   whiskers and mouth out of the socket boxes.
+7. **Keep a margin around the artwork.** The app scales the square canvas to
    about 88% of the pet box and stands its bottom edge on the resting paw line,
    so a character that touches the canvas edge would be clipped and one that
    fills the canvas would look larger than Kiwi. `prepare-character-assets.py`
@@ -129,13 +155,50 @@ What the app animates for a sprite character:
 | --- | --- |
 | Body | Breathing (scale around the paws) plus a small working bob while agents are active |
 | Tail | Sway around the pivot; lifts while an agent waits or the pet celebrates |
+| Head (format 2) | Idle bob, a calm tilt roughly every 18 s, curious tilt, attentive raise while waiting, shake while dancing |
+| Legs (format 2) | One layer per leg, each swinging around its own hip: phase-offset walk cycle while roaming or dragging, paw bounce while dancing, splay while stretching, tucked while resting |
+| Eyes (format 2) | Vector eyes at the socket anchors: cursor-tracked gaze, Kiwi's 4.6 s blink, closed while resting, happy arcs while celebrating or dancing, wide while curious, waiting or dragged, half-lidded while stretching or on a break |
+| Petting hearts (format 2) | Cheek-heart burst while the poke celebration plays |
 | Attention pose | A slight lean, an amber halo, the `?` glyph, and the y/n bubble while an agent waits |
 | Badge | Agent status light plus a pip row with one dot per active session (green or amber) |
 | Celebration | The pack's `celebrationEffect` around the character |
 
-Baked-in face details do not animate: a character with drawn-on eyes cannot
-blink, so keep expressions friendly and unambiguous at 45 pt. Prefer smooth,
-readable silhouettes; the tail is the only part that moves independently.
+### Mood mapping of the layered rig
+
+All eleven `KiwiMood` cases read differently on a rigged sprite character:
+
+| Mood | Head | Legs | Eyes | Tail and extras |
+| --- | --- | --- | --- | --- |
+| `idle` | slow bob, ~2° tilt every 18 s | relaxed | open, gaze + blink | calm sway |
+| `working` | quicker micro-bob | relaxed | open, gaze + blink | sway x1.2, badge light |
+| `celebrating` | hop + 2.4° shake | alternating bounce | happy arcs | sway x2 + lift, skin celebration, cheek hearts |
+| `dancing` | 3° shake at 6.2 rad/s | paw bounce, phase-offset | happy arcs | sway x2 + lift, skin celebration |
+| `stretching` | -2° tilt, lifted | splayed +-5° | half-lidded | body stretch |
+| `curious` | +3° tilt with a slow wobble | relaxed | wide | calm sway, star sparkle |
+| `breakReminder` | -2° tilt, lowered | relaxed | half-lidded | slow sway, halo + sparkle |
+| `resting` | dropped 1%, +1.5° | tucked, -+3° | closed | sway x0.5 |
+| `dragging` | 1.5° wobble at 9 rad/s | dangling swing +-7° | wide | drooped tail |
+| `walking` | step bob at 8 rad/s | walk cycle +-6°, phase-offset pairs | open, gaze + blink | sway x1.4 |
+| `waitingForApproval` | raised 1%, +1.5° | planted | wide | raised tail, amber halo + `?` glyph |
+
+With Reduce Motion (or animations off) every oscillation freezes to its static
+offset - the resting drop, the waiting raise, the tucked legs - and no
+particles are drawn; the halo, badge light and waiting glyph stay as the
+non-motion awareness cues.
+
+Format 2 removes the old "painted face" limit: `prepare-character-assets.py`
+inpaints the master's painted eyes out of the head layer and records the socket
+anchors, so the renderer can draw vector eyes that blink and track the cursor.
+Keep the sockets clear of whiskers, seeds and mouth, and keep expressions
+readable at 45 pt.
+
+### Bundled character skins
+
+Kot-Arbuz ships as three packs that share one rig and one master illustration:
+`kot-arbuz` (leaves), `kot-arbuz-moonlight` (moon dust stars) and
+`kot-arbuz-strawberry` (berry hearts). The variants are hue-band recolors of the
+same layers, written by `prepare-character-assets.py` together with their
+`skin.json`, `pet.json` and Settings previews.
 
 ### Generate the layers from a master illustration
 
@@ -150,7 +213,9 @@ python3 Scripts/prepare-character-assets.py            # write layers + preview 
 python3 Scripts/prepare-character-assets.py --check    # verify the committed files
 ```
 
-The script prints `tailPivotX` / `tailPivotY`; copy them into `pet.json`.
+The script writes every `pet.json` (format 2) itself, plus the recolored
+variant packs and all Settings previews; `--check` verifies the committed files
+against a fresh derivation.
 
 ## Validate a pack
 
@@ -169,8 +234,9 @@ If a skin does not appear after refresh, check that:
 - the ID is safe and unique;
 - colors and animation values are in range;
 - `celebrationEffect` exactly matches a supported value;
-- for format 2: `pet.json` exists, its ranges are valid, and both layer files
-  exist as square PNGs of exactly `canvas` pixels.
+- for format 2: `pet.json` exists, its ranges (including the rig anchors) are
+  valid, and every layer file - body, tail, head, legs-a, legs-b - exists as a
+  square PNG of exactly `canvas` pixels.
 
 `Scripts/validate-skins.py` reports all of the above, including the character
 manifest, for bundled and user packs alike.

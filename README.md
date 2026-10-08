@@ -27,9 +27,13 @@ looks changes the mood without changing the pet.
 
 **Kot-Arbuz** is the watermelon cat: a layered sprite character cut from
 his own artwork, with a striped rind, a red heart, and a palette that is
-his alone. He celebrates with leaves, sways his tail while agents run,
-and lights an amber question mark the moment one of them needs your
-approval — and he never answers to the name Kiwi.
+his alone. His head, legs, tail and eyes are separate layers, so he bobs
+and tilts his head, walks on strolls, blinks and follows your pointer the
+same way Kiwi does. He celebrates with leaves, sways his tail while agents
+run, and lights an amber question mark the moment one of them needs your
+approval — and he never answers to the name Kiwi. He ships in three looks
+of his own: the base rind, **Kot-Arbuz Moonlight** (moon-dust stars) and
+**Kot-Arbuz Strawberry** (berry hearts).
 
 ![Kot-Arbuz skin card: the watermelon cat on a mint-to-blush card with his palette swatches](Resources/Art/Rendered/preview-kot-arbuz.png)
 
@@ -48,10 +52,11 @@ for the design, the sprite layers, and the app states side by side.
   On completion, either release the assertion and let macOS resume
   its normal sleep settings, or put the Mac to sleep immediately
   (with per-session confirmation).
-- **Four built-in characters.** Kiwi, Moonlight, and Strawberry are
+- **Six built-in characters.** Kiwi, Moonlight, and Strawberry are
   palette packs for the procedural cat; **Kot-Arbuz** ("Watermelon
-  cat") is a layered sprite character with its own breathing body and
-  wagging tail. All four keep the same panel behaviour, moods, and
+  cat") is a layered sprite character - breathing body, wagging tail,
+  bobbing head, walk cycle and cursor-tracked blinking eyes - in three
+  palettes of his own. All six keep the same panel behaviour, moods, and
   agent cues. Add your own packs without touching app source; see
   `docs/SKIN_AUTHORING.md`.
 - **Emotions and playful moments.** Kiwi dances, stretches, and gets

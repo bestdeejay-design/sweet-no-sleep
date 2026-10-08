@@ -210,6 +210,31 @@ private final class WindowTrackingView: NSView {
     }
 }
 
+/// Smoothed frame-rate probe behind the hidden debug FPS overlay
+/// (`defaults write <bundle> SNSDebugFPSOverlay -bool true`). The Canvas closure
+/// is a pure function of the timeline date, so the probe keeps its own state.
+final class FrameRateProbe {
+    static let shared = FrameRateProbe()
+
+    private let lock = NSLock()
+    private var lastTime: Double = 0
+    private var framesPerSecond: Double = 0
+
+    func sample(_ time: Double) -> Double {
+        lock.lock()
+        defer { lock.unlock() }
+        if lastTime > 0 {
+            let delta = time - lastTime
+            if delta > 0, delta < 0.5 {
+                let instant = 1.0 / delta
+                framesPerSecond = framesPerSecond == 0 ? instant : framesPerSecond * 0.9 + instant * 0.1
+            }
+        }
+        lastTime = time
+        return framesPerSecond
+    }
+}
+
 /// A tiny, asset-free cat character drawn in SwiftUI Canvas.
 /// Its idle loop uses restrained secondary motion: breathing, blinks, a soft tail
 /// sway and small expression changes. It follows Reduce Motion and can be dragged.
@@ -225,6 +250,9 @@ struct KiwiPetView: View {
 
     @State private var isDragging = false
     @State private var trackedWindow: NSWindow?
+
+    /// Defaults key of the hidden FPS overlay used for 60 fps acceptance.
+    static let debugFPSKey = "SNSDebugFPSOverlay"
 
     private var renderedSize: CGFloat {
         sizeOverride ?? CGFloat(model.petSize)
@@ -243,16 +271,20 @@ struct KiwiPetView: View {
     var body: some View {
         TimelineView(
             .animation(
-                minimumInterval: reduceMotion ? 0.12 : 1.0 / 24.0,
+                // The display-refresh schedule: 60 fps while animated, so the
+                // walk cycle, gaze and particles never step; Reduce Motion keeps
+                // the slow static-pose cadence.
+                minimumInterval: reduceMotion ? 0.12 : 1.0 / 60.0,
                 paused: !model.isPetVisible
             )
         ) { timeline in
             Canvas { context, size in
                 let skin = model.activeSkin
+                let time = timeline.date.timeIntervalSinceReferenceDate
                 Self.drawPet(
                     in: &context,
                     size: size,
-                    time: timeline.date.timeIntervalSinceReferenceDate,
+                    time: time,
                     mood: model.mood,
                     palette: .palette(for: skin),
                     gaze: tracksCursor ? cursorGaze(canvasSize: canvasSize, topInset: topInset) : .zero,
@@ -262,6 +294,18 @@ struct KiwiPetView: View {
                     attention: model.hasWaitingAgent ? .question : nil,
                     sprite: CharacterSpriteStore.shared.sprite(for: skin)
                 )
+                if UserDefaults.standard.bool(forKey: Self.debugFPSKey) {
+                    let fps = FrameRateProbe.shared.sample(time)
+                    if fps > 1 {
+                        context.draw(
+                            Text("\(Int(fps)) fps")
+                                .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                                .foregroundStyle(Color.green),
+                            at: CGPoint(x: 6, y: 4),
+                            anchor: .topLeading
+                        )
+                    }
+                }
             }
             .frame(width: canvasSize, height: canvasSize)
         }
@@ -340,6 +384,7 @@ struct KiwiPetView: View {
                 light: agentLight,
                 agentCount: agentCount,
                 attention: attention,
+                gaze: gaze,
                 animated: !reducedMotion
             )
             return

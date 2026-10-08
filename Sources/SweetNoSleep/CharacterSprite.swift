@@ -2,14 +2,19 @@ import AppKit
 import CoreGraphics
 import Foundation
 
-/// A loaded sprite character: the body and tail layers of a `pet.json` pack.
+/// A loaded sprite character: the layers of a `pet.json` pack.
 ///
-/// Both layers are square and share one canvas, so drawing them into the same
-/// rect restores the master artwork; the tail rotates around the pivot from the
-/// manifest.
+/// All layers are square and share one canvas, so drawing them into the same
+/// rect (legs, tail, body, head) restores the master artwork; each layer then
+/// rotates around the pivot the manifest declares. Format 1 packs ship body and
+/// tail only, and the head/leg layers stay nil.
 struct CharacterSprite {
     let body: CGImage
     let tail: CGImage
+    let head: CGImage?
+    let legsA: CGImage?
+    let legsB: CGImage?
+    let legsC: CGImage?
     let art: PetCharacterArt
 
     var canvasSide: CGFloat { CGFloat(art.canvas) }
@@ -19,6 +24,12 @@ struct CharacterSprite {
 
     var tailPivot: CGPoint {
         CGPoint(x: CGFloat(art.tailPivotX), y: CGFloat(art.tailPivotY))
+    }
+
+    /// The layered rig, when every rig layer loaded successfully.
+    var rig: PetCharacterRig? {
+        guard let rig = art.rig, head != nil, legsA != nil, legsB != nil, legsC != nil else { return nil }
+        return rig
     }
 }
 
@@ -54,7 +65,25 @@ final class CharacterSpriteStore {
               let tail = Self.cgImage(at: folder.appendingPathComponent(manifest.tailLayerName))
         else { return nil }
 
-        let sprite = CharacterSprite(body: body, tail: tail, art: manifest.art)
+        // A format 2 pack that lost one rig layer is refused wholesale, exactly
+        // as Scripts/validate-skins.py does, instead of drawing a headless cat.
+        var head: CGImage?
+        var legsA: CGImage?
+        var legsB: CGImage?
+        var legsC: CGImage?
+        if manifest.isRigged {
+            guard let loadedHead = Self.cgImage(at: folder.appendingPathComponent(manifest.headLayerName)),
+                  let loadedLegsA = Self.cgImage(at: folder.appendingPathComponent(manifest.legsALayerName)),
+                  let loadedLegsB = Self.cgImage(at: folder.appendingPathComponent(manifest.legsBLayerName)),
+                  let loadedLegsC = Self.cgImage(at: folder.appendingPathComponent(manifest.legsCLayerName))
+            else { return nil }
+            head = loadedHead
+            legsA = loadedLegsA
+            legsB = loadedLegsB
+            legsC = loadedLegsC
+        }
+
+        let sprite = CharacterSprite(body: body, tail: tail, head: head, legsA: legsA, legsB: legsB, legsC: legsC, art: manifest.art)
         lock.lock()
         cache[key] = sprite
         lock.unlock()
