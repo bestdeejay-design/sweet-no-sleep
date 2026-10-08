@@ -98,7 +98,7 @@ private struct PanelContentSizeReporter: NSViewRepresentable {
 
     final class View: NSView {
         var onChange: ((NSSize) -> Void)?
-        private(set) var reportedSize: NSSize = .zero
+        fileprivate(set) var reportedSize: NSSize = .zero
     }
 
     func makeNSView(context: Context) -> View {
