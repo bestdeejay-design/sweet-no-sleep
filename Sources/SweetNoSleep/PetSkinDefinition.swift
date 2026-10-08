@@ -221,7 +221,7 @@ enum PetSkinLibrary {
         if definition.formatVersion >= 2, definition.art == nil { return nil }
         guard definition.isValid else { return nil }
         if definition.isSpriteCharacter,
-           CharacterSpriteStore.sprite(for: definition, in: folder) == nil {
+           CharacterSpriteStore.shared.sprite(for: definition, in: folder) == nil {
             return nil
         }
         return definition
