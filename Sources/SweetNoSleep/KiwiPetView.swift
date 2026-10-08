@@ -104,7 +104,7 @@ struct PetWaitingBubble: View {
                     .font(.system(size: 11, weight: .semibold, design: .rounded))
                 Spacer(minLength: 0)
                 Text(L10n.text("y / n"))
-                    .font(.system(size: 9, weight: .bold, design: .rounded).monospaced()))
+                    .font(.system(size: 9, weight: .bold, design: .rounded).monospaced())
                     .foregroundStyle(Color(hex: 0xE5A93C))
                     .padding(.horizontal, 7)
                     .padding(.vertical, 2)
