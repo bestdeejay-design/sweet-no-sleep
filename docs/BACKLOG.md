@@ -91,6 +91,8 @@ UI tests; portfolio image swaps need manual cache-busting; docs scatter.
   (learned twice); add a one-line note to ksu DESIGN_RULES and consider
   hashing filenames in the next restructure.
 
+- **B-20 · Waiting-cue discoverability.** Live confusion: a stale hook session showed "1 waiting" but the user could not find the question — the bubble hides permanently after "Not now" (`dismissedWaitingIDs`) and dashboard rows show only short ids/states. *Accept:* dashboard row shows the question text; opening the dashboard re-arms the bubble for undismissed waiting sessions; "End agent sessions" confirm mentions which sessions end.
+
 ## Suggested sequencing
 
 1. B-01 (verify on Mac — 15 min) → B-03/B-02 (small fixes) → B-04 (runbook).
