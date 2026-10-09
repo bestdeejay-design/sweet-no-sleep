@@ -93,26 +93,7 @@ On a Mac, run `./Scripts/check-project.sh`, then `./Scripts/build-app.sh release
 
 ## Further development plan
 
-### Priority 0 — Mac validation
-
-- Manually launch the CI-built `.app`, confirm the menu-bar Settings action opens the Settings scene, and run the power, skin, and roaming scenarios above on macOS 14+.
-- Record results on Apple Silicon/Intel, single/multiple displays, and across Spaces.
-- Compare the live pet against `docs/images/agent-awareness-states.png` and
-  `docs/images/agent-awareness-min-size.png`: those images are an offline
-  mock-up built from the same drawing constants, not a screen capture.
-- Add Swift unit tests for pure model/validation components once a macOS test environment is available.
-
-### Priority 1 — Agent workflow reliability
-
-- Add provider-specific Claude Code, Codex, and IDE hooks with explicit running, waiting-for-approval, completed, and failed events; keep heartbeat/TTL as a safety net.
-- Keep assertion failures visible alongside active lease state.
-- Decide whether the local URL bridge needs additional controls beyond opt-in; a custom URL scheme is not authentication.
-
-### Priority 2 — Pet and workflow extensibility
-
-- Extend skin packs with independent clips/poses and additional silhouettes while keeping manifests data-only.
-- Add selected-skin preview, skipped-pack diagnostics, and a reset-to-bundled action.
-- Consider monitor selection, a hotkey, and adaptive power modes after the core loop is stable.
+State lists and remaining work live in [`docs/BACKLOG.md`](BACKLOG.md) (do not duplicate them here). UI-test skeleton: `Tests/UITests/`.
 
 ## Audit limits
 

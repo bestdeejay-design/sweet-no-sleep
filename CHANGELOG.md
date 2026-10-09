@@ -5,6 +5,9 @@ The format follows Keep a Changelog, versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+- XCUITest skeleton under `Tests/UITests/` (B-14, not wired to CI).
+  CODE_AUDIT defers state lists to BACKLOG (B-15). ksu cache-bust note
+  in `docs/KSU_DESIGN_RULES.md` (B-18).
 - Petting hearts on the sprite path in both animation states (B-09). FPS
   overlay on-screen hint (B-10). Break/waiting bubbles sized for the 45 pt
   rig (B-11). Skin picker auto-reloads the user folder (B-12). Portfolio
