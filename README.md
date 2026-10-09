@@ -282,6 +282,14 @@ Extra locales are generated via `Scripts/localize.sh` (Crowdin CLI,
 CI-supplied credentials), never hand-edited. This checkout ships
 English source strings only.
 
+## License
+
+Released under **CC BY-SA 4.0** (Attribution-ShareAlike). You may use,
+study, modify and redistribute the app and its artwork — but you must
+credit the original project with a link to
+[bestdeejay-design/sweet-no-sleep](https://github.com/bestdeejay-design/sweet-no-sleep),
+and distribute derivative works under the same license.
+
 ## Docs
 
 - `docs/RESEARCH.md` — design notes, power-management limits,
