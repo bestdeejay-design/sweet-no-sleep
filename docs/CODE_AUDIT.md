@@ -87,6 +87,7 @@ On a Mac, run `./Scripts/check-project.sh`, then `./Scripts/build-app.sh release
 - Test `./Scripts/agent-session.sh smoke-1 -- <short-command>`, a failed command, manual agent-session stop, bridge disable, and lease expiry without heartbeat. Start with normal sleep, not immediate sleep.
 - Test Mac sleep/wake during an active session and confirm assertions release before sleep and restore after wake.
 - Click the menu-bar **Settings** button and confirm the Settings scene opens while the app uses accessory activation policy.
+- Webhook lifecycle (B-05): enable/disable the loopback bridge several times in a row; confirm port 18290 is released (`lsof -iTCP:18290 -sTCP:LISTEN`). Launch a second instance while the first holds the port and confirm the in-use error. Regenerate the token while a client is mid-request and confirm the old bearer is rejected. Automated contract tests: `python3 Scripts/test-webhook-auth.py`.
 
 ## Further development plan
 

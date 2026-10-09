@@ -218,6 +218,17 @@ def validate(path: Path) -> tuple[str | None, list[str]]:
             problems.append("animation.celebrationEffect must be one of: " + ", ".join(sorted(EFFECTS)))
 
     validate_character(path.parent, format_version, problems)
+    if problems and (
+        format_version == 2
+        or any("pet.json" in item or "format 2" in item or "rig" in item for item in problems)
+    ):
+        problems.append(
+            "migration hint: format-1 packs stay on the procedural cat. To ship a "
+            "character, set skin.json \"format\": 2 and add pet.json (format 1 = "
+            "body.png + tail.png; format 2 = layered rig with head/legs/eyes). A "
+            "format-2 pack missing any rig layer is refused wholesale — copy "
+            "Resources/PetSkins/kot-arbuz/ as the recipe. See docs/SKIN_AUTHORING.md."
+        )
     return skin_id, problems
 
 

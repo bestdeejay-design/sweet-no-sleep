@@ -5,6 +5,13 @@ The format follows Keep a Changelog, versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+- Assertion names follow the active source class (manual/focus/agent);
+  Hold diagnostics lists awake sources (B-02). Dashboard height covers
+  the six default state combinations (B-03). Agent events route with
+  `open -b` and `LSMultipleInstancesProhibited` (B-04). Webhook auth
+  tests and MCP smoke test in `check-project.sh` (B-05, B-06). Heartbeat
+  never opens a lease (B-07). Skin validator prints a format-1→2
+  migration hint (B-08).
 - README "The cats": Kiwi (the original, three palette looks) and
   Kot-Arbuz (layered sprite character, leaf celebrations, agent
   awareness) as two characters with their own names, with the skin

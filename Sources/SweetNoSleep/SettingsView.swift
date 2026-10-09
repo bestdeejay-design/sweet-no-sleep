@@ -461,6 +461,10 @@ private struct PowerSettingsPane: View {
                         label: L10n.text("Last power event"),
                         value: model.diagnostics.lastPowerEvent
                     )
+                    diagnosticSettingsRow(
+                        label: L10n.text("Awake sources"),
+                        value: model.diagnostics.awakeSources
+                    )
                 }
             }
 

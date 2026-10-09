@@ -121,6 +121,21 @@ private struct MenuBarDashboard: View {
         return 24 + CGFloat(min(model.activeAgentCount, 4)) * 18
     }
 
+    /// Six default combinations (B-03): idle focus card; running focus; 1–4
+    /// agent rows; waiting reason wrap; agents + diagnostics; focus +
+    /// diagnostics. ScrollView is a last resort for >4 rows or a very long reason.
+    private var dashboardHeight: CGFloat {
+        var height: CGFloat = model.isFocusSession ? 660 : 640
+        height += agentRowsHeight
+        if !model.isFocusSession, model.agentWaitingReason != nil {
+            height += 36
+        }
+        if showDiagnostics {
+            height += 148
+        }
+        return height
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
@@ -165,7 +180,7 @@ private struct MenuBarDashboard: View {
                 .padding(.horizontal, 19)
                 .padding(.bottom, 17)
         }
-        .frame(width: 362, height: (model.isFocusSession ? 660 : 640) + agentRowsHeight + (showDiagnostics ? 110 : 0))
+        .frame(width: 362, height: dashboardHeight)
         .animation(.easeInOut(duration: 0.18), value: showDiagnostics)
         .background {
             ZStack(alignment: .topTrailing) {
@@ -536,6 +551,10 @@ private struct MenuBarDashboard: View {
                     diagnosticDashboardRow(
                         label: L10n.text("Last power event"),
                         value: model.diagnostics.lastPowerEvent
+                    )
+                    diagnosticDashboardRow(
+                        label: L10n.text("Awake sources"),
+                        value: model.diagnostics.awakeSources
                     )
                 }
                 .padding(.top, 2)

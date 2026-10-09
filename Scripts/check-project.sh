@@ -24,6 +24,8 @@ else
   printf 'SKIP character layer check: Pillow and NumPy are not installed.\n'
 fi
 Scripts/test-agent-hooks.sh
+python3 Scripts/test-webhook-auth.py
+python3 Scripts/test-mcp-server.py
 
 if [[ "${SWEET_NO_SLEEP_SKIP_SWIFT_BUILD:-0}" == "1" ]]; then
   printf 'SKIP Swift build: explicitly skipped for split CI diagnostics.\n'

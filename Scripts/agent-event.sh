@@ -28,5 +28,8 @@ if [[ -n "$REASON" ]]; then
   TARGET="$TARGET&reason=$(url_encode "${REASON:0:200}")"
 fi
 
-# 'open -g' sends the local custom URL event without bringing the menu app forward.
-open -g "$TARGET"
+# Route by bundle id so LaunchServices does not wake a stale checkout copy.
+# Fall back to the URL scheme if this bundle is not registered yet.
+if ! open -g -b com.sweetnosleep.kiwicat "$TARGET" 2>/dev/null; then
+  open -g "$TARGET"
+fi
