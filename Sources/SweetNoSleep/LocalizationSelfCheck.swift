@@ -48,12 +48,12 @@ enum LocalizationSelfCheck {
 
         let bundlePath = Bundle.module.bundlePath
         let preferred = Bundle.module.preferredLocalizations
-        var json = #"{"bundle":"\#(json(bundlePath))","preferred":["#
-        json += preferred.map { #""\#(json($0))""# }.joined(separator: ",")
-        json += #"],"keys":\#(keys.count),"values":{"#
-        json += keys.map { #""\#(json($0))":"\#(json(values[$0] ?? ""))""# }.joined(separator: ",")
-        json += "}}\n"
-        FileHandle.standardOutput.write(Data(json.utf8))
+        var output = #"{"bundle":"\#(escaped(bundlePath))","preferred":["#
+        output += preferred.map { #""\#(escaped($0))""# }.joined(separator: ",")
+        output += #"],"keys":\#(keys.count),"values":{"#
+        output += keys.map { #""\#(escaped($0))":"\#(escaped(values[$0] ?? ""))""# }.joined(separator: ",")
+        output += "}}\n"
+        FileHandle.standardOutput.write(Data(output.utf8))
         return 0
     }
 
@@ -69,7 +69,7 @@ enum LocalizationSelfCheck {
         return strings.keys.sorted()
     }
 
-    private static func json(_ text: String) -> String {
+    private static func escaped(_ text: String) -> String {
         var out = ""
         for scalar in text.unicodeScalars {
             switch scalar {
