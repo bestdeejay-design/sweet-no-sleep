@@ -116,35 +116,16 @@ private struct MenuBarDashboard: View {
     /// while that card is actually on screen: during a focus session the
     /// running-session card replaces it, so the rows would add empty space
     /// (issue #21 audit). Longer lists and wrapped reasons scroll (issue #19).
-    private var agentRowsHeight: CGFloat {
-        guard model.activeAgentCount > 0, !model.isFocusSession else { return 0 }
-        return 24 + CGFloat(min(model.activeAgentCount, 4)) * 18
-    }
-
-    /// Six default combinations (B-03): idle focus card; running focus; 1–4
-    /// agent rows; waiting reason wrap; agents + diagnostics; focus +
-    /// diagnostics. ScrollView is a last resort for >4 rows or a very long reason.
-    private var dashboardHeight: CGFloat {
-        var height: CGFloat = model.isFocusSession ? 660 : 640
-        height += agentRowsHeight
-        if !model.isFocusSession, model.agentWaitingReason != nil {
-            height += 36
-        }
-        if showDiagnostics {
-            height += 148
-        }
-        return height
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
                 .padding(.horizontal, 22)
                 .padding(.top, 22)
 
-            // The middle cards scroll when they outgrow the panel (long agent
-            // questions, several sessions, expanded diagnostics), so the footer
-            // with Settings / Quit can never be pushed off the bottom edge.
+            // The middle cards scroll whenever they outgrow the fixed window
+            // (long agent questions, several sessions, expanded diagnostics);
+            // the footer is laid out after a flexible scroll area, so it stays
+            // pinned to the window edge no matter what the content does.
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
                     companionCard
@@ -174,13 +155,13 @@ private struct MenuBarDashboard: View {
                         .padding(.top, 10)
                 }
             }
+            .frame(maxHeight: .infinity, alignment: .top)
 
-            Spacer(minLength: 12)
             footer
                 .padding(.horizontal, 19)
                 .padding(.bottom, 17)
         }
-        .frame(width: 362, height: dashboardHeight)
+        .frame(width: 362, height: 700)
         .animation(.easeInOut(duration: 0.18), value: showDiagnostics)
         .background {
             ZStack(alignment: .topTrailing) {
