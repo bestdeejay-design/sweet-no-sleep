@@ -1,5 +1,7 @@
 # Sweet No Sleep — Kiwi Cat
 
+[Русская версия](README.ru.md)
+
 A native macOS companion that keeps your Mac awake during long work
 sessions and makes it pleasant to look at. A small floating cat —
 Kiwi or Kot-Arbuz, your pick — lives on your desktop, reacts to what
