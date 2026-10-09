@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check English source strings against the SwiftPM string catalog."""
+"""Check English source strings and every shipped locale in the SwiftPM string catalog."""
 from __future__ import annotations
 
 import json
@@ -11,10 +11,24 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE_DIR = ROOT / "Sources" / "SweetNoSleep"
 CATALOG_PATH = SOURCE_DIR / "Localizable.xcstrings"
 LOCALIZED_CALL = re.compile(r'L10n\.(?:text|format)\(\s*"((?:[^"\\]|\\.)*)"')
+# English is the source; every other entry must ship these locales (keep in sync with README "Languages").
+LOCALES = ("en", "es", "ja", "ko", "ru", "zh-Hans")
+FORMAT_SPECIFIER = re.compile(r"%%|%(?:\d+\$)?[-+ #0]*\d*(?:\.\d+)?(?:hh|h|ll|l|z|t|L|q)?[@dDuUxXoOfeEgGsScCaApi]")
 
 
 def contains_cyrillic(text: str) -> bool:
     return any(0x0400 <= ord(character) <= 0x04FF for character in text)
+
+
+def placeholders(text: str) -> tuple[list[str], int]:
+    """Return format specifiers in order (%% excluded) and the count of any other bare '%'."""
+    specifiers: list[str] = []
+    consumed = 0
+    for match in FORMAT_SPECIFIER.finditer(text):
+        consumed += match.group(0).count("%")
+        if match.group(0) != "%%":
+            specifiers.append(match.group(0))
+    return specifiers, text.count("%") - consumed
 
 
 def main() -> int:
@@ -49,6 +63,30 @@ def main() -> int:
         if english != key:
             invalid_values.append(key)
 
+    translation_errors: list[str] = []
+    for key, entry in sorted(strings.items()):
+        localizations = entry.get("localizations", {})
+        absent = [locale for locale in LOCALES if locale not in localizations]
+        if absent:
+            translation_errors.append(f"{key!r} has no {', '.join(absent)} translation")
+        unsupported = [locale for locale in localizations if locale not in LOCALES]
+        if unsupported:
+            translation_errors.append(f"{key!r} has unsupported locale(s): {', '.join(unsupported)}")
+        english_specifiers, english_bare = placeholders(key)
+        for locale in LOCALES[1:]:
+            value = localizations.get(locale, {}).get("stringUnit", {}).get("value")
+            if not isinstance(value, str) or not value.strip():
+                if locale not in absent:
+                    translation_errors.append(f"{key!r} has an empty {locale} value")
+                continue
+            specifiers, bare = placeholders(value)
+            if specifiers != english_specifiers:
+                translation_errors.append(
+                    f"{key!r} [{locale}] placeholders {specifiers} do not match English {english_specifiers}"
+                )
+            if bare != english_bare:
+                translation_errors.append(f"{key!r} [{locale}] has a stray '%' that is not a format specifier")
+
     errors = source_errors
     if missing:
         errors.append("Missing catalog keys: " + ", ".join(repr(key) for key in missing))
@@ -56,13 +94,17 @@ def main() -> int:
         errors.append("Unused catalog keys: " + ", ".join(repr(key) for key in extra))
     if invalid_values:
         errors.append("English source values differ from their keys: " + ", ".join(repr(key) for key in invalid_values))
+    errors.extend(translation_errors)
 
     if errors:
         for error in errors:
             print(error, file=sys.stderr)
         return 1
 
-    print(f"Localization check passed: {len(expected)} English source keys match the catalog.")
+    print(
+        f"Localization check passed: {len(expected)} English source keys match the catalog, "
+        f"and all {len(strings)} keys ship in {len(LOCALES)} locales ({', '.join(LOCALES)})."
+    )
     return 0
 
 
