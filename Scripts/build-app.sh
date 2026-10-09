@@ -75,7 +75,7 @@ cat > "$APP_DIR/Contents/Info.plist" <<'PLIST'
     <key>CFBundleIconFile</key>
     <string>SweetNoSleep.icns</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.3.0</string>
+    <string>1.0.0</string>
     <key>CFBundleVersion</key>
     <string>3</string>
     <key>LSUIElement</key>
