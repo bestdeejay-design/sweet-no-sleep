@@ -73,7 +73,7 @@ def open_url_scheme(action: str, session_id: str, reason: str | None) -> tuple[b
         target += f"&reason={quote(reason[:200], safe='')}"
     try:
         completed = subprocess.run(
-            ["open", "-g", target],
+            ["open", "-g", "-b", "com.sweetnosleep.kiwicat", target],
             capture_output=True,
             text=True,
             timeout=5,

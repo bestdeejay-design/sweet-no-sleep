@@ -91,6 +91,8 @@ final class SweetNoSleepModel: ObservableObject {
     private var manualAwake = false
     private var agentLeaseTimer: Timer?
     private var agentWebhookServer: AgentWebhookServer?
+    private var skinWatchTimer: Timer?
+    private var lastSkinsSignature = ""
     // Last system wake time. Taps within the grace window are ignored so a
     // click meant to wake the Mac does not accidentally poke the pet.
     private var lastSystemWakeDate: Date?
@@ -420,6 +422,8 @@ final class SweetNoSleepModel: ObservableObject {
         }
         updateDiagnostics()
         schedulePlayfulMoment()
+        lastSkinsSignature = Self.skinsFolderSignature()
+        startSkinFolderWatch()
     }
 
     // MARK: Awake controls
@@ -431,6 +435,37 @@ final class SweetNoSleepModel: ObservableObject {
         if !availableSkins.contains(where: { $0.id == selectedSkinID }) {
             selectedSkinID = availableSkins[0].id
         }
+        lastSkinsSignature = Self.skinsFolderSignature()
+    }
+
+    private func startSkinFolderWatch() {
+        skinWatchTimer?.invalidate()
+        skinWatchTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.reloadSkinsIfFolderChanged()
+            }
+        }
+    }
+
+    private func reloadSkinsIfFolderChanged() {
+        let signature = Self.skinsFolderSignature()
+        guard signature != lastSkinsSignature else { return }
+        reloadSkinLibrary()
+    }
+
+    private static func skinsFolderSignature() -> String {
+        guard let directory = PetSkinLibrary.userDirectory else { return "" }
+        let fm = FileManager.default
+        guard let items = try? fm.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: [.contentModificationDateKey],
+            options: [.skipsHiddenFiles]
+        ) else { return directory.path }
+        let parts = items.map { url -> String in
+            let date = (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+            return "\(url.lastPathComponent):\(date.timeIntervalSince1970)"
+        }.sorted()
+        return parts.joined(separator: "|")
     }
 
     func setKeepAwake(_ enabled: Bool) {
@@ -454,10 +489,7 @@ final class SweetNoSleepModel: ObservableObject {
         hasCapTripped = false
         isPausedByBatteryFloor = false
 
-        startPowerAssertions(
-            reason: "Sweet No Sleep - manual mode",
-            humanReadableReason: L10n.text("Sweet No Sleep - manual keep-awake mode")
-        )
+        startPowerAssertions(labels: assertionLabels())
         guard isKeepingAwake else { return }
         if !isPausedByBatteryFloor {
             statusMessage = L10n.format("%@ is keeping your Mac awake", characterName)
@@ -477,10 +509,7 @@ final class SweetNoSleepModel: ObservableObject {
         hasCapTripped = false
         isPausedByBatteryFloor = false
 
-        startPowerAssertions(
-            reason: "Sweet No Sleep - focus session, \(minutes) min",
-            humanReadableReason: L10n.format("Sweet No Sleep - focus session (%d min)", minutes)
-        )
+        startPowerAssertions(labels: assertionLabels(forceFocusMinutes: minutes, includeManual: false))
         guard isKeepingAwake else { return }
 
         manualAwake = false
@@ -532,6 +561,8 @@ final class SweetNoSleepModel: ObservableObject {
     }
 
     func shutdown() {
+        skinWatchTimer?.invalidate()
+        skinWatchTimer = nil
         stopWebhookServer()
         stopKeepingAwake()
         powerKeeper.shutdown()
@@ -573,8 +604,9 @@ final class SweetNoSleepModel: ObservableObject {
             renewAgentSession(sessionID: sessionID)
             statusMessage = L10n.text("An AI agent reported that work has started.")
         case "heartbeat":
-            // A known session returning to heartbeats is working again; an
-            // unknown one is treated as a start so a lost bridge self-heals.
+            // Unknown sessions are ignored on every channel (webhook semantics).
+            // Use `start` to open a lease; a stray heartbeat must not create one.
+            guard agentSessions[sessionID] != nil else { return }
             renewAgentSession(sessionID: sessionID)
         case "waiting":
             markAgentWaiting(sessionID: sessionID, reason: reason)
@@ -617,9 +649,6 @@ final class SweetNoSleepModel: ObservableObject {
                 guard let self else { return }
                 guard self.agentBridgeEnabled else { return }
                 guard !sessionID.isEmpty, sessionID.count <= 120 else { return }
-                if action == "heartbeat", self.agentSessions[sessionID] == nil {
-                    return
-                }
                 self.handleAgentEvent(action: action, sessionID: sessionID, reason: reason)
             },
             onError: { [weak self] message in
@@ -685,10 +714,9 @@ final class SweetNoSleepModel: ObservableObject {
         }
 
         if !isKeepingAwake {
-            startPowerAssertions(
-                reason: "Sweet No Sleep - AI agent work",
-                humanReadableReason: L10n.text("Sweet No Sleep - AI agent work in progress")
-            )
+            startPowerAssertions(labels: assertionLabels(includeAgent: true))
+        } else {
+            syncAssertionName()
         }
 
         let resumedFromWaiting = wasWaiting && status == .working
@@ -733,6 +761,9 @@ final class SweetNoSleepModel: ObservableObject {
         let message = failed
             ? L10n.text("The AI agent failed.")
             : L10n.text("The AI agent reported completion.")
+        if isKeepingAwake, !agentSessions.isEmpty {
+            syncAssertionName()
+        }
         finishAwakeIfNoOtherSource(message: message)
     }
 
@@ -754,6 +785,9 @@ final class SweetNoSleepModel: ObservableObject {
         let message = agentSessions.isEmpty
             ? L10n.text("The AI agent connection was lost - sleep protection ended after timeout")
             : L10n.text("One agent heartbeat expired - other sessions are still active")
+        if isKeepingAwake, !agentSessions.isEmpty {
+            syncAssertionName()
+        }
         finishAwakeIfNoOtherSource(message: message)
     }
 
@@ -870,8 +904,55 @@ final class SweetNoSleepModel: ObservableObject {
         pendingImmediateSleepToken = nil
     }
 
-    private func startPowerAssertions(reason: String, humanReadableReason: String) {
-        guard !isKeepingAwake else { return }
+    private func assertionLabels(
+        forceFocusMinutes: Int? = nil,
+        includeManual: Bool? = nil,
+        includeAgent: Bool? = nil
+    ) -> (reason: String, human: String) {
+        let focus = forceFocusMinutes != nil || isFocusSession
+        let minutes = forceFocusMinutes ?? selectedMinutes
+        let manual = includeManual ?? manualAwake
+        let agent = includeAgent ?? !agentSessions.isEmpty
+        var tags: [String] = []
+        if focus { tags.append("focus") }
+        if manual { tags.append("manual") }
+        if agent { tags.append("agent") }
+        if tags.isEmpty { tags.append("manual") }
+        let joined = tags.joined(separator: "+")
+        let reason = "Sweet No Sleep - \(joined)"
+        let human: String
+        if focus && tags.count == 1 {
+            human = L10n.format("Sweet No Sleep - focus session (%d min)", minutes)
+        } else if agent && tags.count == 1 {
+            human = L10n.text("Sweet No Sleep - AI agent work in progress")
+        } else if manual && tags.count == 1 {
+            human = L10n.text("Sweet No Sleep - manual keep-awake mode")
+        } else {
+            human = L10n.format("Sweet No Sleep - %@ keep-awake", joined)
+        }
+        return (reason, human)
+    }
+
+    /// Renames the live IOKit assertion so pmset reflects the current source class.
+    private func syncAssertionName() {
+        guard isKeepingAwake, !isPausedByBatteryFloor else {
+            updateDiagnostics()
+            return
+        }
+        let labels = assertionLabels()
+        _ = powerKeeper.begin(
+            reason: labels.reason,
+            humanReadableReason: labels.human,
+            keepDisplayOn: keepDisplayAwake
+        )
+        updateDiagnostics()
+    }
+
+    private func startPowerAssertions(labels: (reason: String, human: String)) {
+        guard !isKeepingAwake else {
+            syncAssertionName()
+            return
+        }
         powerWarning = nil
 
         let currentPS = powerSourceMonitor.currentStatus
@@ -892,8 +973,8 @@ final class SweetNoSleepModel: ObservableObject {
         }
 
         let result = powerKeeper.begin(
-            reason: reason,
-            humanReadableReason: humanReadableReason,
+            reason: labels.reason,
+            humanReadableReason: labels.human,
             keepDisplayOn: keepDisplayAwake
         )
         guard result.success else {
@@ -926,14 +1007,10 @@ final class SweetNoSleepModel: ObservableObject {
     }
 
     private func refreshPowerAssertions() {
-        let reason = isFocusSession ? "Sweet No Sleep - focus session" : "Sweet No Sleep - manual mode"
-        let humanReadable = isFocusSession
-            ? L10n.format("Sweet No Sleep - focus session (%d min)", selectedMinutes)
-            : L10n.text("Sweet No Sleep - manual keep-awake mode")
-
+        let labels = assertionLabels()
         let result = powerKeeper.begin(
-            reason: reason,
-            humanReadableReason: humanReadable,
+            reason: labels.reason,
+            humanReadableReason: labels.human,
             keepDisplayOn: keepDisplayAwake
         )
         guard result.success else {
@@ -1028,6 +1105,16 @@ final class SweetNoSleepModel: ObservableObject {
         heartbeatTimer = nil
     }
 
+    private func awakeSourcesDescription() -> String {
+        var parts: [String] = []
+        if isFocusSession { parts.append(L10n.text("focus")) }
+        if manualAwake { parts.append(L10n.text("manual")) }
+        if !agentSessions.isEmpty {
+            parts.append(L10n.format("agent × %d", agentSessions.count))
+        }
+        return parts.isEmpty ? L10n.text("none") : parts.joined(separator: ", ")
+    }
+
     private func updateDiagnostics() {
         let seconds = max(0, Int(ceil(powerKeeper.nextRearmDate?.timeIntervalSinceNow ?? 0)))
         let powerSource = powerSourceMonitor.currentStatus
@@ -1038,7 +1125,8 @@ final class SweetNoSleepModel: ObservableObject {
             isDisplayActive: powerKeeper.isDisplayAsserted,
             secondsUntilRearm: (powerKeeper.isSystemAsserted || powerKeeper.isDisplayAsserted) ? seconds : 0,
             batteryDescription: powerSource.descriptionText,
-            lastPowerEvent: powerKeeper.lastPowerEvent
+            lastPowerEvent: powerKeeper.lastPowerEvent,
+            awakeSources: awakeSourcesDescription()
         )
     }
 

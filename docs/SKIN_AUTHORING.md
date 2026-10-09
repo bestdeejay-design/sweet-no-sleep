@@ -23,7 +23,7 @@ For example:
 ~/Library/Application Support/SweetNoSleep/PetSkins/ocean/skin.json
 ```
 
-The app reads manifests at launch and when **Refresh list** is clicked; a restart is not required. Bundled packs are in `Resources/PetSkins/` and are copied into the `.app` by `Scripts/build-app.sh`.
+The app reads manifests at launch, when **Refresh list** is clicked, and when the user skins folder changes (polled about every 2 seconds). A restart is not required. Bundled packs are in `Resources/PetSkins/` and are copied into the `.app` by `Scripts/build-app.sh`.
 
 ## `skin.json` format
 
@@ -226,6 +226,16 @@ python3 Scripts/validate-skins.py /path/to/ocean
 # Or validate one file:
 python3 Scripts/validate-skins.py /path/to/ocean/skin.json
 ```
+
+## Format 1 → 2 recipe
+
+Format-1 packs keep the procedural cat. To become a character pack:
+
+1. Set `"format": 2` in `skin.json`.
+2. Add `pet.json`. Format 1 of `pet.json` is `body.png` + `tail.png` (legacy pose). Format 2 of `pet.json` is the layered rig (`head.png`, `legs-a.png`, `legs-b.png`, `legs-c.png`, plus body and tail).
+3. Copy `Resources/PetSkins/kot-arbuz/` as a working template; every declared layer must be a square PNG of `canvas` pixels. A format-2 pack missing any rig layer is refused wholesale.
+
+`Scripts/validate-skins.py` prints this migration hint when a character pack fails validation.
 
 If a skin does not appear after refresh, check that:
 

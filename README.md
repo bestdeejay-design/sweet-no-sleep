@@ -38,7 +38,9 @@ of his own: the base rind, **Kot-Arbuz Moonlight** (moon-dust stars) and
 ![Kot-Arbuz skin card: the watermelon cat on a mint-to-blush card with his palette swatches](Resources/Art/Rendered/preview-kot-arbuz.png)
 
 See the [Kot-Arbuz character case on dajet.ru](https://dajet.ru/#project-16)
-for the design, the sprite layers, and the app states side by side.
+for the design, the layered rig and gaze, three bundled looks, and the
+app-states strip (`app-states.jpg?v=4`). Copy for that page lives in
+`docs/PORTFOLIO_CASE.md`.
 
 ## Features
 
@@ -150,7 +152,27 @@ You should see the app's `PreventUserIdleSystemSleep` assertion,
 plus a display assertion if **Keep the display on during a session**
 is enabled. Note the `Timeout` field (assertions are created with
 a 120-second fail-safe kernel timeout and automatically re-armed at
-~90 seconds). Stop the session and confirm the entries disappear.
+~90 seconds). The assertion **name** follows the active source class
+(`manual`, `focus`, `agent`, or a `+` combination). Hold diagnostics
+also lists **Awake sources**, so an agent lease that starts while
+manual mode is already on is visible even if `pmset` still shows one
+IOKit ID. Stop the session and confirm the entries disappear.
+
+### Stale app copies (LaunchServices)
+
+`open sweetnosleep://…` can wake an old checkout instead of the
+`.app` you just built. Prefer `Scripts/agent-event.sh` (it uses
+`open -b com.sweetnosleep.kiwicat`). The packaged app sets
+`LSMultipleInstancesProhibited`. If a URL still hits the wrong
+binary:
+
+```bash
+lsregister -u /path/to/old/Sweet\ No\ Sleep\ —\ Kiwi\ Cat.app
+lsregister -f /path/to/dist/Sweet\ No\ Sleep\ —\ Kiwi\ Cat.app
+```
+
+`lsregister` lives at
+`/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister`.
 
 ## AI agents and sleep
 
@@ -165,6 +187,11 @@ use the wrapper for agent commands (sends `start`, heartbeats every
 ```bash
 ./Scripts/agent-session.sh my-agent-123 -- ./run-my-agent.sh --your-args
 ```
+
+Heartbeats **never** open a lease. `start` (or `waiting` / `done` /
+`failed` for a known or new session) creates it; a `heartbeat` for an
+unknown session ID is ignored on both the URL scheme and the webhook.
+Always send `start` before the first heartbeat.
 
 Or call lifecycle events directly from IDE hook callbacks, reusing
 one session ID and heartbeating about once a minute (including

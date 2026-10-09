@@ -456,6 +456,9 @@ struct PowerDiagnostics: Equatable, Sendable {
     var secondsUntilRearm: Int = 0
     var batteryDescription: String = "AC Power (No battery)"
     var lastPowerEvent: String = "None"
+    /// Active keep-awake sources (manual / focus / agent). Shown in diagnostics
+    /// because pmset only prints the assertion name of the first class that won.
+    var awakeSources: String = "none"
 }
 
 @MainActor

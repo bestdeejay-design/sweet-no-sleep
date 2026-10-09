@@ -80,6 +80,8 @@ cat > "$APP_DIR/Contents/Info.plist" <<'PLIST'
     <string>3</string>
     <key>LSUIElement</key>
     <true/>
+    <key>LSMultipleInstancesProhibited</key>
+    <true/>
     <key>CFBundleURLTypes</key>
     <array>
         <dict>

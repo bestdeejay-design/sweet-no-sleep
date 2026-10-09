@@ -1,5 +1,5 @@
 {
-  "$comment": "Sweet No Sleep preset for Claude Code hooks (Issue #11, F5). Copy the hooks below into ~/.claude/settings.json or your project's .claude/settings.json. Session ID is derived from the parent PID so all hooks in one Claude session share one lease.",
+  "$comment": "Sweet No Sleep preset for Claude Code hooks (Issue #11, F5). Copy the hooks below into ~/.claude/settings.json or your project's .claude/settings.json. Session ID is derived from the parent PID so all hooks in one Claude session share one lease. Heartbeat never opens a lease — SessionStart must send start first; a heartbeat for an unknown session is ignored on URL and webhook alike.",
   "hooks": {
     "SessionStart": [
       {

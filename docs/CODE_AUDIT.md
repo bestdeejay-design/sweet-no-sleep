@@ -55,6 +55,8 @@ The validator also accepts a user pack directory or one manifest:
 python3 Scripts/validate-skins.py /path/to/ocean
 ```
 
+Hidden FPS overlay: `defaults write com.sweetnosleep.kiwicat SNSDebugFPSOverlay -bool true` then relaunch. The pet canvas shows a green `N fps · debug overlay` hint (used for 60 fps acceptance). Disable with `-bool false`.
+
 ## Mac acceptance checklist
 
 On a Mac, run `./Scripts/check-project.sh`, then `./Scripts/build-app.sh release`, open the generated `.app`, and test:
@@ -87,29 +89,11 @@ On a Mac, run `./Scripts/check-project.sh`, then `./Scripts/build-app.sh release
 - Test `./Scripts/agent-session.sh smoke-1 -- <short-command>`, a failed command, manual agent-session stop, bridge disable, and lease expiry without heartbeat. Start with normal sleep, not immediate sleep.
 - Test Mac sleep/wake during an active session and confirm assertions release before sleep and restore after wake.
 - Click the menu-bar **Settings** button and confirm the Settings scene opens while the app uses accessory activation policy.
+- Webhook lifecycle (B-05): enable/disable the loopback bridge several times in a row; confirm port 18290 is released (`lsof -iTCP:18290 -sTCP:LISTEN`). Launch a second instance while the first holds the port and confirm the in-use error. Regenerate the token while a client is mid-request and confirm the old bearer is rejected. Automated contract tests: `python3 Scripts/test-webhook-auth.py`.
 
 ## Further development plan
 
-### Priority 0 — Mac validation
-
-- Manually launch the CI-built `.app`, confirm the menu-bar Settings action opens the Settings scene, and run the power, skin, and roaming scenarios above on macOS 14+.
-- Record results on Apple Silicon/Intel, single/multiple displays, and across Spaces.
-- Compare the live pet against `docs/images/agent-awareness-states.png` and
-  `docs/images/agent-awareness-min-size.png`: those images are an offline
-  mock-up built from the same drawing constants, not a screen capture.
-- Add Swift unit tests for pure model/validation components once a macOS test environment is available.
-
-### Priority 1 — Agent workflow reliability
-
-- Add provider-specific Claude Code, Codex, and IDE hooks with explicit running, waiting-for-approval, completed, and failed events; keep heartbeat/TTL as a safety net.
-- Keep assertion failures visible alongside active lease state.
-- Decide whether the local URL bridge needs additional controls beyond opt-in; a custom URL scheme is not authentication.
-
-### Priority 2 — Pet and workflow extensibility
-
-- Extend skin packs with independent clips/poses and additional silhouettes while keeping manifests data-only.
-- Add selected-skin preview, skipped-pack diagnostics, and a reset-to-bundled action.
-- Consider monitor selection, a hotkey, and adaptive power modes after the core loop is stable.
+State lists and remaining work live in [`docs/BACKLOG.md`](BACKLOG.md) (do not duplicate them here). UI-test skeleton: `Tests/UITests/`.
 
 ## Audit limits
 

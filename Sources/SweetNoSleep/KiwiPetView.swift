@@ -335,15 +335,14 @@ struct KiwiPetView: View {
                 )
                 if UserDefaults.standard.bool(forKey: Self.debugFPSKey) {
                     let fps = FrameRateProbe.shared.sample(time)
-                    if fps > 1 {
-                        context.draw(
-                            Text("\(Int(fps)) fps")
-                                .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                                .foregroundStyle(Color.green),
-                            at: CGPoint(x: 6, y: 4),
-                            anchor: .topLeading
-                        )
-                    }
+                    let label = fps > 1 ? "\(Int(fps)) fps · debug overlay" : "fps · debug overlay"
+                    context.draw(
+                        Text(label)
+                            .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(Color.green),
+                        at: CGPoint(x: 6, y: 4),
+                        anchor: .topLeading
+                    )
                 }
             }
             .frame(width: canvasSize, height: canvasSize)
