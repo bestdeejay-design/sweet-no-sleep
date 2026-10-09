@@ -2,7 +2,8 @@ import AppKit
 import Combine
 import SwiftUI
 
-@main
+/// The entry point lives in `main.swift`, which runs the localization
+/// self-check before handing control to SwiftUI.
 struct SweetNoSleepApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var model = SweetNoSleepModel.shared

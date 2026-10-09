@@ -23,10 +23,13 @@ if [[ ${#RESOURCE_BUNDLES[@]} -eq 0 ]]; then
   echo "Build succeeded, but SwiftPM localization resource bundle was not found in: $BIN_DIR" >&2
   exit 1
 fi
-cp -R "${RESOURCE_BUNDLES[@]}" "$APP_DIR/Contents/Resources/"
-# Native `swift build` copies Localizable.xcstrings unchanged; compile it into per-locale tables.
+# Native `swift build` copies Localizable.xcstrings unchanged; compile it into
+# per-locale tables. Do it here, before the copy: `Bundle.module` walks a list
+# of candidate URLs and takes the first one that exists, and in a workspace that
+# still has `.build` that list can hand back the build-directory bundle instead
+# of the app's. Compiling first means every copy ships the tables.
 CATALOG_BUNDLE_COUNT=0
-for bundle in "$APP_DIR"/Contents/Resources/*.bundle; do
+for bundle in "${RESOURCE_BUNDLES[@]}"; do
   [[ -f "$bundle/Localizable.xcstrings" ]] || continue
   python3 "$ROOT_DIR/Scripts/compile-localizations.py" "$bundle/Localizable.xcstrings" "$bundle"
   CATALOG_BUNDLE_COUNT=$((CATALOG_BUNDLE_COUNT + 1))
@@ -35,6 +38,7 @@ if [[ "$CATALOG_BUNDLE_COUNT" -eq 0 ]]; then
   echo "Localizable.xcstrings was not copied into any SwiftPM resource bundle." >&2
   exit 1
 fi
+cp -R "${RESOURCE_BUNDLES[@]}" "$APP_DIR/Contents/Resources/"
 if [[ -d "$ROOT_DIR/Resources/PetSkins" ]]; then
   mkdir -p "$APP_DIR/Contents/Resources/PetSkins"
   cp -R "$ROOT_DIR/Resources/PetSkins/." "$APP_DIR/Contents/Resources/PetSkins/"

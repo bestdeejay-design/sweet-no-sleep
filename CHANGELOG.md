@@ -5,6 +5,24 @@ The format follows Keep a Changelog, versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+- **Character animation loops (issue #27):** `Scripts/render-character-animations.py`
+  renders both cats headlessly onto a transparent canvas — no display, no
+  macOS capture. It ports `SpriteCharacterRenderer.swift` (Kot-Arbuz, over the
+  committed sprite layers and the `pet.json` rig) and `KiwiPetView.drawPet`
+  (Kiwi, pure geometry) to Pillow: breathing, blink, cursor gaze, walk cycle,
+  dance, petting hearts, waiting glyph, agent badge with session pips, and the
+  celebration effects. Output is one 420 × 420, 15 s, 12.5 fps loop per cat in
+  animated WebP (full alpha) and GIF (fallback), covering idle → walk → dance →
+  hearts → waiting → celebration.
+- **Localization fix:** `Scripts/compile-localizations.py` now emits classic
+  OpenStep `.strings` tables (`"key" = "value";`, UTF-16LE) instead of
+  property lists. The CFBundle strings loader ignores a plist table, so
+  `NSLocalizedString` silently returned the English key even though the
+  file was in the bundle and `plutil` could read it. `L10n` ships a
+  `--localization-report` self-check and `Scripts/verify-localizations.py`
+  resolves every key of all six locales through `Bundle.module` in the
+  assembled app on CI, so a format regression fails the build instead of
+  shipping English.
 - XCUITest skeleton under `Tests/UITests/` (B-14, not wired to CI).
   CODE_AUDIT defers state lists to BACKLOG (B-15). ksu cache-bust note
   in `docs/KSU_DESIGN_RULES.md` (B-18).
