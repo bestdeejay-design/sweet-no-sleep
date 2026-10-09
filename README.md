@@ -290,7 +290,10 @@ python3 Scripts/validate-localization.py
 
 Translations are kept directly in the catalog (`ru`, `es`, `ko`, `zh-Hans`,
 `ja`); `validate-localization.py` requires every key in all six locales
-and rejects placeholder mismatches. `Scripts/localize.sh` (Crowdin CLI,
+and rejects placeholder mismatches. SwiftPM copies the catalog unchanged,
+so `Scripts/build-app.sh` compiles it into per-locale tables
+(`Scripts/compile-localizations.py`) inside the app bundle. A plain
+`swift build` or `swift run` shows English. `Scripts/localize.sh` (Crowdin CLI,
 CI-supplied credentials) is still available for future batches, but its
 download step can overwrite these entries, so reconcile before running it.
 

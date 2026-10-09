@@ -24,6 +24,17 @@ if [[ ${#RESOURCE_BUNDLES[@]} -eq 0 ]]; then
   exit 1
 fi
 cp -R "${RESOURCE_BUNDLES[@]}" "$APP_DIR/Contents/Resources/"
+# Native `swift build` copies Localizable.xcstrings unchanged; compile it into per-locale tables.
+CATALOG_BUNDLE_COUNT=0
+for bundle in "$APP_DIR"/Contents/Resources/*.bundle; do
+  [[ -f "$bundle/Localizable.xcstrings" ]] || continue
+  python3 "$ROOT_DIR/Scripts/compile-localizations.py" "$bundle/Localizable.xcstrings" "$bundle"
+  CATALOG_BUNDLE_COUNT=$((CATALOG_BUNDLE_COUNT + 1))
+done
+if [[ "$CATALOG_BUNDLE_COUNT" -eq 0 ]]; then
+  echo "Localizable.xcstrings was not copied into any SwiftPM resource bundle." >&2
+  exit 1
+fi
 if [[ -d "$ROOT_DIR/Resources/PetSkins" ]]; then
   mkdir -p "$APP_DIR/Contents/Resources/PetSkins"
   cp -R "$ROOT_DIR/Resources/PetSkins/." "$APP_DIR/Contents/Resources/PetSkins/"
