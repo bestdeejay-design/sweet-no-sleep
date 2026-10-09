@@ -14,8 +14,10 @@ enum L10n {
     private static var cache: [String: [String: String]] = [:]
 
     static func text(_ key: String) -> String {
-        if let table = currentTable(), let value = table[key], !value.isEmpty {
-            return value
+        for table in candidateTables() {
+            if let value = table[key], !value.isEmpty {
+                return value
+            }
         }
         return NSLocalizedString(key, tableName: nil, bundle: .module, value: key, comment: "")
     }
@@ -24,37 +26,63 @@ enum L10n {
         String(format: text(key), locale: Locale.current, arguments: arguments)
     }
 
-    /// The first localization whose table exists and parses, in the order the
-    /// user (then the bundle) prefers. Results are cached per language code.
-    private static func currentTable() -> [String: String]? {
-        var candidates = UserDefaults.standard.stringArray(forKey: "AppleLanguages") ?? []
-        candidates.append(contentsOf: Bundle.module.preferredLocalizations)
+    /// Candidate tables in resolution order: the in-app override
+    /// (`app.language`), the app-domain `AppleLanguages`, the canonical system
+    /// list (`Locale.preferredLanguages`, resolves ru-RU → ru), the bundle's
+    /// own preferred localizations, then English. Each candidate is tried with
+    /// its full code (ru-RU) and its bare language code (ru), because the
+    /// shipped lproj directories are bare-code.
+    private static func candidateTables() -> [[String: String]] {
+        var candidates: [String] = []
+        if let override = UserDefaults.standard.string(forKey: "app.language"), !override.isEmpty {
+            candidates.append(override)
+        }
+        candidates += UserDefaults.standard.stringArray(forKey: "AppleLanguages") ?? []
+        candidates += Locale.preferredLanguages
+        candidates += Bundle.module.preferredLocalizations
         candidates.append("en")
 
-        for language in candidates {
-            guard !language.isEmpty else { continue }
-            cacheLock.lock()
-            if let cached = cache[language] {
-                cacheLock.unlock()
-                return cached
+        var tables: [[String: String]] = []
+        var seen = Set<String>()
+        for candidate in candidates {
+            for code in expansion(candidate) where !seen.contains(code) {
+                seen.insert(code)
+                if let table = tableForLocalization(code) {
+                    tables.append(table)
+                }
             }
-            cacheLock.unlock()
-            guard
-                let path = Bundle.module.path(
-                    forResource: "Localizable",
-                    ofType: "strings",
-                    inDirectory: nil,
-                    forLocalization: language
-                ),
-                let table = NSDictionary(contentsOfFile: path) as? [String: String],
-                !table.isEmpty
-            else { continue }
-
-            cacheLock.lock()
-            cache[language] = table
-            cacheLock.unlock()
-            return table
         }
-        return nil
+        return tables
+    }
+
+    /// "ru-RU" → ["ru-RU", "ru"]: the full code first, then the bare code.
+    private static func expansion(_ code: String) -> [String] {
+        let parts = code.split(separator: "-").map(String.init)
+        return parts.isEmpty ? [code] : [code, parts[0]]
+    }
+
+    private static func tableForLocalization(_ language: String) -> [String: String]? {
+        cacheLock.lock()
+        if let cached = cache[language] {
+            cacheLock.unlock()
+            return cached
+        }
+        cacheLock.unlock()
+
+        guard
+            let path = Bundle.module.path(
+                forResource: "Localizable",
+                ofType: "strings",
+                inDirectory: nil,
+                forLocalization: language
+            ),
+            let table = NSDictionary(contentsOfFile: path) as? [String: String],
+            !table.isEmpty
+        else { return nil }
+
+        cacheLock.lock()
+        cache[language] = table
+        cacheLock.unlock()
+        return table
     }
 }

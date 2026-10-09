@@ -30,7 +30,10 @@ fi
 # of the app's. Compiling first means every copy ships the tables.
 CATALOG_BUNDLE_COUNT=0
 for bundle in "${RESOURCE_BUNDLES[@]}"; do
-  [[ -f "$bundle/Localizable.xcstrings" ]] || continue
+  # Incremental builds may stop copying the catalog into the bundle once the
+  # resource cache is warm; always seed from the source so the tables match
+  # the current catalog, then compile.
+  cp "$ROOT_DIR/Sources/SweetNoSleep/Localizable.xcstrings" "$bundle/Localizable.xcstrings"
   python3 "$ROOT_DIR/Scripts/compile-localizations.py" "$bundle/Localizable.xcstrings" "$bundle"
   CATALOG_BUNDLE_COUNT=$((CATALOG_BUNDLE_COUNT + 1))
 done
