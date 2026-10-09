@@ -16,8 +16,8 @@ watches over your focus time.
 [Download the 1280 × 640 banner PNG](Resources/Art/Rendered/banner.png) · [editable banner SVG](Resources/Art/banner.svg) · [Open Graph SVG](Resources/Art/og-image.svg). The SVG files are the editable sources; `Scripts/render-media.sh` rebuilds raster assets on macOS. A successful macOS CI push commits the generated images to the task branch and uploads the media kit as an artifact.
 
 <p align="center">
-  <img src="Resources/Art/Rendered/kot-arbuz-demo.gif" alt="Kot-Arbuz, the watermelon cat: blinking, walking, eyes following the cursor" width="300"/>
-  <img src="Resources/Art/Rendered/kiwi-demo.gif" alt="Kiwi: procedural cat with gaze, blink, and leaf details" width="300"/>
+  <img src="Resources/Art/Rendered/animation-kot-arbuz.webp" alt="Kot-Arbuz, the watermelon cat: dancing, hearts, waiting glyph — transparent background" width="300"/>
+  <img src="Resources/Art/Rendered/animation-kiwi.webp" alt="Kiwi: procedural cat — gaze, blink, hearts, dance" width="300"/>
 </p>
 
 **Live on your desktop.** Both cats blink, breathe, walk, and their eyes
