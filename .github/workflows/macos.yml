@@ -72,6 +72,29 @@ jobs:
           /usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$APP/Contents/Info.plist" | grep -q 'SweetNoSleep.icns'
           codesign --verify --deep --strict "$APP"
 
+      - name: Verify compiled localizations
+        run: |
+          APP="dist/Sweet No Sleep — Kiwi Cat.app"
+          python3 - "$APP/Contents/Resources" <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+          resources = pathlib.Path(sys.argv[1])
+          bundles = sorted(resources.glob("*.bundle"))
+          if not bundles:
+              sys.exit("No SwiftPM resource bundle in the app")
+          expected = {"es": "Ajustes", "ja": "設定", "ko": "설정", "ru": "Настройки", "zh-Hans": "设置"}
+          for locale, value in expected.items():
+              strings = [path for bundle in bundles for path in bundle.rglob(f"{locale}.lproj/Localizable.strings")]
+              if not strings:
+                  sys.exit(f"Missing compiled {locale}.lproj/Localizable.strings")
+              data = json.loads(subprocess.check_output(["plutil", "-convert", "json", "-o", "-", str(strings[0])]))
+              if data.get("Settings") != value:
+                  sys.exit(f"{locale}: 'Settings' resolves to {data.get('Settings')!r}, expected {value!r}")
+              print(f"{locale}: Settings -> {value}")
+          PY
+
       - name: Commit macOS-rendered media outputs to the task branch
         if: github.event_name == 'push' && github.ref == 'refs/heads/arena/e650720d-sweet-no-sleep'
         run: |

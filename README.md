@@ -288,16 +288,19 @@ python3 Scripts/validate-skins.py /path/to/a-skin-pack
 python3 Scripts/validate-localization.py
 ```
 
-Extra locales are generated via `Scripts/localize.sh` (Crowdin CLI,
-CI-supplied credentials), never hand-edited. This checkout ships
-English source strings only.
+Translations are kept directly in the catalog (`ru`, `es`, `ko`, `zh-Hans`,
+`ja`); `validate-localization.py` requires every key in all six locales
+and rejects placeholder mismatches. `Scripts/localize.sh` (Crowdin CLI,
+CI-supplied credentials) is still available for future batches, but its
+download step can overwrite these entries, so reconcile before running it.
 
 ## Languages
 
-Interface ships in English (source). Translations for **Русский, Español,
-한국어, 中文, 日本語** are prepared in the localization workstream — they ride
-the standard `Localizable.xcstrings` catalog, so adding a locale needs no
-code changes. Want your language? Open a PR with the translated catalog.
+Interface ships in English (source) and five translations: **Русский**
+(`ru`), **Español** (`es`), **한국어** (`ko`), **中文 简体** (`zh-Hans`), and
+**日本語** (`ja`). The app follows your macOS preferred language; any other
+language shows English. Want your language? Open a PR with the translated
+catalog.
 
 ## License
 
