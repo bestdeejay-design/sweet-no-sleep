@@ -330,6 +330,9 @@ def validate_source_text(errors: list[str]) -> None:
     for path in sorted(source_root.rglob("*")):
         if not path.is_file():
             continue
+        if path.name == "Localizable.xcstrings":
+            # Translations live in the string catalog by design; code must stay Cyrillic-free.
+            continue
         try:
             content = path.read_text(encoding="utf-8")
         except (OSError, UnicodeError):
