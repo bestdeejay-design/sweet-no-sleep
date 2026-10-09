@@ -22,7 +22,9 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -31,6 +33,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CATALOG = ROOT / "Sources" / "SweetNoSleep" / "Localizable.xcstrings"
 REPORT_FLAG = "--localization-report"
 TIMEOUT_SECONDS = 60
+LIBRARY = "AppleLanguages"
 
 
 def fail(message: str) -> None:
@@ -68,6 +71,39 @@ def check_tables(bundles: list[Path], locales: list[str]) -> None:
             fail(f"missing compiled {locale}.lproj/Localizable.strings in the app bundle")
 
 
+@contextlib.contextmanager
+def apple_language(locale: str):
+    """Publish `AppleLanguages` in the global domain for the duration.
+
+    System Settings writes the language list to the global (`-g`) domain, and
+    that is what CFBundle reads when it chooses a bundle's localization. The
+    previous value is restored on the way out, so running this check leaves the
+    machine as it found it.
+    """
+    if shutil.which("defaults") is None:
+        print("SKIP AppleLanguages override: `defaults` is macOS-only.")
+        yield
+        return
+
+    def defaults(*arguments: str) -> subprocess.CompletedProcess:
+        return subprocess.run(["defaults", *arguments], capture_output=True, text=True)
+
+    previous = defaults("read", "-g", LIBRARY)
+    written = defaults("write", "-g", LIBRARY, "-array", locale)
+    if written.returncode != 0:
+        fail(f"could not write {LIBRARY} to the global domain: {written.stderr.strip()}")
+    check = defaults("read", "-g", LIBRARY)
+    if locale not in check.stdout:
+        fail(f"{LIBRARY} is {check.stdout.strip()!r} after writing {locale!r}")
+    try:
+        yield
+    finally:
+        if previous.returncode == 0 and previous.stdout.strip():
+            defaults("write", "-g", LIBRARY, previous.stdout.strip())
+        else:
+            defaults("delete", "-g", LIBRARY)
+
+
 def run_report(binary: Path, locale: str) -> dict:
     """Run the app once for this locale and return its report.
 
@@ -76,12 +112,13 @@ def run_report(binary: Path, locale: str) -> dict:
     real launch selects a language, and both should agree.
     """
     try:
-        completed = subprocess.run(
-            [str(binary), REPORT_FLAG, "--locale", locale, "-AppleLanguages", f"({locale})"],
-            capture_output=True,
-            text=True,
-            timeout=TIMEOUT_SECONDS,
-        )
+        with apple_language(locale):
+            completed = subprocess.run(
+                [str(binary), REPORT_FLAG, "--locale", locale, "-AppleLanguages", f"({locale})"],
+                capture_output=True,
+                text=True,
+                timeout=TIMEOUT_SECONDS,
+            )
     except subprocess.TimeoutExpired:
         fail(f"{locale}: {binary.name} {REPORT_FLAG} timed out after {TIMEOUT_SECONDS}s")
     if completed.returncode != 0:
@@ -108,6 +145,8 @@ def describe(report: dict) -> str:
         "mainBundle",
         "mainResources",
         "moduleResources",
+        "userDefaults",
+        "localeLanguages",
     ):
         if key in report:
             parts.append(f"{key}={report[key]!r}")

@@ -59,6 +59,10 @@ enum LocalizationSelfCheck {
             ("mainBundle", Bundle.main.bundlePath),
             ("mainResources", Bundle.main.resourceURL?.path ?? ""),
             ("moduleResources", Bundle(for: SelfCheckToken.self).resourceURL?.path ?? ""),
+            // Which of the places a process can publish AppleLanguages actually
+            // reached the bundle picker.
+            ("userDefaults", String(describing: UserDefaults.standard.object(forKey: "AppleLanguages"))),
+            ("localeLanguages", Locale.preferredLanguages.joined(separator: ",")),
         ]
         if let locale {
             fields.append((
