@@ -15,6 +15,16 @@ watches over your focus time.
 
 [Download the 1280 × 640 banner PNG](Resources/Art/Rendered/banner.png) · [editable banner SVG](Resources/Art/banner.svg) · [Open Graph SVG](Resources/Art/og-image.svg). The SVG files are the editable sources; `Scripts/render-media.sh` rebuilds raster assets on macOS. A successful macOS CI push commits the generated images to the task branch and uploads the media kit as an artifact.
 
+<p align="center">
+  <img src="Resources/Art/Rendered/kot-arbuz-demo.gif" alt="Kot-Arbuz, the watermelon cat: blinking, walking, eyes following the cursor" width="300"/>
+  <img src="Resources/Art/Rendered/kiwi-demo.gif" alt="Kiwi: procedural cat with gaze, blink, and leaf details" width="300"/>
+</p>
+
+**Live on your desktop.** Both cats blink, breathe, walk, and their eyes
+follow your cursor. While an AI agent works, the cat shows a green chest
+light and a session count; when one asks for approval — an amber question
+mark and a y/n bubble.
+
 ## The cats
 
 Two characters live in the app, and each one keeps its own name.
@@ -281,6 +291,13 @@ python3 Scripts/validate-localization.py
 Extra locales are generated via `Scripts/localize.sh` (Crowdin CLI,
 CI-supplied credentials), never hand-edited. This checkout ships
 English source strings only.
+
+## Languages
+
+Interface ships in English (source). Translations for **Русский, Español,
+한국어, 中文, 日本語** are prepared in the localization workstream — they ride
+the standard `Localizable.xcstrings` catalog, so adding a locale needs no
+code changes. Want your language? Open a PR with the translated catalog.
 
 ## License
 
