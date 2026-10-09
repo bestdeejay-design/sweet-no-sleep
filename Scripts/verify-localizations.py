@@ -69,9 +69,15 @@ def check_tables(bundles: list[Path], locales: list[str]) -> None:
 
 
 def run_report(binary: Path, locale: str) -> dict:
+    """Run the app once for this locale and return its report.
+
+    `--locale` makes the binary override `AppleLanguages` for itself; the
+    `-AppleLanguages` launch argument is passed as well because that is how a
+    real launch selects a language, and both should agree.
+    """
     try:
         completed = subprocess.run(
-            [str(binary), REPORT_FLAG, "-AppleLanguages", f"({locale})"],
+            [str(binary), REPORT_FLAG, "--locale", locale, "-AppleLanguages", f"({locale})"],
             capture_output=True,
             text=True,
             timeout=TIMEOUT_SECONDS,
@@ -87,6 +93,15 @@ def run_report(binary: Path, locale: str) -> dict:
     if not isinstance(report, dict) or not isinstance(report.get("values"), dict):
         fail(f"{locale}: unexpected report shape: {completed.stdout[:400]!r}")
     return report
+
+
+def describe(report: dict) -> str:
+    """The bundle facts the report carries, for a failure message."""
+    parts = []
+    for key in ("bundle", "preferred", "available", "development", "dictionary", "table"):
+        if key in report:
+            parts.append(f"{key}={report[key]!r}")
+    return ", ".join(parts)
 
 
 def main() -> int:
@@ -118,15 +133,14 @@ def main() -> int:
         wrong = sorted(key for key in expected if values.get(key) != expected[key])
         if wrong:
             sample = wrong[0]
-            fail(
-                f"{locale}: {len(wrong)}/{len(expected)} keys fell back to English, "
-                f"e.g. {sample!r} resolved to {values.get(sample)!r}, expected {expected[sample]!r}"
+            first = " | ".join(
+                f"{key} -> {values.get(key)!r} (expected {expected[key]!r})" for key in wrong[:3]
             )
-        preferred = report.get("preferred") or ["?"]
-        print(
-            f"{locale}: {len(expected)} keys resolved at runtime through Bundle.module "
-            f"(preferred: {', '.join(preferred)})"
-        )
+            fail(
+                f"{locale}: {len(wrong)}/{len(expected)} keys fell back to English. "
+                f"First: {first}. Bundle: {describe(report)}"
+            )
+        print(f"{locale}: {len(expected)} keys resolved at runtime through Bundle.module")
 
     print(
         f"Localization runtime check passed: {len(locales)} locales "

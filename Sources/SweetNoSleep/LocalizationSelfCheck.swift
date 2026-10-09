@@ -9,18 +9,6 @@ import Foundation
 /// `NSLocalizedString(key, tableName: nil, bundle: .module, value: key)` - and
 /// compare the results against the source catalog.
 ///
-/// The report is a JSON object on stdout:
-///
-/// ```json
-/// {"bundle": "...", "preferred": ["ru"], "keys": 240, "values": {"Settings": "<translated>"}}
-/// ```
-///
-/// It is driven from `main.swift`, before AppKit or SwiftUI start, so it runs on
-/// a headless CI runner and never touches the menu bar. The locale comes from
-/// the caller as a launch argument (`-AppleLanguages "(ru)"`), which is how
-/// macOS selects a language at launch; one process per locale keeps Foundation's
-/// bundle cache from reusing the first locale.
-///
 /// Kept free of non-ASCII text on purpose: `Scripts/validate-media.py` rejects
 /// Cyrillic under `Sources/` so a stray translation can never creep into code
 /// (the catalog is the only place translated copy belongs).
@@ -34,10 +22,21 @@ enum LocalizationSelfCheck {
     static func runIfRequested() -> Int32? {
         let arguments = CommandLine.arguments
         guard arguments.contains(flag) else { return nil }
-        guard let keys = catalogKeys(), !keys.isEmpty else {
-            FileHandle.standardError.write(
-                Data("localization report: no keys found in the bundled Localizable.xcstrings\n".utf8)
+
+        // One process per locale. The volatile argument domain is how a process
+        // overrides `AppleLanguages` for itself: it is what CFBundle reads when
+        // it picks a bundle's preferred localization, and it writes nothing to
+        // the user's defaults.
+        let locale = value(of: "--locale", in: arguments)
+        if let locale {
+            UserDefaults.standard.setVolatileDomain(
+                ["AppleLanguages": [locale]],
+                forName: UserDefaults.argumentDomain
             )
+        }
+
+        guard let keys = catalogKeys(), !keys.isEmpty else {
+            fail("no keys found in the bundled Localizable.xcstrings")
             return 1
         }
 
@@ -46,11 +45,34 @@ enum LocalizationSelfCheck {
             values[key] = L10n.text(key)
         }
 
-        let bundlePath = Bundle.module.bundlePath
-        let preferred = Bundle.module.preferredLocalizations
-        var output = #"{"bundle":"\#(escaped(bundlePath))","preferred":["#
-        output += preferred.map { #""\#(escaped($0))""# }.joined(separator: ",")
-        output += #"],"keys":\#(keys.count),"values":{"#
+        let bundle = Bundle.module
+        var fields: [(String, String)] = [
+            ("bundle", bundle.bundlePath),
+            ("locale", locale ?? ""),
+            ("preferred", bundle.preferredLocalizations.joined(separator: ",")),
+            ("available", bundle.localizations.joined(separator: ",")),
+            ("development", bundle.developmentLocalization ?? ""),
+            ("keys", String(keys.count)),
+        ]
+        if let locale {
+            fields.append((
+                "table",
+                bundle.path(forResource: "Localizable", ofType: "strings", inDirectory: nil, forLocalization: locale) ?? ""
+            ))
+            // `NSDictionary` uses the property-list parser, not the CFBundle
+            // strings loader, so a non-zero count here with English values in
+            // the report means the file is fine and the loader rejected it.
+            if let table = bundle.url(forResource: "Localizable", withExtension: "strings", subdirectory: nil, localization: locale),
+               let parsed = NSDictionary(contentsOf: table)
+            {
+                fields.append(("dictionary", String(parsed.count)))
+            } else {
+                fields.append(("dictionary", "0"))
+            }
+        }
+
+        var output = "{" + fields.map { #""\#(escaped($0.0))":"\#(escaped($0.1))""# }.joined(separator: ",")
+        output += #","values":{"#
         output += keys.map { #""\#(escaped($0))":"\#(escaped(values[$0] ?? ""))""# }.joined(separator: ",")
         output += "}}\n"
         FileHandle.standardOutput.write(Data(output.utf8))
@@ -67,6 +89,15 @@ enum LocalizationSelfCheck {
               let strings = catalog["strings"] as? [String: Any]
         else { return nil }
         return strings.keys.sorted()
+    }
+
+    private static func value(of option: String, in arguments: [String]) -> String? {
+        guard let index = arguments.firstIndex(of: option), index + 1 < arguments.count else { return nil }
+        return arguments[index + 1]
+    }
+
+    private static func fail(_ message: String) {
+        FileHandle.standardError.write(Data("localization report: \(message)\n".utf8))
     }
 
     private static func escaped(_ text: String) -> String {
