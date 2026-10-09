@@ -5,6 +5,15 @@ The format follows Keep a Changelog, versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+- **Character animation loops (issue #27):** `Scripts/render-character-animations.py`
+  renders both cats headlessly onto a transparent canvas — no display, no
+  macOS capture. It ports `SpriteCharacterRenderer.swift` (Kot-Arbuz, over the
+  committed sprite layers and the `pet.json` rig) and `KiwiPetView.drawPet`
+  (Kiwi, pure geometry) to Pillow: breathing, blink, cursor gaze, walk cycle,
+  dance, petting hearts, waiting glyph, agent badge with session pips, and the
+  celebration effects. Output is one 420 × 420, 15 s, 12.5 fps loop per cat in
+  animated WebP (full alpha) and GIF (fallback), covering idle → walk → dance →
+  hearts → waiting → celebration.
 - **Localization fix:** `Scripts/compile-localizations.py` now emits classic
   OpenStep `.strings` tables (`"key" = "value";`, UTF-16LE) instead of
   property lists. The CFBundle strings loader ignores a plist table, so

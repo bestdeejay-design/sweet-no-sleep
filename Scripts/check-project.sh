@@ -24,6 +24,9 @@ fi
 python3 Scripts/validate-skins.py
 if python3 -c 'import PIL, numpy' >/dev/null 2>&1; then
   python3 Scripts/prepare-character-assets.py --check
+  # Verifies the committed transparent animation loops; skips if they were
+  # never rendered (Scripts/render-character-animations.py).
+  python3 Scripts/render-character-animations.py --check
 else
   printf 'SKIP character layer check: Pillow and NumPy are not installed.\n'
 fi

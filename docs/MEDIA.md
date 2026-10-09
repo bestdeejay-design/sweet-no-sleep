@@ -51,6 +51,44 @@ runtime. Each preview composes that pack's own sprite layers (legs, tail, body,
 head) and draws the rig's vector eyes at their socket anchors, so the card
 shows exactly what the desktop pet draws.
 
+## Character animation loops
+
+`Scripts/render-character-animations.py` renders both cats headlessly, on a
+transparent canvas, with no display and no macOS capture step. It is a port of
+the two SwiftUI renderers to Pillow:
+
+| Output | Source |
+| --- | --- |
+| `animation-kot-arbuz.webp` / `.gif` | `SpriteCharacterRenderer.swift` + `Resources/PetSkins/kot-arbuz/{pet.json, *.png}` |
+| `animation-kiwi.webp` / `.gif` | `KiwiPetView.drawPet` + `Resources/PetSkins/kiwi/skin.json` |
+
+Each file is a 420 × 420 loop, 188 frames at 12.5 fps, 15 s — the canvas and
+frame cadence of the existing `*-demo.gif` assets — showing, in order:
+
+| Shot | Mood | Seconds | Shows |
+| --- | --- | --- | --- |
+| idle | `idle` | 3.0 | breathing, blink, eyes tracking a synthetic cursor |
+| walk | `walking` | 2.4 | leg cycle / paw step |
+| dance | `dancing` | 2.4 | sway + hop + paw bounce |
+| hearts | `celebrating` | 2.4 | petting hearts |
+| waiting | `waitingForApproval` | 2.4 | amber halo, `?` glyph, raised paw, badge |
+| celebration | `celebrating` | 2.4 | celebration effect plus the agent badge and pips |
+
+WebP is the deliverable that matters: it keeps the full alpha channel, so the
+anti-aliased sprite edges stay smooth. The GIF is a compatibility fallback and
+inevitably has 1-bit alpha. Regenerate both with:
+
+```bash
+python3 Scripts/render-character-animations.py            # both cats
+python3 Scripts/render-character-animations.py --cat kiwi
+python3 Scripts/render-character-animations.py --check    # verify what is committed
+```
+
+`check-project.sh` runs `--check` when Pillow and NumPy are available and skips
+cleanly when the loops were never rendered. Rendering needs those two packages
+and is a development-only step: the app never runs this script, and the
+committed loops are the deliverable.
+
 ## Design guidance
 
 - **`app-icon.svg` is frozen:** it is the user-approved golden build's icon, and `Scripts/validate-media.py` pins its SHA-256. Do not restyle, re-export, or "improve" it; any change requires a new user decision in issue #5. Keep the complete iconset, macOS `iconutil` pipeline, and 16–1024 px sizes in sync with the source.
