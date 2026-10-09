@@ -5,6 +5,10 @@ The format follows Keep a Changelog, versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+- Petting hearts on the sprite path in both animation states (B-09). FPS
+  overlay on-screen hint (B-10). Break/waiting bubbles sized for the 45 pt
+  rig (B-11). Skin picker auto-reloads the user folder (B-12). Portfolio
+  case copy + `app-states.jpg?v=4` (B-13).
 - Assertion names follow the active source class (manual/focus/agent);
   Hold diagnostics lists awake sources (B-02). Dashboard height covers
   the six default state combinations (B-03). Agent events route with

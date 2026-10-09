@@ -91,6 +91,8 @@ final class SweetNoSleepModel: ObservableObject {
     private var manualAwake = false
     private var agentLeaseTimer: Timer?
     private var agentWebhookServer: AgentWebhookServer?
+    private var skinWatchTimer: Timer?
+    private var lastSkinsSignature = ""
     // Last system wake time. Taps within the grace window are ignored so a
     // click meant to wake the Mac does not accidentally poke the pet.
     private var lastSystemWakeDate: Date?
@@ -420,6 +422,8 @@ final class SweetNoSleepModel: ObservableObject {
         }
         updateDiagnostics()
         schedulePlayfulMoment()
+        lastSkinsSignature = Self.skinsFolderSignature()
+        startSkinFolderWatch()
     }
 
     // MARK: Awake controls
@@ -431,6 +435,37 @@ final class SweetNoSleepModel: ObservableObject {
         if !availableSkins.contains(where: { $0.id == selectedSkinID }) {
             selectedSkinID = availableSkins[0].id
         }
+        lastSkinsSignature = Self.skinsFolderSignature()
+    }
+
+    private func startSkinFolderWatch() {
+        skinWatchTimer?.invalidate()
+        skinWatchTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.reloadSkinsIfFolderChanged()
+            }
+        }
+    }
+
+    private func reloadSkinsIfFolderChanged() {
+        let signature = Self.skinsFolderSignature()
+        guard signature != lastSkinsSignature else { return }
+        reloadSkinLibrary()
+    }
+
+    private static func skinsFolderSignature() -> String {
+        guard let directory = PetSkinLibrary.userDirectory else { return "" }
+        let fm = FileManager.default
+        guard let items = try? fm.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: [.contentModificationDateKey],
+            options: [.skipsHiddenFiles]
+        ) else { return directory.path }
+        let parts = items.map { url -> String in
+            let date = (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+            return "\(url.lastPathComponent):\(date.timeIntervalSince1970)"
+        }.sorted()
+        return parts.joined(separator: "|")
     }
 
     func setKeepAwake(_ enabled: Bool) {
@@ -526,6 +561,8 @@ final class SweetNoSleepModel: ObservableObject {
     }
 
     func shutdown() {
+        skinWatchTimer?.invalidate()
+        skinWatchTimer = nil
         stopWebhookServer()
         stopKeepingAwake()
         powerKeeper.shutdown()

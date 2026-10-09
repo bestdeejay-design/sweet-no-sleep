@@ -22,7 +22,7 @@ struct PanelLayoutSmokeTest {
 
         // Waiting cue on screen: bubble height and wide-enough width.
         let waiting = PetPanelLayout.contentSize(petSize: pet, showsWaitingBubble: true, isBreakDue: true)
-        expect(waiting.height, side + 92, "waiting wins over break reminder")
+        expect(waiting.height, side + 100, "waiting wins over break reminder")
         expect(waiting.width, max(side, 228), "waiting width")
 
         // Dismissed waiting cue while the agent still waits: no bubble space.
@@ -33,10 +33,10 @@ struct PanelLayoutSmokeTest {
         expect(dismissed.width, side, "dismissed waiting cue width")
 
         let breakOnly = PetPanelLayout.contentSize(petSize: pet, showsWaitingBubble: false, isBreakDue: true)
-        expect(breakOnly.height, side + 88, "break reminder height")
+        expect(breakOnly.height, side + 96, "break reminder height")
 
-        expect(PetPanelLayout.topInset(showsWaitingBubble: true, isBreakDue: false), 92, "gaze inset matches waiting bubble")
-        expect(PetPanelLayout.topInset(showsWaitingBubble: false, isBreakDue: true), 88, "gaze inset matches break bubble")
+        expect(PetPanelLayout.topInset(showsWaitingBubble: true, isBreakDue: false), 100, "gaze inset matches waiting bubble")
+        expect(PetPanelLayout.topInset(showsWaitingBubble: false, isBreakDue: true), 96, "gaze inset matches break bubble")
         expect(PetPanelLayout.topInset(showsWaitingBubble: false, isBreakDue: false), 0, "gaze inset without bubble")
 
         if failures > 0 {

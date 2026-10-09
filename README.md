@@ -38,7 +38,9 @@ of his own: the base rind, **Kot-Arbuz Moonlight** (moon-dust stars) and
 ![Kot-Arbuz skin card: the watermelon cat on a mint-to-blush card with his palette swatches](Resources/Art/Rendered/preview-kot-arbuz.png)
 
 See the [Kot-Arbuz character case on dajet.ru](https://dajet.ru/#project-16)
-for the design, the sprite layers, and the app states side by side.
+for the design, the layered rig and gaze, three bundled looks, and the
+app-states strip (`app-states.jpg?v=4`). Copy for that page lives in
+`docs/PORTFOLIO_CASE.md`.
 
 ## Features
 

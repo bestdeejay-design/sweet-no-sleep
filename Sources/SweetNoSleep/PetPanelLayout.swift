@@ -12,9 +12,11 @@ import Foundation
 /// so a dismissed cue occupies no space anywhere.
 enum PetPanelLayout {
     static let waitingBubbleWidth: CGFloat = 228
-    static let waitingBubbleHeight: CGFloat = 92
+    static let waitingBubbleHeight: CGFloat = 100
     static let breakBubbleWidth: CGFloat = 228
-    static let breakBubbleHeight: CGFloat = 88
+    /// 96 pt clears the layered-rig head at the 45 pt pet size (the old 88 pt
+    /// formula predates the head layer).
+    static let breakBubbleHeight: CGFloat = 96
     /// Transparent margin the pet canvas keeps around the sprite.
     static let petCanvasMargin: CGFloat = 48
 

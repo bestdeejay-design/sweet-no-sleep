@@ -151,4 +151,4 @@ CFBundleVersion auto-increment). `check-project.sh` = shell syntax +
 localization (233) + media + skins + character assets + agent hooks (10
 events) + swift build + panel-wander smoke test. CI: `.github/workflows/
 macos.yml` builds and verifies bundle contents. Portfolio site: `ksu` repo →
-dajet.ru (Pages), case `#project-16`; image swaps must bump `?v=N`.
+dajet.ru (Pages), case `#project-16`; image swaps must bump `?v=N` (app-states strip is currently `?v=4`). See `docs/PORTFOLIO_CASE.md`.

@@ -152,13 +152,11 @@ enum SpriteCharacterRenderer {
 
         // Reduce Motion / animations off: a static pose with no particles. The
         // non-motion awareness cues (halo, badge light, waiting glyph) stay.
-        if animated {
-            if isCelebrating {
-                drawPettingHearts(in: &context, rect: rect, time: time, palette: palette, animated: animated)
-            }
-            if isCelebrating || isDancing {
-                drawCelebration(in: &context, center: CGPoint(x: rect.midX, y: rect.minY + rect.height * 0.5), radius: side * 0.44, time: time, palette: palette, animated: animated)
-            }
+        if isCelebrating {
+            drawPettingHearts(in: &context, rect: rect, time: time, palette: palette, animated: animated)
+        }
+        if animated, isCelebrating || isDancing {
+            drawCelebration(in: &context, center: CGPoint(x: rect.midX, y: rect.minY + rect.height * 0.5), radius: side * 0.44, time: time, palette: palette, animated: animated)
         }
         if mood == .curious || mood == .breakReminder {
             let sparkle = CGPoint(x: rect.maxX - side * 0.16, y: rect.minY + side * 0.20)

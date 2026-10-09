@@ -2390,6 +2390,16 @@
           }
         }
       }
+    },
+    "New packs in that folder appear in the picker automatically; Refresh list still works.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New packs in that folder appear in the picker automatically; Refresh list still works."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

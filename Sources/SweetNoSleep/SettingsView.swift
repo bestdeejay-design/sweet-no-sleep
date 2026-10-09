@@ -159,6 +159,7 @@ private struct CompanionSettingsPane: View {
                 }
 
                 Text(L10n.text("User folder: ~/Library/Application Support/SweetNoSleep/PetSkins - place one skin.json in each skin folder."))
+                Text(L10n.text("New packs in that folder appear in the picker automatically; Refresh list still works."))
                     .font(.system(size: 10, design: .rounded))
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)

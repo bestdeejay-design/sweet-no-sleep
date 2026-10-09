@@ -13,7 +13,7 @@ this pack does not restate or retranslate it.
 | `kot-arbuz.jpg` | 2000 × 2000 | 149 KB | 200 KB | `Resources/Characters/kot-arbuz/kot-arbuz.png` (3756², opaque white backdrop), flattened to white, LANCZOS downscale | `portfolio/characters/kot-arbuz/kot-arbuz.jpg` (works-grid cover + "Final character" gallery) |
 | `skin-card.jpg` | 1200 × 800 | 66 KB | 300 KB | `Resources/PetSkins/kot-arbuz/{body,tail}.png` sprite layers, composed like `preview-kot-arbuz@2x.png` at scale 5 (sprite drawn at 752 px — downscale only) | `portfolio/characters/kot-arbuz/skin-card.jpg` ("Skin card" gallery; overlay content is ~1120 px wide) |
 | `og-16.jpg` | 1200 × 630 | 49 KB | 100 KB | the same transparent sprite layers — **never the master PNG**, whose white backdrop would paint a white card on the dark page; silhouette-cropped, 520 px tall, centred, soft glow in `#7FAF5E` / `#FD5D5D` | `og-16.jpg` at the site root (og meta of `project-16/index.html`) |
-| `app-states.jpg` | 2200 × 443 | 103 KB | 300 KB | `artifacts/2026-10-08-pr16-acceptance-evidence.png` (idle / 2 agents working / waiting bubble / after done / 45 pt minimum) | `portfolio/characters/kot-arbuz/app-states.jpg` ("Alive in the app" gallery) |
+| `app-states.jpg` | 2200 × 443 | 103 KB | 300 KB | current-build strip (idle / 2 agents working / waiting bubble / after done / 45 pt; layered rig + gaze). Serve as `app-states.jpg?v=4` | `portfolio/characters/kot-arbuz/app-states.jpg?v=4` ("Alive in the app" gallery) |
 
 All four: JPEG, quality 85, progressive, optimized. Rebuild with `python3 handover/media/build_media.py`
 (needs Pillow + NumPy); re-check with `python3 handover/media/verify_media.py`. Both are development

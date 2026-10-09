@@ -55,6 +55,8 @@ The validator also accepts a user pack directory or one manifest:
 python3 Scripts/validate-skins.py /path/to/ocean
 ```
 
+Hidden FPS overlay: `defaults write com.sweetnosleep.kiwicat SNSDebugFPSOverlay -bool true` then relaunch. The pet canvas shows a green `N fps · debug overlay` hint (used for 60 fps acceptance). Disable with `-bool false`.
+
 ## Mac acceptance checklist
 
 On a Mac, run `./Scripts/check-project.sh`, then `./Scripts/build-app.sh release`, open the generated `.app`, and test:

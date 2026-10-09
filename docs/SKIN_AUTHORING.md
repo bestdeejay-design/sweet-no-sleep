@@ -23,7 +23,7 @@ For example:
 ~/Library/Application Support/SweetNoSleep/PetSkins/ocean/skin.json
 ```
 
-The app reads manifests at launch and when **Refresh list** is clicked; a restart is not required. Bundled packs are in `Resources/PetSkins/` and are copied into the `.app` by `Scripts/build-app.sh`.
+The app reads manifests at launch, when **Refresh list** is clicked, and when the user skins folder changes (polled about every 2 seconds). A restart is not required. Bundled packs are in `Resources/PetSkins/` and are copied into the `.app` by `Scripts/build-app.sh`.
 
 ## `skin.json` format
 
