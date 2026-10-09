@@ -74,32 +74,10 @@ jobs:
 
       - name: Verify compiled localizations
         run: |
-          APP="dist/Sweet No Sleep — Kiwi Cat.app"
-          python3 - "$APP/Contents/Resources" <<'PY'
-          import json
-          import pathlib
-          import subprocess
-          import sys
-
-          def fail(message, resources):
-              listing = " | ".join(str(path.relative_to(resources)) for path in sorted(resources.rglob("*")))[:3000]
-              print(f"::error title=Localization bundle::{message}. Bundle contents: {listing}")
-              sys.exit(1)
-
-          resources = pathlib.Path(sys.argv[1])
-          bundles = sorted(resources.glob("*.bundle"))
-          if not bundles:
-              fail("No SwiftPM resource bundle in the app", resources)
-          expected = {"es": "Ajustes", "ja": "設定", "ko": "설정", "ru": "Настройки", "zh-Hans": "设置"}
-          for locale, value in expected.items():
-              tables = [path for bundle in bundles for path in bundle.rglob(f"{locale}.lproj/Localizable.strings")]
-              if not tables:
-                  fail(f"Missing compiled {locale}.lproj/Localizable.strings", resources)
-              data = json.loads(subprocess.check_output(["plutil", "-convert", "json", "-o", "-", str(tables[0])]))
-              if data.get("Settings") != value:
-                  fail(f"{locale}: 'Settings' resolves to {data.get('Settings')!r}, expected {value!r}", resources)
-              print(f"{locale}: Settings -> {value}")
-          PY
+          # Resolves every key of every locale through NSLocalizedString in
+          # Bundle.module, inside the assembled app: table presence alone does
+          # not prove the strings loader accepts the file.
+          python3 Scripts/verify-localizations.py "dist/Sweet No Sleep — Kiwi Cat.app"
 
       - name: Commit macOS-rendered media outputs to the task branch
         if: github.event_name == 'push' && github.ref == 'refs/heads/arena/e650720d-sweet-no-sleep'

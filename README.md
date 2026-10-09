@@ -293,9 +293,20 @@ Translations are kept directly in the catalog (`ru`, `es`, `ko`, `zh-Hans`,
 and rejects placeholder mismatches. SwiftPM copies the catalog unchanged,
 so `Scripts/build-app.sh` compiles it into per-locale tables
 (`Scripts/compile-localizations.py`) inside the app bundle. A plain
-`swift build` or `swift run` shows English. `Scripts/localize.sh` (Crowdin CLI,
-CI-supplied credentials) is still available for future batches, but its
-download step can overwrite these entries, so reconcile before running it.
+`swift build` or `swift run` shows English.
+
+The tables are written in the classic OpenStep strings format
+(`"key" = "value";`, UTF-16LE). That detail is load-bearing: a binary or XML
+property list reads back fine with `plutil` and
+`NSDictionary(contentsOfFile:)`, but the CFBundle strings loader ignores it,
+and `NSLocalizedString` quietly returns the English key. After assembling the
+app, `Scripts/verify-localizations.py` resolves every key of every locale
+through `L10n.text` in the running binary and compares it against the
+catalog, so a format regression fails CI instead of shipping English.
+
+`Scripts/localize.sh` (Crowdin CLI, CI-supplied credentials) is still
+available for future batches, but its download step can overwrite these
+entries, so reconcile before running it.
 
 ## Languages
 

@@ -5,6 +5,15 @@ The format follows Keep a Changelog, versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+- **Localization fix:** `Scripts/compile-localizations.py` now emits classic
+  OpenStep `.strings` tables (`"key" = "value";`, UTF-16LE) instead of
+  property lists. The CFBundle strings loader ignores a plist table, so
+  `NSLocalizedString` silently returned the English key even though the
+  file was in the bundle and `plutil` could read it. `L10n` ships a
+  `--localization-report` self-check and `Scripts/verify-localizations.py`
+  resolves every key of all six locales through `Bundle.module` in the
+  assembled app on CI, so a format regression fails the build instead of
+  shipping English.
 - XCUITest skeleton under `Tests/UITests/` (B-14, not wired to CI).
   CODE_AUDIT defers state lists to BACKLOG (B-15). ksu cache-bust note
   in `docs/KSU_DESIGN_RULES.md` (B-18).

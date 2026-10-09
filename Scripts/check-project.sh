@@ -11,6 +11,10 @@ printf 'Shell syntax checks passed.\n'
 
 python3 -m json.tool Sources/SweetNoSleep/Localizable.xcstrings >/dev/null
 python3 Scripts/validate-localization.py
+python3 Scripts/compile-localizations.py --self-test
+# Real NSLocalizedString lookups through Bundle.module; needs the assembled app,
+# so it skips until Scripts/build-app.sh has run (macOS only).
+python3 Scripts/verify-localizations.py "dist/Sweet No Sleep — Kiwi Cat.app"
 if [[ "$(uname -s)" == "Darwin" ]]; then
   Scripts/render-media.sh
   python3 Scripts/validate-media.py --check-rendered
