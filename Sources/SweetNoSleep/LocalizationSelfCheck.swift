@@ -53,6 +53,12 @@ enum LocalizationSelfCheck {
             ("available", bundle.localizations.joined(separator: ",")),
             ("development", bundle.developmentLocalization ?? ""),
             ("keys", String(keys.count)),
+            // Where `Bundle.module` could have pointed instead: the generated
+            // accessor takes the first candidate that exists, so a stale copy
+            // in the build directory can win over the app's.
+            ("mainBundle", Bundle.main.bundlePath),
+            ("mainResources", Bundle.main.resourceURL?.path ?? ""),
+            ("moduleResources", Bundle(for: SelfCheckToken.self).resourceURL?.path ?? ""),
         ]
         if let locale {
             fields.append((
@@ -95,6 +101,10 @@ enum LocalizationSelfCheck {
         guard let index = arguments.firstIndex(of: option), index + 1 < arguments.count else { return nil }
         return arguments[index + 1]
     }
+
+    /// Anchor class for `Bundle(for:)`, the same trick SwiftPM uses to find
+    /// the resource bundle from inside the module.
+    private final class SelfCheckToken {}
 
     private static func fail(_ message: String) {
         FileHandle.standardError.write(Data("localization report: \(message)\n".utf8))

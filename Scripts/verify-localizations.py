@@ -98,7 +98,17 @@ def run_report(binary: Path, locale: str) -> dict:
 def describe(report: dict) -> str:
     """The bundle facts the report carries, for a failure message."""
     parts = []
-    for key in ("bundle", "preferred", "available", "development", "dictionary", "table"):
+    for key in (
+        "bundle",
+        "preferred",
+        "available",
+        "development",
+        "dictionary",
+        "table",
+        "mainBundle",
+        "mainResources",
+        "moduleResources",
+    ):
         if key in report:
             parts.append(f"{key}={report[key]!r}")
     return ", ".join(parts)
