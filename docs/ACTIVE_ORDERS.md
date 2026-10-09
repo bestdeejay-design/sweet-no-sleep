@@ -37,3 +37,16 @@ https://github.com/bestdeejay-design/sweet-no-sleep/issues/27#issuecomment-60772
   idle blink/gaze → walk → dance → hearts → waiting glyph → celebration.
 - The capture-script part of the original order is cancelled; keep
   `Scripts/demo-*.swift` (useful later).
+
+## Order 3 — Batch D from `docs/BACKLOG.md` (B-20, B-21, B-24)
+
+Added 2026-10-09 after live use. Small, scoped fixes:
+
+- **B-20:** waiting-cue discoverability — dashboard row shows the question
+  text; reopening the dashboard re-arms the bubble for undismissed waiting
+  sessions; "End agent sessions" lists what it ends.
+- **B-21:** hidden `sweetnosleep://debug/mood` trigger (see backlog entry).
+- **B-24:** retire or gate `localize.sh` (superseded by direct translation).
+
+B-22 (native review) stays with the maintainer. One PR, keep
+`check-project.sh` green.

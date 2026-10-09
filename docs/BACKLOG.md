@@ -93,6 +93,11 @@ UI tests; portfolio image swaps need manual cache-busting; docs scatter.
 
 - **B-20 · Waiting-cue discoverability.** Live confusion: a stale hook session showed "1 waiting" but the user could not find the question — the bubble hides permanently after "Not now" (`dismissedWaitingIDs`) and dashboard rows show only short ids/states. *Accept:* dashboard row shows the question text; opening the dashboard re-arms the bubble for undismissed waiting sessions; "End agent sessions" confirm mentions which sessions end.
 
+- **B-21 · Debug mood trigger.** Promo filming was painful: playful moods are random with a 60 s floor, so capturing the dance required blind waiting. *Accept:* hidden `sweetnosleep://debug/mood?mood=dancing&duration=4` (and `?list=1`) behind `agentBridge.enabled`; undocumented in README, documented in CODE_AUDIT; lets demos and tests trigger any `KiwiMood` deterministically.
+- **B-22 · Native-speaker localization review.** PR #26 translations were written by the arena; RU/ES wording, gender assumptions (pet = masculine), and KO/ZH/JA nuance need a human pass. *Accept:* maintainer/native review notes applied; validator stays green.
+- **B-23 · Notarized public builds.** v1.0.0 ships ad-hoc signed (right-click → Open). For wider distribution: Developer ID signing + notarization, or document the friction prominently; consider update delivery (manual re-download vs Sparkle). *Accept:* a release whose first launch needs no workaround, or a README banner that survives contact with a real user.
+- **B-24 · Retire `localize.sh`.** The Crowdin-based script predates PR #26's direct-translation flow and can overwrite hand-edited catalog entries. *Accept:* script removed or clearly gated; README workflow updated to match how localization actually happens now.
+
 ## Suggested sequencing
 
 1. B-01 (verify on Mac — 15 min) → B-03/B-02 (small fixes) → B-04 (runbook).
