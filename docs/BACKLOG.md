@@ -18,10 +18,12 @@ UI tests; portfolio image swaps need manual cache-busting; docs scatter.
 
 ## P0 — correctness / user-visible bugs
 
-- **B-01 · Verify Approve-clip fix on Mac.** Arena's audit commit (`09ed5a6`,
-  issue #21 P0) reworked the bubble-dismiss path; maintainer confirmed the
-  bug live but the fix is not yet re-verified. *Accept:* waiting bubble →
-  Approve → no clipping at 45/132/170 pt, recorded side-by-side.
+- **B-01 · ✅ Verified fixed (2026-10-09).** Arena's audit commit (`09ed5a6`,
+  issue #21 P0) reworked the bubble-dismiss path. Live Mac verification with
+  a scripted Approve click at 45/132/170 pt, frames captured 0.15 s after the
+  click (mid-resize) and settled: the pet renders complete in every frame,
+  panel returns to petSide, waiting cue dismissed while the agent keeps
+  waiting (badge stays amber). Evidence: maintainer acceptance session.
 - **B-02 · Assertion naming.** With manual mode on, agent activity is
   invisible in `pmset` (first source names the assertion). *Accept:* either
   rename assertion when a new source class arrives, or expose per-source
