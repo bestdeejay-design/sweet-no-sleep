@@ -200,7 +200,7 @@ private struct CompanionSettingsPane: View {
                         Slider(value: Binding(
                             get: { Double(model.playfulMomentIntervalSeconds) },
                             set: { model.playfulMomentIntervalSeconds = Int($0) }
-                        ), in: 60...120, step: 15)
+                        ), in: 15...120, step: 15)
                         .tint(Color(hex: 0x74C987))
                         .accessibilityLabel(L10n.text("Playful moment interval"))
                     }

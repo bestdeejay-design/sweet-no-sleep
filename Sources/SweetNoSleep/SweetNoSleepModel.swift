@@ -352,7 +352,7 @@ final class SweetNoSleepModel: ObservableObject {
         animationsEnabled = defaults.object(forKey: Key.animationsEnabled) as? Bool ?? true
         playfulMomentsEnabled = defaults.object(forKey: Key.playfulMomentsEnabled) as? Bool ?? true
         playfulMomentIntervalSeconds = min(
-            max(defaults.object(forKey: Key.playfulMomentIntervalSeconds) as? Int ?? 90, 60),
+            max(defaults.object(forKey: Key.playfulMomentIntervalSeconds) as? Int ?? 90, 15),
             120
         )
         playfulDancingWeight = min(
@@ -1204,7 +1204,7 @@ final class SweetNoSleepModel: ObservableObject {
               playfulDancingWeight + playfulStretchingWeight + playfulCuriousWeight > 0
         else { return }
 
-        let preferredInterval = Double(min(max(playfulMomentIntervalSeconds, 60), 120))
+        let preferredInterval = Double(min(max(playfulMomentIntervalSeconds, 15), 120))
         let minimumDelay = max(60, preferredInterval * 0.9)
         let maximumDelay = min(120, preferredInterval * 1.1)
         let delay = TimeInterval.random(in: minimumDelay...maximumDelay)
