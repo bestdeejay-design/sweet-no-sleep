@@ -98,7 +98,7 @@ def main() -> int:
 
     app: Path = arguments.app
     binary = app / "Contents" / "MacOS" / arguments.binary
-    if not app.is_dir() or not binary.is_executable():
+    if not app.is_dir() or not binary.is_file():
         print(f"SKIP localization runtime check: {binary} is not built yet.")
         return 0
 
