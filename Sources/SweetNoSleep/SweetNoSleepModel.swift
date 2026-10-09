@@ -1205,8 +1205,10 @@ final class SweetNoSleepModel: ObservableObject {
         else { return }
 
         let preferredInterval = Double(min(max(playfulMomentIntervalSeconds, 15), 120))
-        let minimumDelay = max(60, preferredInterval * 0.9)
-        let maximumDelay = min(120, preferredInterval * 1.1)
+        // Keep the random window valid even at short intervals (15 s):
+        // clamp the jitter band around the preferred interval.
+        let minimumDelay = preferredInterval * 0.9
+        let maximumDelay = max(minimumDelay + 1, min(120, preferredInterval * 1.25))
         let delay = TimeInterval.random(in: minimumDelay...maximumDelay)
         playfulTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
             Task { @MainActor [weak self] in
