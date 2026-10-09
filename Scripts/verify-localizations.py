@@ -3,14 +3,18 @@
 
 Table presence is not enough: the CFBundle strings loader silently rejects a
 `Localizable.strings` it cannot parse and `NSLocalizedString` then returns the
-English key. So this script asks the app itself - it runs the menu-bar binary
-with `--localization-report`, which resolves every catalog key through
-`L10n.text` (that is, `NSLocalizedString(key, tableName: nil, bundle: .module,
-value: key)`) - and compares the result against `Localizable.xcstrings`.
+English key. So this script asks the app itself to resolve the strings, by
+running the menu-bar binary with `--localization-report`, and compares the
+results against `Localizable.xcstrings`.
 
-One process per locale with `-AppleLanguages "(<locale>)"`, which is how macOS
-selects a language at launch; a fresh process avoids Foundation's bundle cache
-handing the first locale to every later lookup.
+Each locale gets its own scratch bundle: a copy of the shipped
+`<locale>.lproj/Localizable.strings` in a bundle that carries only that locale
+and declares it as its development region. CFBundle has no choice there, so the
+lookup is deterministic - the CI answer does not depend on the machine's
+language list, which CFBundle may read from a preferences domain a test process
+cannot influence. The same run also reports the facts about `Bundle.module`
+itself (is the locale discovered, does its table resolve, does it parse), so a
+placement problem is still caught.
 
 Requires the assembled app bundle, so it only runs on macOS (or wherever the
 bundle was built). It skips with a message when the bundle is absent, so
@@ -22,18 +26,28 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import contextlib
 import json
+import plistlib
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CATALOG = ROOT / "Sources" / "SweetNoSleep" / "Localizable.xcstrings"
 REPORT_FLAG = "--localization-report"
 TIMEOUT_SECONDS = 60
-LIBRARY = "AppleLanguages"
+
+# A minimal macOS-style bundle. `CFBundleDevelopmentRegion` is the lever: with
+# only one localization present, it is what CFBundle falls back to, so the
+# lookup happens in the locale under test no matter what the machine prefers.
+SCRATCH_INFO_PLIST = {
+    "CFBundleIdentifier": "com.sweetnosleep.localizationcheck",
+    "CFBundleName": "LocalizationCheck",
+    "CFBundlePackageType": "BNDL",
+    "CFBundleInfoDictionaryVersion": "6.0",
+}
 
 
 def fail(message: str) -> None:
@@ -63,62 +77,37 @@ def resource_bundles(app: Path) -> list[Path]:
     return bundles
 
 
-def check_tables(bundles: list[Path], locales: list[str]) -> None:
-    """Cheap structural gate: every locale ships a table inside the bundle."""
-    for locale in locales:
-        tables = [bundle for bundle in bundles if (bundle / f"{locale}.lproj" / "Localizable.strings").is_file()]
-        if not tables:
-            fail(f"missing compiled {locale}.lproj/Localizable.strings in the app bundle")
+def shipped_table(bundles: list[Path], locale: str) -> Path:
+    """The compiled table for `locale` inside the app's own resource bundle."""
+    for bundle in bundles:
+        candidate = bundle / f"{locale}.lproj" / "Localizable.strings"
+        if candidate.is_file():
+            return candidate
+    fail(f"missing compiled {locale}.lproj/Localizable.strings in the app bundle")
 
 
-@contextlib.contextmanager
-def apple_language(locale: str):
-    """Publish `AppleLanguages` in the global domain for the duration.
+def build_scratch_bundle(root: Path, locale: str, table: Path) -> Path:
+    """A bundle whose only localization is `locale`, holding a copy of `table`."""
+    bundle = root / f"{locale}.bundle"
+    contents = bundle / "Contents"
+    target = contents / "Resources" / f"{locale}.lproj"
+    target.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(table, target / "Localizable.strings")
+    info = dict(SCRATCH_INFO_PLIST)
+    info["CFBundleDevelopmentRegion"] = locale
+    with (contents / "Info.plist").open("wb") as handle:
+        plistlib.dump(info, handle, fmt=plistlib.FMT_XML)
+    return bundle
 
-    System Settings writes the language list to the global (`-g`) domain, and
-    that is what CFBundle reads when it chooses a bundle's localization. The
-    previous value is restored on the way out, so running this check leaves the
-    machine as it found it.
-    """
-    if shutil.which("defaults") is None:
-        print("SKIP AppleLanguages override: `defaults` is macOS-only.")
-        yield
-        return
 
-    def defaults(*arguments: str) -> subprocess.CompletedProcess:
-        return subprocess.run(["defaults", *arguments], capture_output=True, text=True)
-
-    previous = defaults("read", "-g", LIBRARY)
-    written = defaults("write", "-g", LIBRARY, "-array", locale)
-    if written.returncode != 0:
-        fail(f"could not write {LIBRARY} to the global domain: {written.stderr.strip()}")
-    check = defaults("read", "-g", LIBRARY)
-    if locale not in check.stdout:
-        fail(f"{LIBRARY} is {check.stdout.strip()!r} after writing {locale!r}")
+def run_report(binary: Path, locale: str, scratch: Path) -> dict:
     try:
-        yield
-    finally:
-        if previous.returncode == 0 and previous.stdout.strip():
-            defaults("write", "-g", LIBRARY, previous.stdout.strip())
-        else:
-            defaults("delete", "-g", LIBRARY)
-
-
-def run_report(binary: Path, locale: str) -> dict:
-    """Run the app once for this locale and return its report.
-
-    `--locale` makes the binary override `AppleLanguages` for itself; the
-    `-AppleLanguages` launch argument is passed as well because that is how a
-    real launch selects a language, and both should agree.
-    """
-    try:
-        with apple_language(locale):
-            completed = subprocess.run(
-                [str(binary), REPORT_FLAG, "--locale", locale, "-AppleLanguages", f"({locale})"],
-                capture_output=True,
-                text=True,
-                timeout=TIMEOUT_SECONDS,
-            )
+        completed = subprocess.run(
+            [str(binary), REPORT_FLAG, "--locale", locale, "--bundle", str(scratch), "-AppleLanguages", f"({locale})"],
+            capture_output=True,
+            text=True,
+            timeout=TIMEOUT_SECONDS,
+        )
     except subprocess.TimeoutExpired:
         fail(f"{locale}: {binary.name} {REPORT_FLAG} timed out after {TIMEOUT_SECONDS}s")
     if completed.returncode != 0:
@@ -132,29 +121,12 @@ def run_report(binary: Path, locale: str) -> dict:
     return report
 
 
-def describe(report: dict) -> str:
-    """The bundle facts the report carries, for a failure message."""
-    parts = []
-    for key in (
-        "bundle",
-        "preferred",
-        "available",
-        "development",
-        "dictionary",
-        "table",
-        "mainBundle",
-        "mainResources",
-        "moduleResources",
-        "userDefaults",
-        "localeLanguages",
-    ):
-        if key in report:
-            parts.append(f"{key}={report[key]!r}")
-    return ", ".join(parts)
+def describe(report: dict, keys: tuple[str, ...]) -> str:
+    return ", ".join(f"{key}={report[key]!r}" for key in keys if key in report)
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description="Verify that every shipped locale loads at runtime.")
     parser.add_argument("app", type=Path, help="assembled .app bundle")
     parser.add_argument("--catalog", type=Path, default=DEFAULT_CATALOG)
     parser.add_argument("--binary", default="SweetNoSleep", help="executable name inside Contents/MacOS")
@@ -169,31 +141,59 @@ def main() -> int:
     tables = catalog_tables(arguments.catalog)
     locales = sorted(tables)
     bundles = resource_bundles(app)
-    check_tables(bundles, locales)
+    entries = len(next(iter(tables.values())))
 
-    for locale in locales:
-        expected = tables[locale]
-        report = run_report(binary, locale)
-        values: dict[str, str] = report["values"]
+    with tempfile.TemporaryDirectory(prefix="sns-localizations-") as temporary:
+        root = Path(temporary)
+        for locale in locales:
+            expected = tables[locale]
+            scratch = build_scratch_bundle(root, locale, shipped_table(bundles, locale))
+            report = run_report(binary, locale, scratch)
 
-        missing = sorted(set(expected) - set(values))
-        if missing:
-            fail(f"{locale}: the app resolved no value for {len(missing)} key(s), e.g. {missing[:3]}")
-        wrong = sorted(key for key in expected if values.get(key) != expected[key])
-        if wrong:
-            sample = wrong[0]
-            first = " | ".join(
-                f"{key} -> {values.get(key)!r} (expected {expected[key]!r})" for key in wrong[:3]
+            # 1. The deterministic gate: the strings loader has to agree with
+            #    the catalog for the bytes that ship.
+            preferred = str(report.get("preferred", "")).split(",")
+            if preferred[:1] != [locale]:
+                fail(
+                    f"{locale}: the scratch bundle resolved to {preferred!r} instead of [{locale!r}]. "
+                    f"Scratch bundle: {describe(report, ('bundle', 'available', 'development', 'table', 'dictionary'))}"
+                )
+            values: dict[str, str] = report["values"]
+            missing = sorted(set(expected) - set(values))
+            if missing:
+                fail(f"{locale}: the app resolved no value for {len(missing)} key(s), e.g. {missing[:3]}")
+            wrong = sorted(key for key in expected if values.get(key) != expected[key])
+            if wrong:
+                sample = " | ".join(
+                    f"{key} -> {values.get(key)!r} (expected {expected[key]!r})" for key in wrong[:3]
+                )
+                fail(
+                    f"{locale}: {len(wrong)}/{len(expected)} keys fell back to English. First: {sample}. "
+                    f"Scratch bundle: {describe(report, ('bundle', 'table', 'dictionary'))}"
+                )
+
+            # 2. The placement gate: the app's own resource bundle has to
+            #    discover the locale and resolve a table that parses.
+            available = str(report.get("moduleAvailable", "")).split(",")
+            if locale not in available:
+                fail(f"{locale}: Bundle.module does not offer it. {describe(report, ('modulePath', 'moduleAvailable'))}")
+            if not report.get("moduleTable"):
+                fail(f"{locale}: Bundle.module resolves no table. {describe(report, ('modulePath', 'moduleAvailable'))}")
+            if int(report.get("moduleDictionary", "0")) != entries:
+                fail(
+                    f"{locale}: Bundle.module table has {report.get('moduleDictionary')} entries, "
+                    f"expected {entries}. {describe(report, ('modulePath', 'moduleTable'))}"
+                )
+
+            print(
+                f"{locale}: {len(expected)} keys resolved at runtime through the CFBundle strings loader; "
+                f"Bundle.module offers {len(available)} locales and its table parses to "
+                f"{report.get('moduleDictionary')} entries"
             )
-            fail(
-                f"{locale}: {len(wrong)}/{len(expected)} keys fell back to English. "
-                f"First: {first}. Bundle: {describe(report)}"
-            )
-        print(f"{locale}: {len(expected)} keys resolved at runtime through Bundle.module")
 
     print(
         f"Localization runtime check passed: {len(locales)} locales "
-        f"({', '.join(locales)}) resolve all {len(next(iter(tables.values())))} keys at runtime."
+        f"({', '.join(locales)}) resolve all {entries} keys at runtime."
     )
     return 0
 
