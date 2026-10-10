@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22">
+  <title>Sweet No Sleep menu bar icon: Kiwi asleep</title>
+  <!-- SNS media pack - menu bar template icon source (asleep state).
+       Same rules as menubar-awake.svg: template black only. The ears droop and
+       the eyes close, so the two states stay readable next to each other at
+       22 pt. Strokes stay at 1 px in the rendered image. -->
+  <g transform="translate(11 11.2) scale(9.6)">
+    <path d="M-0.76 0.44 C-1.00 0.15 -0.98 -0.12 -0.88 -0.33 L-0.70 -0.80 Q-0.52 -0.79 -0.32 -0.69 C-0.12 -0.58 0.12 -0.58 0.32 -0.69 Q0.52 -0.79 0.70 -0.80 L0.88 -0.33 C0.98 -0.12 1.00 0.15 0.76 0.44 C0.47 0.99 -0.47 0.99 -0.76 0.44 Z"
+          fill="none" stroke="#000000" stroke-width="0.112" stroke-linecap="round" stroke-linejoin="round"/>
+    <g fill="none" stroke="#000000" stroke-width="0.112" stroke-linecap="round">
+      <path d="M-0.40 0.09 Q-0.285 0.19 -0.17 0.09"/>
+      <path d="M0.17 0.09 Q0.285 0.19 0.40 0.09"/>
+    </g>
+  </g>
+</svg>

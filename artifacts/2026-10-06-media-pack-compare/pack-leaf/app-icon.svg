@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title description">
+  <title id="title">Sweet No Sleep — leaf and kiwi-heart app icon</title>
+  <desc id="description">A species-neutral green leaf paired with a small kiwi-slice heart on a dark rounded card. No character or face.</desc>
+  <defs>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1B293B"/>
+      <stop offset="1" stop-color="#0D1420"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="0.48" cy="0.45" r="0.66">
+      <stop offset="0" stop-color="#6EAE78" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#6EAE78" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="leaf-fill" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#4E9869"/>
+      <stop offset="1" stop-color="#8BD27A"/>
+    </linearGradient>
+    <linearGradient id="heart-fill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#82CE72"/>
+      <stop offset="1" stop-color="#55A66D"/>
+    </linearGradient>
+  </defs>
+
+  <rect id="brand-card" width="1024" height="1024" rx="228" fill="url(#card)"/>
+  <rect x="28" y="28" width="968" height="968" rx="205" fill="none" stroke="#FFFFFF" stroke-opacity="0.09" stroke-width="4"/>
+  <circle cx="512" cy="506" r="364" fill="url(#halo)"/>
+  <circle cx="187" cy="274" r="10" fill="#FFFFFF" opacity="0.12"/>
+  <circle cx="823" cy="795" r="8" fill="#FFFFFF" opacity="0.10"/>
+
+  <!-- A botanical brand mark, deliberately separate from any particular pet species. -->
+  <g id="brand-leaf" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M341 778 C258 648 249 478 356 340 C453 215 612 166 780 204 C799 351 736 508 628 615 C533 710 427 765 341 778 Z" fill="url(#leaf-fill)" stroke="#214A39" stroke-width="12"/>
+    <path d="M350 765 C467 601 583 421 774 215" fill="none" stroke="#E3F4D9" stroke-opacity="0.76" stroke-width="15"/>
+    <path d="M475 586 C430 548 391 520 351 496M546 477 C501 449 463 426 417 412M623 365 C579 341 546 318 506 286" fill="none" stroke="#D9F0CF" stroke-opacity="0.60" stroke-width="9"/>
+    <path d="M486 568 C552 562 613 552 678 555M568 447 C630 440 678 425 721 397M647 329 C692 317 733 291 764 251" fill="none" stroke="#D9F0CF" stroke-opacity="0.60" stroke-width="9"/>
+    <path d="M350 765 C330 781 313 795 290 812" fill="none" stroke="#65B374" stroke-width="17"/>
+  </g>
+
+  <!-- Kiwi-heart accent: a fruit-colored heart with a small seed ring, not a face. -->
+  <g id="kiwi-heart" stroke-linejoin="round">
+    <path d="M752 585 C729 550 699 541 674 558 C641 580 649 626 683 660 C704 682 731 702 752 718 C773 702 800 682 821 660 C855 626 863 580 830 558 C805 541 775 550 752 585 Z" fill="url(#heart-fill)" stroke="#14283A" stroke-width="13"/>
+    <path d="M752 605 C735 581 715 573 699 584 C679 598 686 625 707 646 C721 660 739 674 752 684 C765 674 783 660 797 646 C818 625 825 598 805 584 C789 573 769 581 752 605 Z" fill="#F4EFD5"/>
+    <g fill="#66594A">
+      <ellipse cx="752" cy="613" rx="5.2" ry="8.2"/>
+      <ellipse cx="731" cy="628" rx="5.2" ry="8.2" transform="rotate(-42 731 628)"/>
+      <ellipse cx="773" cy="628" rx="5.2" ry="8.2" transform="rotate(42 773 628)"/>
+      <ellipse cx="739" cy="650" rx="5.2" ry="8.2" transform="rotate(-25 739 650)"/>
+      <ellipse cx="765" cy="650" rx="5.2" ry="8.2" transform="rotate(25 765 650)"/>
+    </g>
+    <circle cx="752" cy="637" r="7" fill="#78BE70"/>
+  </g>
+</svg>

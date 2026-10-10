@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title description">
+  <title id="title">Sweet No Sleep — stay in your flow</title>
+  <desc id="description">A calm focus timer for Mac with focus sessions, gentle breaks, and a live dashboard preview.</desc>
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FBF7ED"/>
+      <stop offset="1" stop-color="#EAF2E5"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0.95" y2="1">
+      <stop offset="0" stop-color="#1B293B"/>
+      <stop offset="1" stop-color="#0D1420"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#paper)"/>
+  <circle cx="1108" cy="316" r="300" fill="#DCEBD7"/>
+  <circle cx="1210" cy="112" r="104" fill="#E9D8BA" opacity="0.32"/>
+  <path d="M657 71c25-31 58-40 93-29-13 36-41 57-81 57 31 8 49 28 55 60-39 2-70-17-82-53-3-13 2-24 15-35Z" fill="#78B76F" opacity="0.27"/>
+  <circle cx="690" cy="498" r="7" fill="#75C56A" opacity="0.55"/>
+  <circle cx="717" cy="520" r="4" fill="#E99B8E" opacity="0.78"/>
+  <path d="M666 167c9-8 20-8 28 0-9 0-17 5-22 13-5-2-7-7-6-13Z" fill="#75C56A" opacity="0.45"/>
+
+  <!-- Wordmark -->
+  <circle cx="105" cy="91" r="22" fill="#E8C48A"/>
+  <path d="M105 88c-5-7-15-10-19-3-5 9 4 17 19 26 15-9 24-17 19-26-4-7-14-4-19 3Z" fill="#5A9E67"/>
+  <path d="M104 75c-3-8-1-14 4-18 6 6 7 12 3 19M108 75c5-8 10-11 17-10-2 7-7 11-16 13" fill="#75C56A"/>
+  <text x="141" y="87" fill="#435546" font-family="Avenir Next, Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="2.2">SWEET NO SLEEP</text>
+  <text x="141" y="108" fill="#829080" font-family="Avenir Next, Arial, sans-serif" font-size="11" font-weight="600" letter-spacing="1.65">A TINY MAC DESKTOP COMPANION</text>
+
+  <!-- Main release message -->
+  <text x="80" y="237" fill="#26382E" font-family="Avenir Next, Arial, sans-serif" font-size="72" font-weight="700" letter-spacing="-2.6">Stay in your</text>
+  <text x="80" y="316" fill="#26382E" font-family="Avenir Next, Arial, sans-serif" font-size="78" font-weight="700" letter-spacing="-2.8">flow.</text>
+  <path d="M83 343h104" stroke="#75B978" stroke-width="6" stroke-linecap="round"/>
+  <text x="82" y="393" fill="#5D685F" font-family="Avenir Next, Arial, sans-serif" font-size="22" font-weight="500">A gentle focus timer for long sessions and AI agents.</text>
+  <text x="82" y="425" fill="#5D685F" font-family="Avenir Next, Arial, sans-serif" font-size="22" font-weight="500">Normal sleep resumes when your work is done.</text>
+
+  <!-- Feature chips -->
+  <g font-family="Avenir Next, Arial, sans-serif" font-size="14" font-weight="600">
+    <rect x="82" y="479" width="154" height="38" rx="19" fill="#E6F0E2"/>
+    <circle cx="103" cy="498" r="5" fill="#65A975"/>
+    <text x="117" y="503" fill="#526B56">Focus sessions</text>
+    <rect x="248" y="479" width="157" height="38" rx="19" fill="#F4E9D5"/>
+    <circle cx="270" cy="498" r="5" fill="#D99B6A"/>
+    <text x="284" y="503" fill="#76634A">Gentle breaks</text>
+    <rect x="417" y="479" width="151" height="38" rx="19" fill="#F5E4E0"/>
+    <circle cx="439" cy="498" r="5" fill="#D7877F"/>
+    <text x="453" y="503" fill="#7A5A59">A little Kiwi</text>
+  </g>
+  <text x="82" y="570" fill="#8A9288" font-family="Avenir Next, Arial, sans-serif" font-size="13" font-weight="600" letter-spacing="1.25">MACOS 14+  ·  YOUR PACE, YOUR DESK</text>
+
+  <!-- Soft botanical backdrop; the release banner intentionally has no pet mascot. -->
+  <circle cx="1114" cy="320" r="176" fill="#D7E8CE"/>
+  <circle cx="1114" cy="320" r="151" fill="#EAF2DE" opacity="0.78"/>
+
+  <!-- The real dark menu-bar dashboard is the banner's product illustration. -->
+  <g transform="translate(88 0)">
+  <rect x="724" y="89" width="306" height="461" rx="34" fill="#233145" opacity="0.12"/>
+  <rect x="716" y="80" width="306" height="461" rx="34" fill="url(#panel)" stroke="#FFFFFF" stroke-opacity="0.54" stroke-width="2"/>
+  <circle cx="751" cy="116" r="5" fill="#E79082"/>
+  <circle cx="770" cy="116" r="5" fill="#E5C178"/>
+  <circle cx="789" cy="116" r="5" fill="#76C486"/>
+  <text x="751" y="160" fill="#F4F1E9" font-family="Avenir Next, Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="1.5">SWEET NO SLEEP</text>
+  <text x="751" y="183" fill="#A5B0BE" font-family="Avenir Next, Arial, sans-serif" font-size="10" font-weight="500">A calm corner for deep work</text>
+
+  <rect x="750" y="205" width="238" height="82" rx="19" fill="#172234" stroke="#FFFFFF" stroke-opacity="0.08"/>
+  <rect x="766" y="224" width="40" height="40" rx="13" fill="#285039"/>
+  <path d="M786 234v19m-7-12 7-7 7 7" fill="none" stroke="#99E2A3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="818" y="239" fill="#FFFFFF" font-family="Avenir Next, Arial, sans-serif" font-size="12" font-weight="700">Keep Mac awake</text>
+  <text x="818" y="258" fill="#AEB9C6" font-family="Avenir Next, Arial, sans-serif" font-size="9" font-weight="500">Idle sleep is prevented</text>
+  <rect x="930" y="232" width="46" height="27" rx="14" fill="#72C283"/>
+  <circle cx="963" cy="245.5" r="10" fill="#FFFFFF"/>
+
+  <rect x="750" y="301" width="238" height="202" rx="20" fill="#172234" stroke="#FFFFFF" stroke-opacity="0.08"/>
+  <text x="770" y="330" fill="#B4DDB9" font-family="Avenir Next, Arial, sans-serif" font-size="9" font-weight="700" letter-spacing="1.3">FOCUS SESSION</text>
+  <text x="770" y="371" fill="#F6F4EE" font-family="Avenir Next, Arial, sans-serif" font-size="23" font-weight="700">50 minutes</text>
+  <text x="770" y="394" fill="#AEB9C6" font-family="Avenir Next, Arial, sans-serif" font-size="10" font-weight="500">Normal sleep resumes when done</text>
+  <rect x="770" y="417" width="170" height="44" rx="15" fill="#91D18E"/>
+  <text x="855" y="445" text-anchor="middle" fill="#17251A" font-family="Avenir Next, Arial, sans-serif" font-size="11" font-weight="700">Start focus session</text>
+  <text x="770" y="481" fill="#8694A5" font-family="Avenir Next, Arial, sans-serif" font-size="9" font-weight="500">A soft nudge, never a blocker.</text>
+  </g>
+</svg>

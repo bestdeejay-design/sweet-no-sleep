@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img">
+  <title>Sweet No Sleep Kiwi Cat app icon</title>
+  <desc>Kiwi's round face with a kiwi-heart accent and green eyes, drawn with the geometry of KiwiPetView.</desc>
+  <!-- SNS media pack - app icon source. Do not rasterize by hand:
+       Scripts/render-media.sh builds SweetNoSleep.icns from this file on macOS.
+       Geometry mirrors Sources/SweetNoSleep/KiwiPetView.swift:
+       the face is drawn in normalized units where 1.0 == the pet radius R,
+       so every coordinate below can be compared with the Swift code.
+       Apple icon grid: 1024 canvas, 824 content square, corner radius 185.4. -->
+  <defs>
+    <linearGradient id="sns-card" x1="0" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#1E2F4A"/>
+      <stop offset="0.55" stop-color="#141F33"/>
+      <stop offset="1" stop-color="#0A0F1B"/>
+    </linearGradient>
+    <linearGradient id="sns-fur" x1="0.1" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#FFF1D6"/>
+      <stop offset="0.62" stop-color="#EFD3A4"/>
+      <stop offset="1" stop-color="#E8C48A"/>
+    </linearGradient>
+    <linearGradient id="sns-heart" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#9ADB8B"/>
+      <stop offset="1" stop-color="#5FB264"/>
+    </linearGradient>
+    <radialGradient id="sns-glow" cx="0.5" cy="0.42" r="0.52">
+      <stop offset="0" stop-color="#7BCB86" stop-opacity="0.42"/>
+      <stop offset="0.62" stop-color="#5FAE7C" stop-opacity="0.13"/>
+      <stop offset="1" stop-color="#5FAE7C" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="sns-card-clip">
+      <rect x="100" y="100" width="824" height="824" rx="185.4"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#sns-card-clip)">
+    <rect x="100" y="100" width="824" height="824" fill="url(#sns-card)"/>
+    <circle cx="512" cy="512" r="470" fill="url(#sns-glow)"/>
+
+    <!-- Face: same normalized geometry as KiwiPetView.catHeadPath (R = 310 px). -->
+    <g transform="translate(512 606) scale(342)">
+      <!-- Inner ear wedges, drawn before the head outline like the app does. -->
+      <g fill="#E88D85" fill-opacity="0.86">
+        <path d="M-0.68 -0.64 L-0.77 -0.88 Q-0.59 -0.79 -0.48 -0.71 Z"/>
+        <path d="M0.68 -0.64 L0.77 -0.88 Q0.59 -0.79 0.48 -0.71 Z"/>
+      </g>
+
+      <!-- Head silhouette: ears, cheeks, and a round chin. -->
+      <path d="M-0.76 0.44 C-1.00 0.15 -0.98 -0.12 -0.88 -0.33 L-0.84 -1.02 Q-0.52 -0.88 -0.32 -0.69 C-0.12 -0.58 0.12 -0.58 0.32 -0.69 Q0.52 -0.88 0.84 -1.02 L0.88 -0.33 C0.98 -0.12 1.00 0.15 0.76 0.44 C0.47 0.99 -0.47 0.99 -0.76 0.44 Z"
+            fill="url(#sns-fur)" stroke="#5D443B" stroke-width="0.056" stroke-linejoin="round"/>
+
+      <!-- Cheeks sit behind the muzzle detail, as in drawFace. -->
+      <g fill="#E99B8E" fill-opacity="0.42">
+        <ellipse cx="-0.39" cy="0.31" rx="0.12" ry="0.062"/>
+        <ellipse cx="0.39" cy="0.31" rx="0.12" ry="0.062"/>
+      </g>
+
+      <!-- Eyes: dark almond, green iris, pupil, and a highlight. -->
+      <g>
+        <ellipse cx="-0.285" cy="0.06" rx="0.118" ry="0.148" fill="#4E382F"/>
+        <ellipse cx="0.285" cy="0.06" rx="0.118" ry="0.148" fill="#4E382F"/>
+        <ellipse cx="-0.278" cy="0.068" rx="0.090" ry="0.114" fill="#6FBB8A"/>
+        <ellipse cx="0.278" cy="0.068" rx="0.090" ry="0.114" fill="#6FBB8A"/>
+        <ellipse cx="-0.272" cy="0.075" rx="0.055" ry="0.080" fill="#221A1F"/>
+        <ellipse cx="0.272" cy="0.075" rx="0.055" ry="0.080" fill="#221A1F"/>
+        <ellipse cx="-0.3" cy="0.022" rx="0.030" ry="0.034" fill="#FFFFFF" fill-opacity="0.95"/>
+        <ellipse cx="0.3" cy="0.022" rx="0.030" ry="0.034" fill="#FFFFFF" fill-opacity="0.95"/>
+      </g>
+
+      <!-- Nose and smile. -->
+      <path d="M0 0.24 Q-0.085 0.17 -0.08 0.16 Q0 0.27 0.08 0.16 Q0.085 0.17 0 0.24 Z" fill="#E88D85"/>
+      <path d="M0 0.243 L0 0.31 M0 0.31 Q-0.07 0.42 -0.12 0.29 M0 0.31 Q0.07 0.42 0.12 0.29"
+            fill="none" stroke="#5D443B" stroke-width="0.038" stroke-linecap="round"/>
+
+      <!-- Kiwi-heart accent: the leaf cluster's place on the forehead, as a heart. -->
+      <g transform="translate(0.02 -0.70) scale(0.0049)">
+        <path d="M0 0 C-18 -14 -34 -22 -34 -36 C-34 -46 -26 -52 -17 -52 C-10 -52 -4 -48 0 -42 C4 -48 10 -52 17 -52 C26 -52 34 -46 34 -36 C34 -22 18 -14 0 0 Z"
+              fill="url(#sns-heart)" stroke="#3F6B45" stroke-width="9" stroke-linejoin="round"/>
+        <path d="M0 -5 C-3 -17 -10 -27 -19 -33" fill="none" stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="5" stroke-linecap="round"/>
+      </g>
+      <g transform="translate(0.05 -1.00) scale(0.0049)">
+        <path d="M-2 8 Q-16 -4 -30 0 Q-21 -18 -3 -13 Z" fill="#8FD07F" stroke="#3F6B45" stroke-width="8" stroke-linejoin="round"/>
+      </g>
+    </g>
+  </g>
+</svg>
