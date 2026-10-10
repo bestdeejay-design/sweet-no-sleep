@@ -70,6 +70,8 @@ All three are gated behind `agentBridge.enabled` - the same opt-in as the agent 
 | `sweetnosleep://debug/place?x=<points>&y=<points>[&screen=<index>]` | Puts the **pet canvas'** top-left corner at exactly `(x, y)`, in points measured from the top-left of the primary display (the space `CGWindowListCopyWindowInfo` reports). `screen` picks `NSScreen.screens` by index; default is the display the pet is on. Clamped into that display's visible frame the way a restored drag origin is, applied with no animation, and persisted to `pet.panelOrigin` exactly like a drag, so a relaunch keeps it. A waiting/break bubble sits above the pet and is *not* moved. |
 | `sweetnosleep://debug/size?pt=<45..170>` | Sets the pet size, the same value Settings writes (clamped to 45...170). The pet is `pt` points tall; the window is the aura canvas around it - `1.25 × (pt + 48)` - see `PetPanelLayout.auraCanvasScale` and `docs/MEDIA.md`. |
 
+`Scripts/verify-debug-instruments.py` guards the list: it checks that the parser, this table and `KiwiMood`'s cases agree (on every platform) and, when a built binary exists, that `SweetNoSleep --debug-moods` prints exactly those ids and exits 0. `check-project.sh` runs it.
+
 Mood ids: `idle`, `working`, `celebrating`, `dancing`, `stretching`, `curious`, `breakReminder`, `resting`, `dragging`, `walking`, `waitingForApproval`.
 
 ```bash

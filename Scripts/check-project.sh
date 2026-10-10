@@ -49,3 +49,9 @@ fi
 # Against the assembled app, when one exists (after Scripts/build-app.sh): the
 # app must render the packs baked into it, not a checkout's. Skips otherwise.
 python3 Scripts/verify-pack-roots.py "dist/Sweet No Sleep — Kiwi Cat.app"
+
+# The hidden debug instruments (docs/CODE_AUDIT.md): `SweetNoSleep --debug-moods`,
+# the headless twin of `sweetnosleep://debug/mood?list=1`, must print every
+# `KiwiMood` in declaration order. The source-side half runs on every platform;
+# the report runs when a built binary exists.
+python3 Scripts/verify-debug-instruments.py "dist/Sweet No Sleep — Kiwi Cat.app"
