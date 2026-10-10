@@ -50,3 +50,17 @@ Added 2026-10-09 after live use. Small, scoped fixes:
 
 B-22 (native review) stays with the maintainer. One PR, keep
 `check-project.sh` green.
+
+## Order 4 — Kot-Arbuz v2 native animation (issue #29)
+
+Added 2026-10-10. The artist shipped an updated cat plus an **exploded part
+sheet** (head, tail, body, three legs as separate pieces), which is exactly
+the layer set `prepare-character-assets.py` cuts algorithmically today.
+
+- Base: `main` @ `d729467`. Full work order:
+  <https://github.com/bestdeejay-design/sweet-no-sleep/issues/29>, detail in
+  `artifacts/2026-10-10-work-order-kot-arbuz-v2-native-animation.md` and the
+  measurements in `Resources/Characters/kot-arbuz/v2/README.md`.
+- The v2 silhouette and the derived rig anchors match v1, so the renderer
+  should need no changes; the work is the layer pipeline and re-verification.
+- One PR, `check-project.sh` green.
