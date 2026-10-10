@@ -100,6 +100,7 @@ def main() -> int:
     print("pack roots resolved by the app (SweetNoSleep --pack-roots, run from this checkout):")
     for kind, path, state in roots:
         print(f"  {kind:<10} {state:<8} {path}")
+    summary_rows: list[tuple[str, str, str]] = []
 
     bundle_roots = [r for r in roots if r[0] == "bundle"]
     if len(bundle_roots) != 1 or not same_path(bundle_roots[0][1], bundle_packs):
@@ -125,6 +126,7 @@ def main() -> int:
             print(f"  {name:<24} -            (not loaded)")
             continue
         print(f"  {name:<24} {sha12(folder / 'head.png'):<12} {folder}")
+        summary_rows.append((name, sha12(folder / "head.png"), str(folder)))
 
         if inside(folder, bundle_packs):
             for source in sorted((REPO_PACKS / name).iterdir()):
@@ -141,10 +143,42 @@ def main() -> int:
     if failures:
         for failure in failures:
             print(f"FAIL {failure}")
-        print("VERDICT: REJECT - the app would not render the packs baked into it")
-        return 1
-    print(f"PASS: the app renders {len(expected)} bundled pack(s) from its own bundle, byte-identical to Resources/PetSkins")
-    return 0
+        verdict = "REJECT - the app would not render the packs baked into it"
+        print(f"VERDICT: {verdict}")
+    else:
+        verdict = f"PASS - the app renders {len(expected)} bundled pack(s) from its own bundle, byte-identical to Resources/PetSkins"
+        print(f"PASS: {verdict[7:]}")
+    write_job_summary(roots, summary_rows, failures, verdict)
+    return 1 if failures else 0
+
+
+def write_job_summary(roots, rows, failures, verdict):
+    """Mirror the report into the GitHub job summary, when running in Actions."""
+    target = os.environ.get("GITHUB_STEP_SUMMARY")
+    if not target:
+        return
+    lines = [
+        "### Pack roots resolved by the built app",
+        "",
+        "`SweetNoSleep --pack-roots`, run from the checkout with no opt-in set.",
+        "",
+        "| root | state | path |",
+        "| --- | --- | --- |",
+    ]
+    lines += [f"| {kind} | {state} | `{path}` |" for kind, path, state in roots]
+    lines += [
+        "",
+        "### Packs and the head.png each one renders",
+        "",
+        "| pack | head.png sha256 (12) | folder |",
+        "| --- | --- | --- |",
+    ]
+    lines += [f"| {name} | `{digest}` | `{folder}` |" for name, digest, folder in rows]
+    lines += ["", f"**{verdict}**", ""]
+    if failures:
+        lines += [f"- {failure}" for failure in failures]
+    with open(target, "a", encoding="utf-8") as handle:
+        handle.write("\n".join(lines) + "\n")
 
 
 if __name__ == "__main__":
