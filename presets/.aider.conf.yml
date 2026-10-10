@@ -1,0 +1,24 @@
+# Sweet No Sleep preset for Aider.
+# Verified against aider/args.py and aider/main.py on the upstream main branch:
+#   * there is no --post-edit-command or --post-commit-command flag, and no
+#     post-edit/post-commit hook event at all;
+#   * --alias is a MODEL alias (format "alias:model-name"), not a command alias;
+#   * --cwd and --format-cmd do not exist.
+# Real automation points: --lint-cmd / --auto-lint / --test-cmd / --auto-test.
+# Run Aider from the repo root; agent lifecycle events are sent from the chat
+# with the "!" shell escape, see aider-aliases.md.
+
+# Let Aider create its own commits so /sns-done lines up with real work units.
+auto-commits: true
+dirty-commits: true
+
+# No lint command configured for this Swift project yet.
+lint-cmd: []
+auto-lint: true
+
+# Optional: run the project test suite after each LLM change batch.
+# test-cmd: "Scripts/check-project.sh"
+auto-test: false
+
+# Watch mode for AI coding comments.
+watch-files: false

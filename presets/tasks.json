@@ -40,15 +40,15 @@
     {
       "label": "Build (with Sweet No Sleep hold)",
       "type": "shell",
-      "command": "${workspaceFolder}/Scripts/agent-session.sh \"${input:agentSessionId}\" -- npm run build",
+      "command": "${workspaceFolder}/Scripts/agent-session.sh \"${input:agentSessionId}\" -- swift build",
       "group": "build",
       "presentation": { "reveal": "always" },
-      "problemMatcher": "$tsc"
+      "problemMatcher": "$swiftc"
     },
     {
       "label": "Test (with Sweet No Sleep hold)",
       "type": "shell",
-      "command": "${workspaceFolder}/Scripts/agent-session.sh \"${input:agentSessionId}\" -- npm test",
+      "command": "${workspaceFolder}/Scripts/agent-session.sh \"${input:agentSessionId}\" -- swift test",
       "group": "test",
       "presentation": { "reveal": "always" },
       "problemMatcher": []
