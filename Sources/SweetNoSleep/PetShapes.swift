@@ -111,25 +111,26 @@ enum PetShapes {
         fade: CGFloat,
         reducedMotion: Bool
     ) {
+        let haloRadius = radius * 0.90
         let haloPulse: CGFloat = reducedMotion ? 1.0 : 1.0 + 0.06 * CGFloat(sin(time * 5.0))
         let haloBase: CGFloat = reducedMotion ? 0.16 : 0.10 + 0.12 * CGFloat(0.5 + 0.5 * sin(time * 5.0))
         let haloRect = CGRect(
-            x: center.x - radius * 1.16 * haloPulse,
-            y: center.y - radius * 0.98 * haloPulse,
-            width: radius * 2.32 * haloPulse,
-            height: radius * 2.32 * haloPulse
+            x: center.x - haloRadius * 1.16 * haloPulse,
+            y: center.y - haloRadius * 0.98 * haloPulse,
+            width: haloRadius * 2.32 * haloPulse,
+            height: haloRadius * 2.32 * haloPulse
         )
         context.stroke(
             Path(ellipseIn: haloRect),
             with: .color(palette.accent.opacity(min(haloBase * fade, 1.0))),
-            style: StrokeStyle(lineWidth: max(radius * 0.05, 1), lineCap: .round)
+            style: StrokeStyle(lineWidth: max(haloRadius * 0.05, 1), lineCap: .round)
         )
 
         let blinkers: [(CGFloat, CGFloat, Double)] = [
             (-1.12, -0.78, 0.0), (1.12, -0.82, 2.1), (-1.06, 0.44, 4.2), (1.04, 0.48, 1.05)
         ]
         for (x, y, phase) in blinkers {
-            let point = CGPoint(x: center.x + x * radius, y: center.y + y * radius)
+            let point = CGPoint(x: center.x + x * haloRadius, y: center.y + y * haloRadius)
             let blink: CGFloat = reducedMotion ? 0.7 : CGFloat(pow(max(0, sin(time * 3.0 + phase)), 2.0))
             guard blink > 0.02 else { continue }
             let arm = radius * 0.09 * (reducedMotion ? 1.0 : (0.85 + 0.15 * blink))
