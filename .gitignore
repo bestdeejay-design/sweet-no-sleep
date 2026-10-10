@@ -8,3 +8,8 @@ dist/
 .swiftpm/
 *.DS_Store
 __pycache__/
+
+# Relocated PR worktrees (see docs/WORKSPACE.md). Everything inside is ignored
+# except the pointer README, which documents what lives here.
+/builds/*
+!/builds/README.md

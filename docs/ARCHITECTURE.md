@@ -26,6 +26,7 @@ piece talks to the others. Maintainer-facing; user-facing behavior lives in
 | `Scripts/*` | `agent-event.sh`, `agent-session.sh` (wrapper with heartbeats), `test-agent-hooks.sh`, `build-app.sh`, `check-project.sh`, `prepare-character-assets.py`, `validate-skins.py`, `validate-localization.py`, `validate-media.py`, `render-media.sh` |
 | `mcp-server/server.py` | MCP server (F2) exposing agent events to MCP-capable clients |
 | `presets/` | Hook presets for Claude Code / generic hooks / VS Code tasks |
+| `builds/` | Relocated PR worktrees, ignored by git except `builds/README.md` — see `docs/WORKSPACE.md` |
 
 ## Awake sources (who keeps the Mac awake)
 

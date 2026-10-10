@@ -1,0 +1,6 @@
+  arena/22936f10-sweet-no-sleep f89ddb5 [origin/arena/22936f10-sweet-no-sleep: behind 5] fix: rename shadowed max variable in PowerKeeper power source parsing
+  feat/webhook-mcp              f70d766 [origin/feat/webhook-mcp] feat(agent): loopback webhook server (F3) + MCP server (F2) ported from pr9
+  feature/agent-integrations-v2 412345e [origin/feature/agent-integrations-v2: ahead 1] chore: include mcp server and presets files in worktree (from arena commit 0fd2d38)
+* main                          1a32481 [origin/main] fix(l10n): language-code canonicalization for the System language path
++ pr-16-acceptance              2a3ab05 (/Users/best/Projects/sweet-no-sleep-pr16) fix(dashboard): keep Settings/Quit reachable when agent cards overflow
++ tmp-build                     f154467 (/Users/best/Projects/sweet-no-sleep-pr9) [origin/tmp-build] fix: remove extra closing paren in PetWaitingBubble font

@@ -1,0 +1,135 @@
+diff --git a/Sources/SweetNoSleep/AgentWebhookServer.swift b/Sources/SweetNoSleep/AgentWebhookServer.swift
+index 388722b..8a501d2 100644
+--- a/Sources/SweetNoSleep/AgentWebhookServer.swift
++++ b/Sources/SweetNoSleep/AgentWebhookServer.swift
+@@ -14,6 +14,11 @@ final class AgentWebhookServer: @unchecked Sendable {
+     private let queue = DispatchQueue(label: "SweetNoSleep.AgentWebhookServer")
+     private var listener: NWListener?
+     private var isRunning = false
++    private var wantsRunning = false
++    private var bindRetries = 0
++
++    private static let maxBindRetries = 5
++    private static let bindRetryDelay: TimeInterval = 0.1
+ 
+     private static let maxHeadersBytes = 8 * 1024
+     private static let maxBodyBytes = 4 * 1024
+@@ -39,23 +44,30 @@ final class AgentWebhookServer: @unchecked Sendable {
+ 
+     func start() {
+         queue.async { [weak self] in
+-            self?.startOnQueue()
++            guard let self else { return }
++            self.wantsRunning = true
++            self.startOnQueue()
+         }
+     }
+ 
+     func stop() {
+-        queue.async { [weak self] in
+-            guard let self else { return }
+-            self.isRunning = false
+-            self.listener?.cancel()
+-            self.listener = nil
++        // Must run synchronously: callers drop their strong reference right
++        // after stop() returns, so an async block capturing self weakly could
++        // be deallocated before executing and leave a zombie NWListener
++        // holding the port forever.
++        queue.sync {
++            wantsRunning = false
++            isRunning = false
++            bindRetries = 0
++            listener?.cancel()
++            listener = nil
+         }
+     }
+ 
+     // MARK: Listener lifecycle
+ 
+     private func startOnQueue() {
+-        guard !isRunning else { return }
++        guard wantsRunning, !isRunning else { return }
+         isRunning = true
+         do {
+             guard let nwPort = NWEndpoint.Port(rawValue: port) else {
+@@ -88,17 +100,26 @@ final class AgentWebhookServer: @unchecked Sendable {
+     private func handleState(_ state: NWListener.State) {
+         switch state {
+         case .failed(let error):
++            listener = nil
++            isRunning = false
++            if case .posix(let code) = error, code == .EADDRINUSE,
++               bindRetries < Self.maxBindRetries {
++                bindRetries += 1
++                queue.asyncAfter(deadline: .now() + Self.bindRetryDelay) { [weak self] in
++                    guard let self, self.wantsRunning else { return }
++                    self.startOnQueue()
++                }
++                return
++            }
+             if case .posix(let code) = error, code == .EADDRINUSE {
+                 reportError(L10n.text("Port 18290 is already in use"))
+             } else {
+                 reportError(L10n.format("Webhook listener failed: %@", String(describing: error)))
+             }
+-            isRunning = false
+-            listener?.cancel()
+-            listener = nil
+         case .cancelled:
+             isRunning = false
+         case .ready:
++            bindRetries = 0
+             reportError(nil)
+         default:
+             break
+diff --git a/Sources/SweetNoSleep/SettingsView.swift b/Sources/SweetNoSleep/SettingsView.swift
+index 68a57fd..9fcb25a 100644
+--- a/Sources/SweetNoSleep/SettingsView.swift
++++ b/Sources/SweetNoSleep/SettingsView.swift
+@@ -349,6 +349,10 @@ private struct PowerSettingsPane: View {
+     @State private var loginMessage: String?
+     @State private var loginNeedsApproval = false
+ 
++    private var agentHookUsageText: String {
++        L10n.text("From the repository root: ./Scripts/agent-session.sh my-agent-1 -- ./run-agent.sh\nFor IDE hooks: agent-event.sh start > heartbeat (about once a minute) > waiting (when approval is needed) > done or failed; use one ID per session.")
++    }
++
+     var body: some View {
+         SettingsScrollPane {
+             SettingsHero(
+@@ -450,11 +454,20 @@ private struct PowerSettingsPane: View {
+                     .font(.system(size: 11, design: .rounded))
+                     .foregroundStyle(.secondary)
+                     .fixedSize(horizontal: false, vertical: true)
+-                Text(L10n.text("From the repository root: ./Scripts/agent-session.sh my-agent-1 -- ./run-agent.sh\nFor IDE hooks: agent-event.sh start > heartbeat (about once a minute) > waiting (when approval is needed) > done or failed; use one ID per session."))
++                Text(agentHookUsageText)
+                     .font(.system(size: 10, design: .monospaced))
+                     .foregroundStyle(.secondary)
+                     .textSelection(.enabled)
+                     .fixedSize(horizontal: false, vertical: true)
++                HStack(spacing: 8) {
++                    Spacer(minLength: 4)
++                    Button(L10n.text("Copy")) {
++                        NSPasteboard.general.clearContents()
++                        NSPasteboard.general.setString(agentHookUsageText, forType: .string)
++                    }
++                    .buttonStyle(.link)
++                    .font(.system(size: 11, design: .rounded))
++                }
+                 Toggle(L10n.text("Show agent status light on chest badge"), isOn: $model.agentBadgeLightEnabled)
+                 Text(L10n.text("Working sessions glow in the skin accent color; waiting sessions glow amber. Manual awake mode without agents shows no light."))
+                     .font(.system(size: 10, design: .rounded))
+diff --git a/Sources/SweetNoSleep/SweetNoSleepApp.swift b/Sources/SweetNoSleep/SweetNoSleepApp.swift
+index 3d31a89..757eb31 100644
+--- a/Sources/SweetNoSleep/SweetNoSleepApp.swift
++++ b/Sources/SweetNoSleep/SweetNoSleepApp.swift
+@@ -147,7 +147,8 @@ private struct MenuBarDashboard: View {
+                 .padding(.horizontal, 19)
+                 .padding(.bottom, 17)
+         }
+-        .frame(width: 362, height: (model.isFocusSession ? 660 : 640) + (showDiagnostics ? 110 : 0))
++        .frame(minWidth: 362, minHeight: (model.isFocusSession ? 660 : 640) + (showDiagnostics ? 110 : 0))
++        .fixedSize()
+         .animation(.easeInOut(duration: 0.18), value: showDiagnostics)
+         .background {
+             ZStack(alignment: .topTrailing) {
