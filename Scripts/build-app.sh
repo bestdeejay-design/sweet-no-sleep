@@ -35,6 +35,17 @@ for bundle in "${RESOURCE_BUNDLES[@]}"; do
   # the current catalog, then compile.
   cp "$ROOT_DIR/Sources/SweetNoSleep/Localizable.xcstrings" "$bundle/Localizable.xcstrings"
   python3 "$ROOT_DIR/Scripts/compile-localizations.py" "$bundle/Localizable.xcstrings" "$bundle"
+  # Current SwiftPM lays the resource bundle out as a macOS bundle:
+  # `<bundle>/Contents/Info.plist` exists, so CFBundle treats
+  # `<bundle>/Contents/Resources` as the resource path and `Bundle.module`
+  # finds neither the catalog nor the tables that sit at the bundle root.
+  # Seed both locations so the runtime self-check and the shipped app agree.
+  if [[ -d "$bundle/Contents/Resources" ]]; then
+    cp "$ROOT_DIR/Sources/SweetNoSleep/Localizable.xcstrings" \
+      "$bundle/Contents/Resources/Localizable.xcstrings"
+    python3 "$ROOT_DIR/Scripts/compile-localizations.py" \
+      "$bundle/Contents/Resources/Localizable.xcstrings" "$bundle/Contents/Resources"
+  fi
   CATALOG_BUNDLE_COUNT=$((CATALOG_BUNDLE_COUNT + 1))
 done
 if [[ "$CATALOG_BUNDLE_COUNT" -eq 0 ]]; then
