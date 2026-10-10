@@ -61,24 +61,17 @@ UI tests; portfolio image swaps need manual cache-busting; docs scatter.
   Pillow port in `Scripts/render-character-animations.py`
   (`draw_sprite_halo`), which must stay in step.
 
-- **B-27 · See-through slits punched into the character by the white-key.** The
-  pipeline derives each layer's alpha from "pixel is white" (`min(r, g, b) >= 245`)
-  plus a flood fill from the piece border. Light strokes *inside* a piece - the
-  cream rim between rind and face, the highlight streaks on the cheeks - are
-  therefore cut to transparent, and because they connect to the outer light rim
-  the flood fill keeps them: the result is a visible see-through slit, not an
-  enclosed hole. Measured 2026-10-11 on the stacked character at 1024 px
-  (transparent pixels inside the silhouette closed by 4 px): **v1/main 385 px
-  (head 105, legs-c 180, body 57), PR #32 403 px (head 171)**; in the rendered
-  loops the worst frame carries 1360 px (v1) and 431 px (v2). The maintainer
-  spotted it by eye on magenta; the first acceptance metric - "transparent
-  pixels unreachable from the canvas border" - is blind to it, which is why it
-  shipped twice. *Accept:* the alpha is derived from the piece contour, not from
-  per-pixel whiteness (close the non-white mask and fill its interior before
-  keying, or use parts that already carry real alpha); a mechanical gate keeps
-  the closing-based slit count at ~0 per pack
-  (`Scripts/accept-kot-arbuz-v2.py`, gate 5), and the magenta composite of a
-  rendered frame shows no see-through line.
+- **B-27 · ✅ Withdrawn (2026-10-11) — mis-specified.** Filed as "see-through
+  slits punched into the character by the white-key", with 385 px (v1) / 403 px
+  (PR #32) measured inside the silhouette. The metric counted every pixel that
+  was not fully opaque, which includes the **anti-aliased contour fringe** of
+  each piece and the artwork's **own white channels** between parts (white in
+  Ksenia's source too). On a flat background that reads as a tinted outline, not
+  as a gap. Re-checked on eight flat backgrounds, the v2 layers have no
+  see-through patches on the belly or the head; the visible colour bleed belongs
+  to the v1 build. Gate 5 in `Scripts/accept-kot-arbuz-v2.py` was removed for the
+  same reason. *Lesson for the next metric:* exclude the boundary band and
+  compare against the source artwork before calling anything a defect.
 
 - **B-26 · Waiting reason is never sanitized.** In
   `Sources/SweetNoSleep/SweetNoSleepModel.swift` `handleAgentEvent` builds

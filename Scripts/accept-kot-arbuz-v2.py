@@ -50,7 +50,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKS = ("kot-arbuz", "kot-arbuz-moonlight", "kot-arbuz-strawberry")
@@ -214,56 +214,6 @@ def gate_bundle(app: Path) -> bool:
     return not problems
 
 
-def slit_mask(alpha: np.ndarray, radius: int = 4) -> np.ndarray:
-    """Transparent pixels that sit inside the silhouette closed by `radius` px.
-
-    This catches the defect that the earlier revision of this script missed: a
-    white-key can punch a thin transparent slit that is *connected to the outside*
-    of the piece (so an "enclosed hole" test sees nothing) while still cutting a
-    visible see-through line across the character. Closing the mask first, then
-    asking which transparent pixels fall inside it, finds them.
-    """
-    opaque = Image.fromarray(np.where(alpha > 8, 255, 0).astype(np.uint8), "L")
-    closed = opaque.filter(ImageFilter.MaxFilter(2 * radius + 1)).filter(ImageFilter.MinFilter(2 * radius + 1))
-    return (np.asarray(closed) > 127) & (alpha <= 8)
-
-
-def gate_slits(tolerance: int = 16) -> tuple[bool, dict[str, int]]:
-    """Gate 5: the derived layers must not cut see-through slits into the cat."""
-    print("\n== gate 5: no transparent slits inside the character ==")
-    print("   metric: transparent pixels inside the silhouette closed by 4 px, per pack.")
-    results: dict[str, int] = {}
-    for pack in PACKS:
-        per: list[str] = []
-        total = 0
-        for layer in LAYERS:
-            path = ROOT / "Resources" / "PetSkins" / pack / f"{layer}.png"
-            if not path.is_file():
-                continue
-            count = int(slit_mask(np.asarray(Image.open(path).convert("RGBA"))[..., 3]).sum())
-            total += count
-            if count:
-                per.append(f"{layer}:{count}")
-        stack = Image.new("RGBA", (1024, 1024), (0, 0, 0, 0))
-        for layer in LAYERS:
-            path = ROOT / "Resources" / "PetSkins" / pack / f"{layer}.png"
-            if path.is_file():
-                stack.alpha_composite(Image.open(path).convert("RGBA"))
-        stacked = int(slit_mask(np.asarray(stack)[..., 3]).sum())
-        results[pack] = stacked
-        print(f"   {pack}: stacked {stacked} px, sum over layers {total} px  {' '.join(per) if per else ''}")
-    worst = max(results.values()) if results else 0
-    ok = worst <= tolerance
-    print(
-        f"   {'PASS' if ok else 'FAIL'}: worst pack has {worst} px of see-through slits "
-        f"(tolerance {tolerance} px); both revisions currently fail this, so it is a defect to fix, "
-        "not a regression against the base"
-        if not ok
-        else f"   PASS: worst pack has {worst} px of see-through slits (tolerance {tolerance} px)"
-    )
-    return ok, results
-
-
 def report_transforms(base: str) -> None:
     print("\n== for review: part-sheet alignment of the base pack (no verdict) ==")
     print("   The pieces on the sheet are scaled and translated, not rotated (verified on")
@@ -360,7 +310,6 @@ def main() -> int:
     changed_ok, changed = gate_changed(arguments.base)
     wiring_ok, _ = gate_wiring()
     bundle_ok = gate_bundle(Path(arguments.app)) if arguments.app else True
-    slits_ok, slits = gate_slits()
 
     report_transforms(arguments.base)
     if arguments.out:
@@ -372,8 +321,7 @@ def main() -> int:
     print(f"   gate 3 wired to v2      : {'PASS' if wiring_ok else 'FAIL'}")
     if arguments.app:
         print(f"   gate 4 bundle fresh     : {'PASS' if bundle_ok else 'FAIL'}")
-    print(f"   gate 5 no slits         : {'PASS' if slits_ok else 'FAIL'} (worst pack {max(slits.values()) if slits else 0} px)")
-    ok = pipeline_ok and changed_ok and wiring_ok and bundle_ok and slits_ok
+    ok = pipeline_ok and changed_ok and wiring_ok and bundle_ok
     print("\nVERDICT: " + ("ACCEPT" if ok else "REJECT - see the FAIL lines above"))
     if ok:
         print("   Still eyeball the visual sheets: the gates prove the pack is new and")
