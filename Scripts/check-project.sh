@@ -42,6 +42,9 @@ elif [[ "$(uname -s)" == "Darwin" ]] && command -v swift >/dev/null 2>&1; then
   # Pack-root precedence (issue #33): a bundle built inside a stale checkout must
   # still render its own packs.
   Scripts/test-pack-roots.sh
+  # The debug instruments' mood report (`--debug-moods`) runs against the binary
+  # just built, so it may not skip on the one platform that can run it.
+  python3 Scripts/verify-debug-instruments.py --require
 else
   printf 'SKIP Swift build: it requires macOS with Swift 5.9+ and the macOS 14 SDK.\n'
 fi
@@ -52,6 +55,6 @@ python3 Scripts/verify-pack-roots.py "dist/Sweet No Sleep — Kiwi Cat.app"
 
 # The hidden debug instruments (docs/CODE_AUDIT.md): `SweetNoSleep --debug-moods`,
 # the headless twin of `sweetnosleep://debug/mood?list=1`, must print every
-# `KiwiMood` in declaration order. The source-side half runs on every platform;
-# the report runs when a built binary exists.
+# `KiwiMood` in declaration order. The source half runs on every platform; the
+# macOS branch above already ran the report against the freshly built binary.
 python3 Scripts/verify-debug-instruments.py "dist/Sweet No Sleep — Kiwi Cat.app"
