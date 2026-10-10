@@ -450,11 +450,12 @@ struct KiwiPetView: View {
         let posedBreath = breath + (isStretching ? 0.045 : 0)
 
         if mood == .working || mood == .celebrating || mood == .dancing || mood == .breakReminder || isWaiting {
+            let haloRadius = radius * 0.90
             let haloRect = CGRect(
-                x: center.x - radius * 1.16,
-                y: center.y - radius * 0.98,
-                width: radius * 2.32,
-                height: radius * 2.32
+                x: center.x - haloRadius * 1.16,
+                y: center.y - haloRadius * 0.98,
+                width: haloRadius * 2.32,
+                height: haloRadius * 2.32
             )
             let haloOpacity = mood == .celebrating || mood == .dancing ? 0.15 : ((mood == .breakReminder || isWaiting) ? 0.13 : 0.08)
             let haloColor = isWaiting ? AgentIndicator.waitingColor : palette.accent
