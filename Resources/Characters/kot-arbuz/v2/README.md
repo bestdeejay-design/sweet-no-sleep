@@ -43,14 +43,25 @@ pose have to be derived by matching each piece against `kot-arbuz-v2.png`.
 
 ### Separating the pieces from the white background
 
-A plain white-key (transparent where `min(r, g, b) ≥ 245`) is enough: on a
-magenta test composite the pieces come out clean, with no punched-through holes
-and no white fringes. Quantified: after a morphological closing with radius 12
-px, interior white that a key would remove is only 0.1–1.7 % of each piece's
-bounding box — all of it anti-aliasing residue on the edges, not interior
-detail. A scanline through the middle of the head crosses 1861 continuous
-non-white pixels, i.e. there is no enclosed white channel inside the head. A
-short feather on the alpha edge is the only refinement worth doing.
+**Correction, 2026-10-11.** An earlier revision of this section claimed a plain
+white-key (`transparent where min(r, g, b) >= 245`) was enough, because the
+interior white it removes is "0.1-1.7 % of the bounding box, i.e. edge
+anti-aliasing residue". That was wrong, and it cost a review round: those
+interior pixels are the artwork's **light strokes** - the cream rim between rind
+and face, the highlight streaks on the cheeks and rind - and keying them leaves
+see-through slits that connect to the outer rim, so they read as background and
+never show up in an "enclosed hole" test. Measured on the stacked character at
+1024 px (transparent pixels inside the silhouette closed by 4 px): 385 px for the
+v1 layers, 403 px for the PR #32 rebuild.
+
+What works is to take the alpha from the **contour**, not from per-pixel
+whiteness: build the non-white mask, close it (or otherwise seal the thin white
+channels) before flood-filling the background, then fill the interior, and verify
+with the closing-based slit count (gate 5 of
+`Scripts/accept-kot-arbuz-v2.py`). The cleanest input would be the pieces with
+**real alpha** straight from the artist - the delivered SVG wrappers carry a flat
+raster with an opaque white background, so some keying is unavoidable with these
+files.
 
 ## How v2 differs from v1
 

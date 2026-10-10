@@ -15,6 +15,13 @@ Everything here exists because of what the 2026-10-10 reconnaissance found:
 - the sheet is also a **different decomposition** from the current layers, so
   the arena has to work out the mapping instead of assuming 1:1.
 
+And one more, added 2026-10-11 after the maintainer saw it on screen: a white-key
+on a piece's pixels is **not** safe. Light strokes inside the artwork (the cream
+rim, cheek highlights) get cut to transparent and stay connected to the outer rim,
+so they survive as see-through slits. Always composite a rendered frame on magenta
+and run gate 5 before accepting - the eye catches this faster than a mean-difference
+metric does.
+
 ## 1. Materialise the PR next to the main checkout
 
 The arena will push a branch like `arena/<session>-sns`. Worktrees live in
@@ -47,6 +54,7 @@ switch, and it will fail if you point it at an old bundle.
 | 2 committed assets vs `--base` | The art really changed — `--check` was not made green by leaving the v1 pack in place | 0 of 18 layer files differ |
 | 3 pipeline wired to v2 | `Scripts/prepare-character-assets.py` resolves its art inside `Resources/Characters/kot-arbuz/v2/` | The script still reads `Characters/kot-arbuz/kot-arbuz.png` |
 | 4 bundle freshness | The `.app` carries byte-identical layers and previews to the committed ones | Bundle absent, stale, or built from another tree |
+| 5 no see-through slits | The alpha follows the piece contour: no transparent pixel sits inside the silhouette closed by 4 px | The white-key ate a light stroke inside a piece (v1 main 385 px, PR #32 403 px) |
 
 Gate 1 passing on the v1 pack is expected and useless on its own — that is why
 gate 2 and gate 3 exist. A PR that only adds art files and does not switch the
