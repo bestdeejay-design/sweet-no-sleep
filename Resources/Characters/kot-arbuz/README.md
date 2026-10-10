@@ -9,6 +9,21 @@ material for the "bring the character to life" arena work order (see issue #14).
 
 Provided by the maintainer for use in this project (see LICENSE).
 
+## Artwork revisions
+
+| Revision | Files | State |
+| --- | --- | --- |
+| v1 (2026-10-08) | `kot-arbuz.png`, `kot-arbuz.svg` in this folder | What the committed derived assets are built from |
+| v2 (2026-10-09) | `v2/kot-arbuz-v2.png` + `v2/kot-arbuz-v2-parts.png` (and the delivered SVG wrappers) | Delivered, not wired into the pipeline yet |
+
+v2 brings a re-drawn cat plus something v1 never had: an **exploded view of the
+character** with head, tail, body and the three legs as separate pieces on a
+plain white background. That is the exact layer set the current pipeline cuts
+algorithmically out of the flat master. Swapping the pipeline over to v2 is the
+subject of
+`artifacts/2026-10-10-work-order-kot-arbuz-v2-native-animation.md`; the numbers
+that task depends on are in `v2/README.md`.
+
 ## Derived assets
 
 The playable character lives in `Resources/PetSkins/kot-arbuz/` and is derived

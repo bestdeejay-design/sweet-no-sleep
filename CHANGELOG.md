@@ -5,6 +5,27 @@ The format follows Keep a Changelog, versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+- **Workspace consolidation:** the PR checkouts that sat next to the project
+  (`sweet-no-sleep-pr9/-pr16/-pr22`) were git worktrees of this repository and
+  are now relocated to `builds/{pr9,pr16,pr22}` with `git worktree move`; only
+  `builds/README.md` is tracked. `docs/WORKSPACE.md` maps the layout, and the
+  uncommitted diffs those checkouts carried are archived under
+  `artifacts/2026-10-10-worktree-consolidation/`.
+- **Presets:** previously uncommitted local presets are now in `presets/` —
+  Aider (`.aider.conf.yml`, `aider-agent-wrapper.sh`, `aider-preset.md`), the
+  `claude-code-hook.sh` dispatcher, a preset README, and the non-shipped
+  `repo-scoped/` Claude Code variant. `presets/tasks.json` wraps `swift build`
+  / `swift test` instead of the template's `npm` commands.
+- **Localization in SwiftPM macOS bundles:** `Scripts/build-app.sh` seeds
+  `Localizable.xcstrings` and the compiled tables into
+  `<bundle>/Contents/Resources`, which is the resource path CFBundle uses once
+  SwiftPM writes `Contents/Info.plist`. Without it `Bundle.module` could not
+  see the catalog, `--localization-report` failed with "no keys found", and
+  `check-project.sh` was red; all six locales now resolve all 242 keys at
+  runtime.
+- **Character source art:** `Resources/Characters/kot-arbuz/v2/` adds the
+  maintainer-supplied update — the re-drawn master and an exploded view of the
+  character with head, tail, body and the three legs as separate pieces.
 - **Character animation loops (issue #27):** `Scripts/render-character-animations.py`
   renders both cats headlessly onto a transparent canvas — no display, no
   macOS capture. It ports `SpriteCharacterRenderer.swift` (Kot-Arbuz, over the

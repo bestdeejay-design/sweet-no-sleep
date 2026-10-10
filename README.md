@@ -365,6 +365,7 @@ Scripts/agent-session.sh     # wrapped command with heartbeat
 Scripts/install-presets.sh   # install Claude Code / VS Code hook presets
 Scripts/prepare-character-assets.py # derive sprite layers + preview from art
 presets/                     # Claude Code hooks, VS Code tasks
+builds/                      # PR worktrees (git-ignored; see docs/WORKSPACE.md)
 ```
 
 ---
