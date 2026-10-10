@@ -5,6 +5,16 @@ The format follows Keep a Changelog, versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+- **Pack-root precedence (issue #33):** a shipped `.app` now renders only the packs
+  inside its own bundle (plus user packs in Application Support). Before, the
+  repository's `Resources/PetSkins` was found by walking up from the build path and
+  could override the bundle, so a build made inside a checkout still drew the v1
+  Kot-Arbuz. Repository roots are now consulted only by unbundled runs, and
+  `SWEET_NO_SLEEP_PACK_ROOT` is the explicit opt-in. `PetPackRoots` holds the rule,
+  `SweetNoSleep --pack-roots` reports the resolved roots, and
+  `Scripts/test-pack-roots.sh` plus `Scripts/verify-pack-roots.py` gate it in CI.
+- **Kot-Arbuz v2 art and aura (PR #32):** the layers are derived from the v2 part sheet, the
+  aura is no longer clipped by the panel, and the waiting reason is sanitized.
 - **Workspace consolidation:** the PR checkouts that sat next to the project
   (`sweet-no-sleep-pr9/-pr16/-pr22`) were git worktrees of this repository and
   are now relocated to `builds/{pr9,pr16,pr22}` with `git worktree move`; only

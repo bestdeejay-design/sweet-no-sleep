@@ -39,6 +39,13 @@ if [[ "${SWEET_NO_SLEEP_SKIP_SWIFT_BUILD:-0}" == "1" ]]; then
 elif [[ "$(uname -s)" == "Darwin" ]] && command -v swift >/dev/null 2>&1; then
   swift build --package-path "$ROOT_DIR" --configuration debug
   Scripts/test-panel-wander.sh
+  # Pack-root precedence (issue #33): a bundle built inside a stale checkout must
+  # still render its own packs.
+  Scripts/test-pack-roots.sh
 else
   printf 'SKIP Swift build: it requires macOS with Swift 5.9+ and the macOS 14 SDK.\n'
 fi
+
+# Against the assembled app, when one exists (after Scripts/build-app.sh): the
+# app must render the packs baked into it, not a checkout's. Skips otherwise.
+python3 Scripts/verify-pack-roots.py "dist/Sweet No Sleep — Kiwi Cat.app"

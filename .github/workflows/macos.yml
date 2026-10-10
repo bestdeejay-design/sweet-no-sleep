@@ -72,6 +72,11 @@ jobs:
           /usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$APP/Contents/Info.plist" | grep -q 'SweetNoSleep.icns'
           codesign --verify --deep --strict "$APP"
 
+      - name: Verify the app renders the packs baked into it
+        # Runs the built binary's --pack-roots report from this checkout, the
+        # condition under which a stale Resources/PetSkins used to win (issue #33).
+        run: python3 Scripts/verify-pack-roots.py "dist/Sweet No Sleep — Kiwi Cat.app" --require
+
       - name: Verify compiled localizations
         run: |
           # Resolves every key of every locale through NSLocalizedString in
