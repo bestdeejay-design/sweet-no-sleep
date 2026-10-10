@@ -68,6 +68,17 @@ def parse_session(body: bytes) -> tuple[int, str | None, str | None]:
     return 200, session, reason_text
 
 
+def sanitize_reason(reason: str | None) -> str | None:
+    """Keep reason text safe: one line, no control chars, capped at 200, None if empty."""
+    if not reason:
+        return None
+    import re
+    flattened = re.sub(r"[\x00-\x1f\x7f-\x9f]", " ", reason).strip()
+    if not flattened:
+        return None
+    return flattened[:200]
+
+
 class WebhookLifecycle:
     """Minimal model of toggle / bind / token-regen / in-flight drop."""
 
