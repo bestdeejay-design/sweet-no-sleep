@@ -11,8 +11,8 @@
 [English version](README.md)
 
 <p align="center">
-  <img src="Resources/Art/Rendered/animation-kot-arbuz.webp" alt="Коть-арбуз: танцы, сердечки, знак ожидания — прозрачный фон" width="300"/>
-  <img src="Resources/Art/Rendered/animation-kiwi.webp" alt="Киви: взгляд, мигание, сердечки, танец" width="300"/>
+  <img src="Resources/Art/Rendered/animation-kot-arbuz.webp" alt="Коть-арбуз: танцы, сердечки, знак ожидания — прозрачный фон" width="375"/>
+  <img src="Resources/Art/Rendered/animation-kiwi.webp" alt="Киви: взгляд, мигание, сердечки, танец" width="375"/>
 </p>
 
 **Живёт на рабочем столе.** Оба кота дышат, моргают, ходят, а их глаза

@@ -111,7 +111,8 @@ enum PetShapes {
         fade: CGFloat,
         reducedMotion: Bool
     ) {
-        let haloRadius = radius * 0.90
+        // Pre-B-25 size: the canvas grew instead of the effect shrinking (#30).
+        let haloRadius = radius
         let haloPulse: CGFloat = reducedMotion ? 1.0 : 1.0 + 0.06 * CGFloat(sin(time * 5.0))
         let haloBase: CGFloat = reducedMotion ? 0.16 : 0.10 + 0.12 * CGFloat(0.5 + 0.5 * sin(time * 5.0))
         let haloRect = CGRect(

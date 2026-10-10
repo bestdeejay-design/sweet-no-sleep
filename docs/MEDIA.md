@@ -62,8 +62,7 @@ the two SwiftUI renderers to Pillow:
 | `animation-kot-arbuz.webp` / `.gif` | `SpriteCharacterRenderer.swift` + `Resources/PetSkins/kot-arbuz/{pet.json, *.png}` |
 | `animation-kiwi.webp` / `.gif` | `KiwiPetView.drawPet` + `Resources/PetSkins/kiwi/skin.json` |
 
-Each file is a 420 × 420 loop, 188 frames at 12.5 fps, 15 s — the canvas and
-frame cadence of the existing `*-demo.gif` assets — showing, in order:
+Each file is a 525 × 525 loop, 188 frames at 12.5 fps, 15 s, showing, in order:
 
 | Shot | Mood | Seconds | Shows |
 | --- | --- | --- | --- |
@@ -74,6 +73,26 @@ frame cadence of the existing `*-demo.gif` assets — showing, in order:
 | waiting | `waitingForApproval` | 2.4 | amber halo, `?` glyph, raised paw, badge |
 | celebration | `celebrating` | 2.4 | celebration effect plus the agent badge and pips |
 
+### Why the canvas is 525 px, not 420
+
+Three numbers decide the canvas, and all three are the *pre-B-25* geometry the
+aura fix restored (issue #30; `PetPanelLayout.auraCanvasScale` carries the same
+arithmetic for the live panel):
+
+| Quantity | Value | In canvas terms |
+| --- | --- | --- |
+| sprite halo, lowest pixel below the pet frame's top | `1.088 × frame` | the binding constraint |
+| sprite halo width | `1.2064 × sprite side` = `1.062 × frame` | the "at least 1.21 × the sprite side" rule |
+| moon-dust stars (moonlight pack), right of the frame | `1.042 × frame` | widest particle |
+
+The pet is laid out in the same 420 px **frame** as before — so the pet's pixel
+size is unchanged and the aura area matches v1's — and the canvas holds the
+frame centered with a 52.5 px margin (420 × 1.25 = 525). The tightest mood
+(`kot-arbuz` celebrating, moonlight excluded) keeps a 16 px clear ring at 1×,
+which the guard below enforces; before the fix the halo's lowest pixel sat
+outside a 420 px canvas by 37 px. The README embeds keep the cat the size it
+always was on the page: `width="375"` is `300 × 525 / 420`.
+
 WebP is the deliverable that matters: it keeps the full alpha channel, so the
 anti-aliased sprite edges stay smooth. The GIF is a compatibility fallback and
 inevitably has 1-bit alpha. Regenerate both with:
@@ -82,6 +101,27 @@ inevitably has 1-bit alpha. Regenerate both with:
 python3 Scripts/render-character-animations.py            # both cats
 python3 Scripts/render-character-animations.py --cat kiwi
 python3 Scripts/render-character-animations.py --check    # verify what is committed
+```
+
+### 45 pt effect frames
+
+At the 45 pt Settings size the particles are a few points across, which is
+exactly where "hearts yes, particles no" was visible. `--effect-frames` renders
+one still per celebration effect at that size, in the 45 pt geometry:
+
+| File | Pack | Effect |
+| --- | --- | --- |
+| `effect-45pt-kot-arbuz.png` | `kot-arbuz` | leaves |
+| `effect-45pt-kot-arbuz-moonlight.png` | `kot-arbuz-moonlight` | moon dust |
+| `effect-45pt-kot-arbuz-strawberry.png` | `kot-arbuz-strawberry` | berry hearts |
+
+`effect-45pt-<pack>.png` is the panel as it appears on screen (116 × 116 px);
+the `@4x` twin is the same frame sampled finer (464 × 464 px) so a reviewer can
+judge the particles without magnifying a thumbnail. `--check` verifies both
+sizes, the transparent background, and that the frame is not blank.
+
+```bash
+python3 Scripts/render-character-animations.py --effect-frames
 ```
 
 `check-project.sh` runs `--check` when Pillow and NumPy are available and skips

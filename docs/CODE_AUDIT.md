@@ -57,6 +57,31 @@ python3 Scripts/validate-skins.py /path/to/ocean
 
 Hidden FPS overlay: `defaults write com.sweetnosleep.kiwicat SNSDebugFPSOverlay -bool true` then relaunch. The pet canvas shows a green `N fps · debug overlay` hint (used for 60 fps acceptance). Disable with `-bool false`.
 
+## Debug instruments
+
+Three hidden `sweetnosleep://debug/...` URLs exist so a script can show a mood on demand, place the panel exactly and set the pet size. That is what makes a "same mood, same spot, v1 vs v2" comparison reproducible: playful moods are random with a 60 s floor, and the panel position could otherwise only be dragged by hand (backlog **B-21**).
+
+All three are gated behind `agentBridge.enabled` - the same opt-in as the agent bridge - and change nothing while unused. They are deliberately absent from `README.md`/`README.ru.md`; this section is their documentation. The URL parser lives in `Sources/SweetNoSleep/DebugInstruments.swift`, the effects in `SweetNoSleepModel.handleDebugURL` (mood, size) and `PetPanelController.placePanel` (placement). Reports go to standard output, the channel the app's other `--...` reports use.
+
+| URL | Effect |
+| --- | --- |
+| `sweetnosleep://debug/mood?mood=<id>&duration=<seconds>` | Shows `<id>` for `<seconds>` (default 6, clamped to 1...120), overriding whatever the state machine would pick. A second call replaces the first. When the timer expires the pet returns to `baseMood()`, i.e. the real session state. |
+| `sweetnosleep://debug/mood?list=1` | Prints the eleven ids, one per line. `SweetNoSleep --debug-moods` does the same headlessly and exits, like `--pack-roots`. |
+| `sweetnosleep://debug/place?x=<points>&y=<points>[&screen=<index>]` | Puts the **pet canvas'** top-left corner at exactly `(x, y)`, in points measured from the top-left of the primary display (the space `CGWindowListCopyWindowInfo` reports). `screen` picks `NSScreen.screens` by index; default is the display the pet is on. Clamped into that display's visible frame the way a restored drag origin is, applied with no animation, and persisted to `pet.panelOrigin` exactly like a drag, so a relaunch keeps it. A waiting/break bubble sits above the pet and is *not* moved. |
+| `sweetnosleep://debug/size?pt=<45..170>` | Sets the pet size, the same value Settings writes (clamped to 45...170). The pet is `pt` points tall; the window is the aura canvas around it - `1.25 × (pt + 48)` - see `PetPanelLayout.auraCanvasScale` and `docs/MEDIA.md`. |
+
+Mood ids: `idle`, `working`, `celebrating`, `dancing`, `stretching`, `curious`, `breakReminder`, `resting`, `dragging`, `walking`, `waitingForApproval`.
+
+```bash
+# show the dance for 4 s, then let the pet go back to its real state
+open 'sweetnosleep://debug/mood?mood=dancing&duration=4'
+# park the pet at the top-left corner of the primary display
+open 'sweetnosleep://debug/place?x=100&y=100'
+# and read it back from the window list (System Events needs Accessibility
+# permission for the calling app); the position is in the same top-left space
+osascript -e 'tell application "System Events" to get position of window 1 of (first process whose name is "SweetNoSleep")'
+```
+
 ## Mac acceptance checklist
 
 On a Mac, run `./Scripts/check-project.sh`, then `./Scripts/build-app.sh release`, open the generated `.app`, and test:

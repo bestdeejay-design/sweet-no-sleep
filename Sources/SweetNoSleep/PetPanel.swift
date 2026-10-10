@@ -43,8 +43,8 @@ final class PetLayerHitTestView: NSView {
     private func containsPet(at point: NSPoint) -> Bool {
         let xInPanel = point.x
         let yInPanel = bounds.height - point.y // Convert AppKit's bottom-left origin to SwiftUI's top-left origin.
-        let petSide = PetPanelLayout.petSide(petSize: petSize)
-        let petInsetX = (bounds.width - petSide) / 2
+        let canvasSide = PetPanelLayout.petCanvas(petSize: petSize)
+        let petInsetX = (bounds.width - canvasSide) / 2
         let petInsetY = bubbleHeight
 
         if showsWaitingBubble,
@@ -59,10 +59,14 @@ final class PetLayerHitTestView: NSView {
             return true
         }
 
-        let x = xInPanel - petInsetX
-        let y = yInPanel - petInsetY
-        let radius = petSide * 0.335
-        let center = CGPoint(x: petSide * 0.5, y: petSide * 0.55)
+        // The cat is drawn inside the pet frame, which the canvas centers; the
+        // hit shapes use the frame's own coordinates, exactly as v1 did.
+        let frameSide = PetPanelLayout.petFrame(petSize: petSize)
+        let frameOrigin = PetPanelLayout.petFrameOrigin(petSize: petSize)
+        let x = xInPanel - petInsetX - frameOrigin
+        let y = yInPanel - petInsetY - frameOrigin
+        let radius = frameSide * 0.335
+        let center = CGPoint(x: frameSide * 0.5, y: frameSide * 0.55)
         let head = CGPoint(x: center.x, y: center.y - radius * 0.23)
 
         let faceDX = (x - head.x) / (radius * 0.88)
@@ -138,6 +142,9 @@ final class PetPanelController {
 
     init(model: SweetNoSleepModel) {
         self.model = model
+        model.debugPlacementHandler = { [weak self] topLeft, screen in
+            self?.placePanel(topLeft: topLeft, screenIndex: screen)
+        }
         model.$petSize.dropFirst().sink { [weak self] _ in
             self?.syncHitTestFlags()
         }.store(in: &cancellables)
@@ -285,6 +292,55 @@ final class PetPanelController {
             showsWaitingBubble: showsWaitingBubble,
             isBreakDue: showsBreakReminder
         )
+    }
+
+    // MARK: Debug instruments
+
+    /// Applies `sweetnosleep://debug/place` (`docs/CODE_AUDIT.md`).
+    ///
+    /// `topLeft` is the pet canvas' top-left corner in screen points, measured
+    /// with the origin at the top-left of the primary display - the space
+    /// `CGWindowListCopyWindowInfo` and `screencapture` report, so
+    /// `place?x=100&y=100` yields a window whose bounds start exactly at
+    /// (100, 100) while no bubble is up. A waiting or break bubble sits above
+    /// the pet in the panel, so the pet, not the bubble, lands on the requested
+    /// spot. The origin is clamped into the target display the way
+    /// `restoredOrigin` clamps a saved one, applied without animation, and
+    /// persisted under `pet.panelOrigin` exactly like a drag - so a relaunch
+    /// keeps the placement even when the pet is hidden right now.
+    func placePanel(topLeft: CGPoint, screenIndex: Int?) {
+        let size = panel?.frame.size ?? panelSize(for: CGFloat(model.petSize))
+        let bubble = showsWaitingBubble
+            ? PetPanelLayout.waitingBubbleHeight
+            : (showsBreakReminder ? PetPanelLayout.breakBubbleHeight : 0)
+        let canvasSide = PetPanelLayout.petCanvas(petSize: CGFloat(model.petSize))
+        let screen: NSScreen?
+        if let screenIndex, NSScreen.screens.indices.contains(screenIndex) {
+            screen = NSScreen.screens[screenIndex]
+        } else {
+            screen = panel.flatMap { current in
+                NSScreen.screens.first { $0.frame.intersects(current.frame) }
+            } ?? NSScreen.main
+        }
+
+        // The pet is centered in a panel that may be wider than it (bubble) and
+        // sits below the bubble's height inside it.
+        var panelLeft = topLeft.x - (size.width - canvasSide) / 2
+        var panelTopFlipped = topLeft.y - bubble
+        if let screen {
+            let visible = DebugScreenSpace.flipped(screen.visibleFrame)
+            panelLeft = min(max(panelLeft, visible.minX), max(visible.maxX - size.width, visible.minX))
+            panelTopFlipped = min(max(panelTopFlipped, visible.minY), max(visible.maxY - size.height, visible.minY))
+        }
+        let origin = NSPoint(
+            x: panelLeft,
+            y: DebugScreenSpace.appKitY(flippedY: panelTopFlipped + size.height)
+        )
+
+        dragOrigin = nil
+        cancelWanderAnimation()
+        PetPanelPosition.store(origin)
+        panel?.setFrameOrigin(origin)
     }
 
     private func restoredOrigin(for size: NSSize) -> NSPoint {

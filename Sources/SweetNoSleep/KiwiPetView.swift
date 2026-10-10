@@ -56,7 +56,7 @@ struct PetDesktopView: View {
     /// still laid out inside the shrunken panel, clipping the pet).
     var onContentSize: ((NSSize) -> Void)?
 
-    private var petSide: CGFloat { PetPanelLayout.petSide(petSize: CGFloat(model.petSize)) }
+    private var petCanvas: CGFloat { PetPanelLayout.petCanvas(petSize: CGFloat(model.petSize)) }
     private var bubbleHeight: CGFloat {
         PetPanelLayout.bubbleHeight(showsWaitingBubble: model.showsWaitingBubble, isBreakDue: model.isBreakDue)
     }
@@ -73,7 +73,7 @@ struct PetDesktopView: View {
             }
             KiwiPetView(model: model, onDragChanged: onDragChanged, onDragEnded: onDragEnded)
         }
-        .frame(width: bubbleWidth, height: petSide + bubbleHeight, alignment: .top)
+        .frame(width: bubbleWidth, height: petCanvas + bubbleHeight, alignment: .top)
         .background(Color.clear)
         .background(
             PanelContentSizeReporter(
@@ -284,6 +284,15 @@ struct KiwiPetView: View {
     var sizeOverride: CGFloat? = nil
     var allowsDragging = true
     var tracksCursor = true
+    /// How much larger than the pet frame the view's canvas is.
+    ///
+    /// The desktop panel uses `PetPanelLayout.auraCanvasScale`, so an effect may
+    /// leave the pet frame without being clipped. The menu-bar dashboard's
+    /// companion thumbnail is a fixed 116 pt box inside a hand-tuned card and
+    /// has no room for the ring, so it passes `1` and keeps v1's look: the pet
+    /// frame fills the box and the widest aura edge is cropped exactly as v1's
+    /// thumbnail cropped it, instead of the cat shrinking.
+    var auraCanvasScale: CGFloat = PetPanelLayout.auraCanvasScale
     var onDragChanged: ((CGSize) -> Void)?
     var onDragEnded: (() -> Void)?
 
@@ -297,7 +306,14 @@ struct KiwiPetView: View {
         sizeOverride ?? CGFloat(model.petSize)
     }
 
-    private var canvasSize: CGFloat { renderedSize + 48 }
+    /// The square the view holds: the pet frame plus the margin the mood
+    /// effects need (see `PetPanelLayout.auraCanvasScale`).
+    private var canvasSize: CGFloat { frameSize * auraCanvasScale }
+    /// The square the pet is laid out in, with the exact geometry v1 used, so
+    /// the pet keeps its on-screen size while the canvas grows around it.
+    private var frameSize: CGFloat { PetPanelLayout.petFrame(petSize: renderedSize) }
+    /// Distance from the canvas' top-left corner to the pet frame's top-left.
+    private var frameOrigin: CGFloat { (canvasSize - frameSize) / 2 }
     private var reduceMotion: Bool { systemReduceMotion || !model.animationsEnabled }
 
     /// Extra space above the pet when a bubble is visible, so the eyes keep
@@ -317,16 +333,21 @@ struct KiwiPetView: View {
                 paused: !model.isPetVisible
             )
         ) { timeline in
-            Canvas { context, size in
+            Canvas { context, _ in
                 let skin = model.activeSkin
                 let time = timeline.date.timeIntervalSinceReferenceDate
+                // The pet is drawn in its frame's coordinates, with the exact
+                // geometry v1 used; the canvas only adds the margin, so an
+                // effect may leave the frame without leaving the window.
+                var pet = context
+                pet.translateBy(x: frameOrigin, y: frameOrigin)
                 Self.drawPet(
-                    in: &context,
-                    size: size,
+                    in: &pet,
+                    size: CGSize(width: frameSize, height: frameSize),
                     time: time,
                     mood: model.mood,
                     palette: .palette(for: skin),
-                    gaze: tracksCursor ? cursorGaze(canvasSize: canvasSize, topInset: topInset) : .zero,
+                    gaze: tracksCursor ? cursorGaze(canvasSize: canvasSize, frameSize: frameSize, topInset: topInset) : .zero,
                     reducedMotion: reduceMotion,
                     agentLight: model.agentIndicatorEnabled ? model.agentLightState : .off,
                     agentCount: model.agentIndicatorEnabled ? model.activeAgentCount : 0,
@@ -366,12 +387,14 @@ struct KiwiPetView: View {
             : L10n.text("Click to say hello."))
     }
 
-    private func cursorGaze(canvasSize: CGFloat, topInset: CGFloat) -> CGPoint {
+    private func cursorGaze(canvasSize: CGFloat, frameSize: CGFloat, topInset: CGFloat) -> CGPoint {
         guard let window = trackedWindow else { return .zero }
         let frame = window.frame
+        // The pet is centered in the canvas, so the canvas' centre is the pet's
+        // centre; the gaze range stays tied to the pet's own frame.
         let catCenter = CGPoint(x: frame.midX, y: frame.maxY - topInset - canvasSize / 2)
         let cursor = NSEvent.mouseLocation
-        let range = max(canvasSize * 0.48, 1)
+        let range = max(frameSize * 0.48, 1)
         return CGPoint(
             x: min(max((cursor.x - catCenter.x) / range, -1), 1),
             y: min(max((catCenter.y - cursor.y) / range, -1), 1)
@@ -450,7 +473,8 @@ struct KiwiPetView: View {
         let posedBreath = breath + (isStretching ? 0.045 : 0)
 
         if mood == .working || mood == .celebrating || mood == .dancing || mood == .breakReminder || isWaiting {
-            let haloRadius = radius * 0.90
+            // The halo keeps its pre-B-25 size; the canvas grew instead (#30).
+            let haloRadius = radius
             let haloRect = CGRect(
                 x: center.x - haloRadius * 1.16,
                 y: center.y - haloRadius * 0.98,

@@ -21,9 +21,17 @@ Shot list, one 15 s loop per cat:
 | 5 | waiting     | `waitingForApproval` | 2.4     | amber halo, `?` glyph, raised paw          |
 | 6 | celebration | `celebrating`        | 2.4     | celebration effect + agent badge and pips  |
 
-Output is a 420 x 420 loop at 12.5 fps (80 ms per frame, the cadence of the
+Output is a 525 x 525 loop at 12.5 fps (80 ms per frame, the cadence of the
 existing `*-demo.gif` assets), 188 frames, 15 s, in both animated WebP (full
 alpha, the good one) and GIF (1-bit alpha, for renderers that need it).
+
+The canvas grew from 420 to 525 px in the B-25 follow-up: the pet is still drawn
+in a 420 px frame (pixel for pixel the size it had before), and the extra ring is
+the margin the restored aura needs - the same arithmetic `PetPanelLayout.swift`
+gives the live panel, and the numbers behind it are in `docs/MEDIA.md`. The two
+must keep agreeing, so a loop frame and the desktop pet match. `--effect-frames`
+renders the same geometry at the 45 pt Settings size, one frame per celebration
+effect.
 
 Shots 4 and 6 are the same `celebrating` mood; 6 adds the agent badge with three
 session pips so the loop also covers the agent-awareness drawing.
@@ -34,6 +42,7 @@ Usage:
     python3 Scripts/render-character-animations.py            # render both cats
     python3 Scripts/render-character-animations.py --cat kiwi
     python3 Scripts/render-character-animations.py --check    # verify outputs
+    python3 Scripts/render-character-animations.py --effect-frames
 """
 from __future__ import annotations
 
@@ -54,8 +63,34 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "Resources" / "Art" / "Rendered"
 SKIN_ROOT = ROOT / "Resources" / "PetSkins"
 
+# --- pet geometry (mirrors `PetPanelLayout.swift`) --------------------------
+# `petSize` is the Settings size in points. v1 filled a square frame of
+# `petSize + 48` with the pet; the B-25 follow-up keeps the pet's size and adds
+# the margin the restored aura needs, so the panel is `CANVAS_SCALE` times the
+# frame. `docs/MEDIA.md` describes the delivered loops.
+PET_CANVAS_MARGIN = 48      # frame side = petSize + this
+CANVAS_SCALE = 1.25         # canvas side = frame side * this (>= 1.21x the sprite side)
+SPRITE_HEIGHT_RATIO = 0.88  # sprite side / frame side (pre-B-25 value)
+SPRITE_FEET_RATIO = 0.862   # sprite baseline / frame side (pre-B-25 value)
+HALO_RADIUS_RATIO = 0.52    # sprite halo radius / sprite side (pre-B-25 value)
+CELEBRATION_RADIUS_RATIO = 0.44  # sprite celebration radius / sprite side (pre-B-25 value)
+HALO_FACTOR = 1.0           # Kiwi/PetShapes halo radius / pet radius (pre-B-25 value)
+
+
+def canvas_geometry(frame_side: float) -> tuple[float, float]:
+    """Return (frame side, canvas side) in points for a pet frame side."""
+    return frame_side, frame_side * CANVAS_SCALE
+
+
+def frame_origin(canvas_side: float, frame_side: float) -> tuple[float, float]:
+    """The frame is centered in the aura canvas."""
+    offset = (canvas_side - frame_side) / 2.0
+    return offset, offset
+
+
 # --- output geometry --------------------------------------------------------
-OUTPUT = 420           # square output canvas, in pixels (matches the existing demo GIFs)
+PET_FRAME = 420        # the frame the pet is laid out in, in pixels (v1's loop canvas)
+OUTPUT = round(PET_FRAME * CANVAS_SCALE)  # square output canvas, in pixels (+ the aura margin)
 SS = 3                 # supersample factor; the render canvas is OUTPUT * SS
 FPS = 12.5             # 80 ms per frame, the same cadence as the existing demo GIFs
 LOOP_SECONDS = 15.0
@@ -182,19 +217,31 @@ class Canvas:
     Every composite is clipped to the shape's bounding box; a 1440 px canvas
     times ~40 shapes times 300 frames would otherwise spend most of its time
     blending fully transparent pixels.
+
+    `origin` maps the drawing coordinate system onto the image: the pet is laid
+    out in its frame (`petSize + 48`) and the frame sits inside the larger aura
+    canvas, so the effects may draw past the frame and still land on the canvas.
     """
 
-    def __init__(self, size: tuple[int, int]) -> None:
+    def __init__(self, size: tuple[int, int], origin: tuple[float, float] = (0.0, 0.0)) -> None:
         self.size = size
+        self.origin = (round(origin[0]), round(origin[1]))
         self.image = Image.new("RGBA", size, (0, 0, 0, 0))
+        # The drawing-space rectangle that lands inside the image.
+        self._bounds = (
+            -self.origin[0],
+            -self.origin[1],
+            size[0] - self.origin[0],
+            size[1] - self.origin[1],
+        )
 
     # -- clipping ----------------------------------------------------------
     def _clip(self, box, pad: int = 2):
         x0, y0, x1, y1 = box
-        bx0 = max(0, int(math.floor(min(x0, x1))) - pad)
-        by0 = max(0, int(math.floor(min(y0, y1))) - pad)
-        bx1 = min(self.size[0], int(math.ceil(max(x0, x1))) + pad)
-        by1 = min(self.size[1], int(math.ceil(max(y0, y1))) + pad)
+        bx0 = max(math.floor(self._bounds[0]), int(math.floor(min(x0, x1))) - pad)
+        by0 = max(math.floor(self._bounds[1]), int(math.floor(min(y0, y1))) - pad)
+        bx1 = min(math.ceil(self._bounds[2]), int(math.ceil(max(x0, x1))) + pad)
+        by1 = min(math.ceil(self._bounds[3]), int(math.ceil(max(y0, y1))) + pad)
         if bx1 <= bx0 or by1 <= by0:
             return None
         return (bx0, by0, bx1, by1)
@@ -220,7 +267,7 @@ class Canvas:
         self.composite_mask(mask, (bx0, by0), rgb, alpha)
 
     def composite_mask(self, mask: Image.Image, origin, rgb, alpha: float) -> None:
-        """Blend `rgb` through `mask` (an L image) at `origin`."""
+        """Blend `rgb` through `mask` (an L image) at `origin`, in drawing space."""
         mask_array = np.asarray(mask, dtype=np.uint16)
         if mask_array.max() == 0:
             return
@@ -228,7 +275,10 @@ class Canvas:
         layer = np.zeros((height, width, 4), dtype=np.uint8)
         layer[:, :, :3] = rgb
         layer[:, :, 3] = (mask_array * min(alpha, 1.0)).astype(np.uint8)
-        self.image.alpha_composite(Image.fromarray(layer, "RGBA"), (origin[0], origin[1]))
+        self.image.alpha_composite(
+            Image.fromarray(layer, "RGBA"),
+            (origin[0] + self.origin[0], origin[1] + self.origin[1]),
+        )
 
     # -- shapes ------------------------------------------------------------
     def fill_path(self, path: BezierPath, color, opacity: float = 1.0) -> None:
@@ -319,14 +369,14 @@ class Canvas:
 
         `coeffs` is (A, B, C, D, E, F) mapping a canvas pixel (X, Y) to a source
         pixel (u, v). `rect` is the placement box, only used to derive the clip
-        box when the caller does not pass one.
+        box when the caller does not pass one. `box` is in drawing space.
         """
         a, b, c, d, e, f = coeffs
         x0, y0, x1, y1 = box
-        bx0 = max(0, int(math.floor(x0)))
-        by0 = max(0, int(math.floor(y0)))
-        bx1 = min(self.size[0], int(math.ceil(x1)))
-        by1 = min(self.size[1], int(math.ceil(y1)))
+        bx0 = max(math.floor(self._bounds[0]), int(math.floor(x0)))
+        by0 = max(math.floor(self._bounds[1]), int(math.floor(y0)))
+        bx1 = min(math.ceil(self._bounds[2]), int(math.ceil(x1)))
+        by1 = min(math.ceil(self._bounds[3]), int(math.ceil(y1)))
         if bx1 <= bx0 or by1 <= by0:
             return
         layer = source.transform(
@@ -336,10 +386,16 @@ class Canvas:
             resample=Image.BICUBIC,
             fillcolor=(0, 0, 0, 0),
         )
-        self.image.alpha_composite(layer, (bx0, by0))
+        self.image.alpha_composite(layer, (bx0 + self.origin[0], by0 + self.origin[1]))
+
+    def paste_aligned(self, layer: Image.Image) -> None:
+        """Composite a layer that is already in image space (same size)."""
+        self.image.alpha_composite(layer)
 
     def paste(self, layer: Image.Image, origin) -> None:
-        self.image.alpha_composite(layer, (int(round(origin[0])), int(round(origin[1]))))
+        self.image.alpha_composite(
+            layer, (int(round(origin[0])) + self.origin[0], int(round(origin[1])) + self.origin[1])
+        )
 
     def transform_whole(self, forward, inverse_affine) -> Image.Image:
         """Apply `inverse_affine` (dest -> source) to the whole canvas."""
@@ -433,7 +489,7 @@ def celebration_alpha(time: float, reduced_motion: bool = False) -> float:
 
 
 def celebration_base(canvas: Canvas, center, radius: float, time: float, palette, fade: float) -> None:
-    halo_radius = radius * 0.90
+    halo_radius = radius * HALO_FACTOR
     halo_pulse = 1.0 + 0.06 * math.sin(time * 5.0)
     halo_base = 0.10 + 0.12 * (0.5 + 0.5 * math.sin(time * 5.0))
     half_w = halo_radius * 1.16 * halo_pulse
@@ -713,7 +769,7 @@ def draw_kiwi(canvas: Canvas, size, time: float, mood: str, palette: PetPalette,
             0.15 if mood in (CELEBRATING, DANCING) else (0.13 if mood in (BREAK_REMINDER, WAITING_FOR_APPROVAL) else 0.08)
         )
         halo_color = WAITING_COLOR if is_waiting else palette.accent
-        halo_radius = radius * 0.90
+        halo_radius = radius * HALO_FACTOR
         canvas.ellipse(
             (center[0] - halo_radius * 1.16, center[1] - halo_radius * 0.98, halo_radius * 2.32, halo_radius * 2.32),
             fill=halo_color,
@@ -725,13 +781,17 @@ def draw_kiwi(canvas: Canvas, size, time: float, mood: str, palette: PetPalette,
 
     head_tilt = head_tilt_angle(time, mood, not animated)
     if head_tilt != 0.0:
-        group = Canvas((width, height))
+        # The tilted head is composed on its own layer, so only the head moves.
+        # The layer covers the whole canvas (not just the frame) and shares the
+        # canvas origin, so the drawing coordinates stay the pet's frame ones.
+        group = Canvas(canvas.size, origin=canvas.origin)
         draw_kiwi_head(group, head_bob, radius, palette, posed_breath)
         draw_kiwi_face(group, head_bob, radius, time, palette, mood, gaze, animated)
         draw_kiwi_cheek_heart(group, head_bob, radius, time, palette, mood, animated)
         cos_sin = (math.cos(-head_tilt), math.sin(-head_tilt))
-        rotated = rotate_canvas(group.image, head_bob, cos_sin)
-        canvas.paste(rotated, (0, 0))
+        pivot = (head_bob[0] + canvas.origin[0], head_bob[1] + canvas.origin[1])
+        rotated = rotate_canvas(group.image, pivot, cos_sin)
+        canvas.paste_aligned(rotated)
     else:
         draw_kiwi_head(canvas, head_bob, radius, palette, posed_breath)
         draw_kiwi_face(canvas, head_bob, radius, time, palette, mood, gaze, animated)
@@ -1383,8 +1443,8 @@ def draw_sprite(canvas: Canvas, size, time: float, mood: str, palette: PetPalett
                 light: str, agent_count: int, attention, gaze, animated: bool = True) -> None:
     """Port of `SpriteCharacterRenderer.draw`."""
     width, height = size
-    side = height * 0.84
-    feet = (width * 0.5, height * 0.88)
+    side = height * SPRITE_HEIGHT_RATIO
+    feet = (width * 0.5, height * SPRITE_FEET_RATIO)
     rect = (feet[0] - side / 2, feet[1] - side, side, side)
     pet_radius = min(width, height) * 0.335
 
@@ -1415,12 +1475,16 @@ def draw_sprite(canvas: Canvas, size, time: float, mood: str, palette: PetPalett
     draw_sprite_halo(
         canvas,
         (rect[0] + rect[2] / 2, rect[1] + rect[3] * 0.56),
-        side * 0.36,
+        side * HALO_RADIUS_RATIO,
         palette,
         mood,
     )
 
-    pet = Canvas((width, height))
+    # The pet (sprite layers + its own decals) is composed on its own layer so
+    # the lean/hop transform moves it without the halo behind it. The layer
+    # covers the whole canvas and shares the canvas origin, so the drawing
+    # coordinates stay the pet's frame ones and the aura may leave the frame.
+    pet = Canvas(canvas.size, origin=canvas.origin)
     tail_pivot = (rect[0] + pack.tail_pivot_x * rect[2], rect[1] + pack.tail_pivot_y * rect[3])
     if is_dancing:
         swing_scale = 2.0
@@ -1474,7 +1538,7 @@ def draw_sprite(canvas: Canvas, size, time: float, mood: str, palette: PetPalett
         draw_petting_hearts(pet, rect, time, palette, animated)
     if animated and (is_celebrating or is_dancing):
         draw_sprite_celebration(
-            pet, (rect[0] + rect[2] / 2, rect[1] + rect[3] * 0.5), side * 0.34, time, palette, animated
+            pet, (rect[0] + rect[2] / 2, rect[1] + rect[3] * 0.5), side * CELEBRATION_RADIUS_RATIO, time, palette, animated
         )
     if mood in (CURIOUS, BREAK_REMINDER):
         sparkle = (rect[0] + rect[2] - side * 0.16, rect[1] + side * 0.20)
@@ -1495,23 +1559,24 @@ def draw_sprite(canvas: Canvas, size, time: float, mood: str, palette: PetPalett
 
     if animated:
         c, s = math.cos(radians(lean)), math.sin(radians(lean))
+        px, py = pet.origin[0] + feet[0], pet.origin[1] + feet[1]
         transformed = pet.image.transform(
             pet.size,
             Image.AFFINE,
             (
                 c,
                 s,
-                feet[0] - c * feet[0] - s * feet[1] + s * hop,
+                px - c * px - s * py + s * hop,
                 -s,
                 c,
-                feet[1] + s * feet[0] - c * feet[1] + c * hop,
+                py + s * px - c * py + c * hop,
             ),
             resample=Image.BICUBIC,
             fillcolor=(0, 0, 0, 0),
         )
-        canvas.paste(transformed, (0, 0))
+        canvas.paste_aligned(transformed)
     else:
-        canvas.paste(pet.image, (0, 0))
+        canvas.paste_aligned(pet.image)
 
 
 # ===========================================================================
@@ -1555,15 +1620,17 @@ def shot_at(elapsed: float):
     return SHOTS[-1], elapsed - cursor
 
 
-def render_frame(size, elapsed: float, palette: PetPalette, pack, animated: bool = True) -> Image.Image:
+def render_frame(canvas_size, frame_size, elapsed: float, palette: PetPalette, pack,
+                 animated: bool = True) -> Image.Image:
+    """One frame: the pet laid out in `frame_size`, composited on `canvas_size`."""
     shot, local = shot_at(elapsed)
     _, mood, _, light, count, attention, offset = shot
     time = local + offset
-    canvas = Canvas(size)
+    canvas = Canvas(canvas_size, origin=frame_origin(canvas_size[0], frame_size[0]))
     if pack is None:
-        draw_kiwi(canvas, size, time, mood, palette, gaze_at(elapsed), light, count, attention, animated)
+        draw_kiwi(canvas, frame_size, time, mood, palette, gaze_at(elapsed), light, count, attention, animated)
     else:
-        draw_sprite(canvas, size, time, mood, palette, pack, light, count, attention, gaze_at(elapsed), animated)
+        draw_sprite(canvas, frame_size, time, mood, palette, pack, light, count, attention, gaze_at(elapsed), animated)
     return canvas.image
 
 
@@ -1583,13 +1650,14 @@ def render_cat(name: str, outdir: Path) -> list[Path]:
     config = CATS[name]
     palette = load_palette(config["skin"])
     pack = SpritePack(SKIN_ROOT / config["skin"]) if config["pack"] else None
-    render_size = (OUTPUT * SS, OUTPUT * SS)
+    canvas_size = (OUTPUT * SS, OUTPUT * SS)
+    frame_size = (PET_FRAME * SS, PET_FRAME * SS)
     duration_ms = int(round(1000.0 / FPS))
 
     frames: list[Image.Image] = []
     for index in range(FRAMES):
         elapsed = index / FPS
-        frame = render_frame(render_size, elapsed, palette, pack)
+        frame = render_frame(canvas_size, frame_size, elapsed, palette, pack)
         frames.append(premultiplied_resize(frame, (OUTPUT, OUTPUT)))
 
     written: list[Path] = []
@@ -1645,6 +1713,94 @@ def save_gif(frames: list[Image.Image], path: Path, duration_ms: int) -> None:
     )
 
 
+# Celebration effect stills: the smallest Settings pet size, one per effect, so
+# the aura and the particles can be judged where they are only a few pixels
+# across (issue #30 follow-up).
+EFFECT_FRAME_PET_SIZE = 45
+EFFECT_FRAME_TIME = 0.6          # peak of the 2.0 s celebration envelope
+EFFECT_FRAME_SS = 8              # supersample factor of the still render
+EFFECT_FRAME_ZOOM = 4            # the @4x still: the 45 pt geometry, sampled finer
+EFFECT_FRAMES = (
+    ("kot-arbuz", "leaves"),
+    ("kot-arbuz-moonlight", "moonDust"),
+    ("kot-arbuz-strawberry", "berryHearts"),
+)
+
+
+def effect_frame_geometry() -> tuple[tuple[int, int], tuple[int, int]]:
+    """Return ((frame px, canvas px), ...) for the 45 pt effect stills."""
+    frame_side, canvas_side = canvas_geometry(EFFECT_FRAME_PET_SIZE + PET_CANVAS_MARGIN)
+    return round(frame_side), round(canvas_side)
+
+
+def render_effect_frames(outdir: Path) -> list[Path]:
+    """One still per celebration effect at the 45 pt Settings size (issue #30)."""
+    frame_side, canvas_side = effect_frame_geometry()
+    render_size = (canvas_side * EFFECT_FRAME_SS, canvas_side * EFFECT_FRAME_SS)
+    frame_size = (frame_side * EFFECT_FRAME_SS, frame_side * EFFECT_FRAME_SS)
+    written: list[Path] = []
+    for skin, effect in EFFECT_FRAMES:
+        palette = load_palette(skin)
+        if palette.celebration_effect != effect:
+            raise SystemExit(f"{skin}: skin.json says {palette.celebration_effect!r}, expected {effect!r}")
+        # The celebrating mood at the peak of the 2.0 s envelope, drawn with no
+        # agent session, so the still is only about the effect.
+        canvas = Canvas(render_size, origin=frame_origin(render_size[0], frame_size[0]))
+        draw_sprite(
+            canvas,
+            frame_size,
+            EFFECT_FRAME_TIME,
+            CELEBRATING,
+            palette,
+            SpritePack(SKIN_ROOT / skin),
+            OFF,
+            0,
+            None,
+            (0.0, 0.0),
+            True,
+        )
+        image = canvas.image
+        one_x = premultiplied_resize(image, (canvas_side, canvas_side))
+        path = outdir / f"effect-45pt-{skin}.png"
+        one_x.save(path)
+        written.append(path)
+        zoomed = premultiplied_resize(image, (canvas_side * EFFECT_FRAME_ZOOM, canvas_side * EFFECT_FRAME_ZOOM))
+        zoom_path = outdir / f"effect-45pt-{skin}@{EFFECT_FRAME_ZOOM}x.png"
+        zoomed.save(zoom_path)
+        written.append(zoom_path)
+    return written
+
+
+def effect_frame_paths(outdir: Path) -> list[Path]:
+    paths = []
+    for skin, _ in EFFECT_FRAMES:
+        paths.append(outdir / f"effect-45pt-{skin}.png")
+        paths.append(outdir / f"effect-45pt-{skin}@{EFFECT_FRAME_ZOOM}x.png")
+    return paths
+
+
+def check_effect_frame(path: Path, errors: list[str]) -> None:
+    """A 45 pt still: the right size, transparent background, and not blank."""
+    if not path.is_file():
+        errors.append(f"missing 45 pt effect frame: {path.name}")
+        return
+    frame_side, canvas_side = effect_frame_geometry()
+    expected = (canvas_side, canvas_side)
+    if "@" in path.stem:
+        expected = (canvas_side * EFFECT_FRAME_ZOOM, canvas_side * EFFECT_FRAME_ZOOM)
+    with Image.open(path) as image:
+        if image.size != expected:
+            errors.append(f"{path.name}: size {image.size}, expected {expected}")
+            return
+        alpha = np.array(image.convert("RGBA"))[:, :, 3]
+        if alpha[0, 0] != 0 or alpha[0, -1] != 0 or alpha[-1, 0] != 0 or alpha[-1, -1] != 0:
+            errors.append(f"{path.name}: the background is not transparent")
+        if int((alpha > 0).sum()) == 0:
+            errors.append(f"{path.name}: the frame is blank")
+    size_kb = path.stat().st_size / 1024
+    print(f"{path.name}: {expected[0]}x{expected[1]}, {size_kb:.0f} KB")
+
+
 def check(outdir: Path) -> int:
     expected = [outdir / f"animation-{name}.{suffix}" for name in CATS for suffix in ("webp", "gif")]
     if not any(path.is_file() for path in expected):
@@ -1676,12 +1832,26 @@ def check(outdir: Path) -> int:
                     errors.append(f"{path.name}: {border_touching_frames} of {image.n_frames} frames touch the canvas border")
             size_kb = path.stat().st_size / 1024
             print(f"{path.name}: {OUTPUT}x{OUTPUT}, {FRAMES} frames, {size_kb:.0f} KB")
+    for path in effect_frame_paths(outdir):
+        check_effect_frame(path, errors)
     if errors:
         for error in errors:
             print(f"::error title=Character animations::{error}")
         return 1
-    print(f"Character animation check passed: {len(CATS)} cats, transparent {OUTPUT}x{OUTPUT} loops.")
+    print(
+        f"Character animation check passed: {len(CATS)} cats, transparent "
+        f"{OUTPUT}x{OUTPUT} loops, {len(EFFECT_FRAMES)} 45 pt effect frames."
+    )
     return 0
+
+
+def print_geometry() -> None:
+    frame_side, canvas_side = canvas_geometry(PET_FRAME)
+    sprite_side = frame_side * SPRITE_HEIGHT_RATIO
+    print(
+        f"geometry: pet frame {frame_side:.0f} px, sprite side {sprite_side:.1f} px, "
+        f"aura canvas {canvas_side:.1f} px ({canvas_side / sprite_side:.2f}x the sprite side)"
+    )
 
 
 def main() -> int:
@@ -1689,12 +1859,23 @@ def main() -> int:
     parser.add_argument("--cat", choices=sorted(CATS), help="render a single cat")
     parser.add_argument("--outdir", type=Path, default=OUT_DIR)
     parser.add_argument("--check", action="store_true", help="verify the rendered loops instead of rendering")
+    parser.add_argument(
+        "--effect-frames",
+        action="store_true",
+        help=f"render the {EFFECT_FRAME_PET_SIZE} pt stills of the three celebration effects",
+    )
     args = parser.parse_args()
 
     args.outdir.mkdir(parents=True, exist_ok=True)
     if args.check:
         return check(args.outdir)
 
+    if args.effect_frames:
+        for path in render_effect_frames(args.outdir):
+            print(f"wrote {path.relative_to(ROOT)} ({path.stat().st_size / 1024:.0f} KB)")
+        return 0
+
+    print_geometry()
     names = [args.cat] if args.cat else list(CATS)
     for name in names:
         written = render_cat(name, args.outdir)

@@ -11,11 +11,13 @@ import SwiftUI
 /// cursor, blink on Kiwi's cadence and close while resting - the same motion
 /// vocabulary as `KiwiPetView`, applied to the watermelon cat's own artwork.
 enum SpriteCharacterRenderer {
-    /// Fraction of the canvas height the sprite occupies; keeps every character
-    /// at the same on-screen size as the procedural cat.
-    private static let spriteHeightRatio: CGFloat = 0.84
+    /// Fraction of the pet frame's side the sprite occupies; keeps every
+    /// character at the same on-screen size as the procedural cat. The frame is
+    /// the square v1 filled, so these are v1's ratios: the aura margin lives in
+    /// the canvas around the frame (`PetPanelLayout.auraCanvasScale`), not here.
+    private static let spriteHeightRatio: CGFloat = 0.88
     /// Baseline the paws rest on, matching `KiwiPetView.drawPet`.
-    private static let feetRatio: CGFloat = 0.88
+    private static let feetRatio: CGFloat = 0.862
 
     /// How the vector eyes of a rigged sprite character are drawn.
     private enum SpriteEyeState {
@@ -76,7 +78,7 @@ enum SpriteCharacterRenderer {
         let breath: CGFloat = animated ? CGFloat(sin(time * breathFrequency)) * CGFloat(profile.breathingAmplitude) : 0
         let stretch: CGFloat = (mood == .stretching && animated) ? 0.05 : 0
 
-        drawHalo(in: &context, center: CGPoint(x: rect.midX, y: rect.minY + rect.height * 0.56), radius: side * 0.36, palette: palette, mood: mood)
+        drawHalo(in: &context, center: CGPoint(x: rect.midX, y: rect.minY + rect.height * 0.56), radius: side * 0.52, palette: palette, mood: mood)
 
         // Tail: rotation around the pivot from `pet.json`, drawn first so the
         // body's seam band covers its cut.
@@ -156,7 +158,7 @@ enum SpriteCharacterRenderer {
             drawPettingHearts(in: &context, rect: rect, time: time, palette: palette, animated: animated)
         }
         if animated, isCelebrating || isDancing {
-            drawCelebration(in: &context, center: CGPoint(x: rect.midX, y: rect.minY + rect.height * 0.5), radius: side * 0.34, time: time, palette: palette, animated: animated)
+            drawCelebration(in: &context, center: CGPoint(x: rect.midX, y: rect.minY + rect.height * 0.5), radius: side * 0.44, time: time, palette: palette, animated: animated)
         }
         if mood == .curious || mood == .breakReminder {
             let sparkle = CGPoint(x: rect.maxX - side * 0.16, y: rect.minY + side * 0.20)

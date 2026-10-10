@@ -109,12 +109,18 @@ success path).
 
 ## Rendering pipeline
 
-- Pet panel: fixed-size transparent panel `petSide = petSize + 48`
-  (45–170 pt), waiting bubble adds +92 (width ≥ bubble width), break bubble
-  similar. `PanelContentSizeReporter` feeds size changes back.
+- Pet panel: transparent panel of `petCanvas = 1.25 x (petSize + 48)`
+  (45–170 pt): the pet is laid out in the `petSize + 48` frame v1 used - so its
+  on-screen size is unchanged - and the canvas adds the margin the mood effects
+  need (`PetPanelLayout.auraCanvasScale`, issue #30). Waiting bubble adds +100
+  above the pet (panel width ≥ bubble width), break bubble similar.
+  `PanelContentSizeReporter` feeds size changes back.
 - Procedural path (`KiwiPetView`): `TimelineView(.animation)` at display
   refresh (60 fps+), `cursorGaze` follows pointer, blink cadence ~4.6 s,
-  Reduce Motion respected.
+  Reduce Motion respected. The menu-bar dashboard's companion thumbnail passes
+  `drawsAuraMargin: false`: its 116 pt card has no room for the ring, so it
+  draws the pet at the size it always had and crops the widest aura edge, as v1
+  did, instead of shrinking the cat.
 - Sprite path (`SpriteCharacterRenderer`): format-2 packs (head/legs×3/
   body/tail + rig anchors incl. eye sockets, pivots); format-1 packs load
   with the legacy pose. Vector eyes (outline ellipse + white shine, gaze
