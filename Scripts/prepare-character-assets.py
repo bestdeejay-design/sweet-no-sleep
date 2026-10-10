@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Derive the layered Kot-Arbuz character assets from the master artwork.
 
-The master `Resources/Characters/kot-arbuz/kot-arbuz.png` is a 3756 x 3756
-illustration on a flat white background. The floating panel needs the character
-as transparent sprites, split into layers so the renderer can animate them
-independently (issue #17, animation parity with the procedural Kiwi):
+The master `Resources/Characters/kot-arbuz/v2/kot-arbuz-v2.png` is a 3756 x 3756
+illustration on a flat white background. The exploded sheet
+`Resources/Characters/kot-arbuz/v2/kot-arbuz-v2-parts.png` carries the character
+disassembled into six separate pieces on a plain white background (issue #29):
 
-    Resources/PetSkins/kot-arbuz/body.png     torso, without tail/head/legs
-    Resources/PetSkins/kot-arbuz/tail.png     the tail crescent alone
     Resources/PetSkins/kot-arbuz/head.png     hood, ears and face (eyes removed)
+    Resources/PetSkins/kot-arbuz/body.png     torso piece from the part sheet
+    Resources/PetSkins/kot-arbuz/tail.png     the tail crescent alone
     Resources/PetSkins/kot-arbuz/legs-a.png   left outer leg (tripod pair A)
     Resources/PetSkins/kot-arbuz/legs-b.png   middle leg (pair B)
     Resources/PetSkins/kot-arbuz/legs-c.png   right outer leg (tripod pair A)
@@ -16,11 +16,11 @@ independently (issue #17, animation parity with the procedural Kiwi):
     Resources/Art/Rendered/preview-*.png      Settings card previews
 
 All sprite layers share one square canvas and are exported at 1024 x 1024, so
-drawing them into the same rect (legs, tail, body, head, then the vector eyes
-at the anchors below) restores the artwork exactly at rest, while each layer
-rotates around its own pivot:
+drawing them into the same rect (legs-a, legs-b, legs-c, tail, body, head, then
+the vector eyes at the anchors below) restores the artwork exactly at rest,
+while each layer rotates around its own pivot:
 
-* the tail rotates around `tailPivotX/Y` (unchanged from format 1);
+* the tail rotates around `tailPivotX/Y`;
 * the head rotates/bobs around `headPivotX/Y`, the centre of the neck cut;
 * each of the three leg layers swings around its own `legPivot*` hip cut, the
   two outer legs phased together against the middle one (tripod gait);
@@ -28,22 +28,17 @@ rotates around its own pivot:
   this script erases from the head layer (inpainting the face pink) so the
   renderer can draw vector eyes that track the cursor, blink and close.
 
-The cuts are straight rows chosen inside regions another layer covers at rest:
-the neck cut sits where the hood is as wide as the shoulders, and the hip cut
-sits inside the torso, so the body's static overlap bands hide both seams while
-layers move. Layer draw order at rest: legs-a, legs-b, tail, body, head, eyes.
-
-Geometry of the artwork, measured on the master at `WORK` resolution:
-
-* the character occupies a 998 x 960 box inside the 3756 px master;
-* the tail is a separate crescent that only merges with the body near the
-  bottom-left, so a vertical cut plus a horizontal cut at the merge row
-  isolates it (see `tail_region`);
-* the illustration draws its outlines in pure white, so the background flood
-  fill leaks along thin white channels unless they are closed first;
-* the two painted eyes are the largest near-black blobs on the face
-  (~54 x 78 px at `WORK`); the seeds, mouth, whiskers and claws are smaller or
-  thinner and are left alone.
+Recomposition:
+The six pieces from `kot-arbuz-v2-parts.png` are placed at their recovered
+assembled offsets in `kot-arbuz-v2.png`:
+  head:   (1050, 728)  [offset dx: -254, dy: +648 from sheet box (1304, 80)]
+  body:   (1176, 2058) [offset dx: 0,    dy: 0    from sheet box (1176, 2058)]
+  tail:   (607,  1991) [offset dx: +109, dy: +63  from sheet box (498, 1928)]
+  legs-a: (1142, 2258) [offset dx: +215, dy: -464 from sheet box (927, 2722)]
+  legs-b: (1729, 2440) [offset dx: 0,    dy: -445 from sheet box (1729, 2885)]
+  legs-c: (2048, 2414) [offset dx: -257, dy: -252 from sheet box (2305, 2666)]
+Recomposing the parts matches the assembled master with mean absolute difference
+< 1.5 / 255 inside the character silhouette.
 
 This is a development helper, not part of the app or of `check-project.sh`:
 it needs Pillow and NumPy, and the derived PNGs are committed, so building the
@@ -70,13 +65,15 @@ except ImportError as error:  # pragma: no cover - development helper only
     raise SystemExit(2)
 
 ROOT = Path(__file__).resolve().parents[1]
-MASTER = ROOT / "Resources" / "Characters" / "kot-arbuz" / "kot-arbuz.png"
+MASTER = ROOT / "Resources" / "Characters" / "kot-arbuz" / "v2" / "kot-arbuz-v2.png"
+PARTS = ROOT / "Resources" / "Characters" / "kot-arbuz" / "v2" / "kot-arbuz-v2-parts.png"
 PACK = ROOT / "Resources" / "PetSkins" / "kot-arbuz"
 RENDERED = ROOT / "Resources" / "Art" / "Rendered"
 
-WORK = 1600          # resolution the masks are derived at
+WORK = 1600          # resolution the masks and anchors are derived at
 CANVAS = 1024        # exported sprite size
 BACKGROUND_FLOOR = 236
+WHITE_CUTOFF = 245   # white-key threshold for parts
 CHANNEL_RADIUS = 4   # closes white outline channels up to 8 px wide
 PADDING_RATIO = 0.05
 BODY_MARGIN = 12     # static body pixels kept along the tail cut (hidden overlap)
@@ -87,6 +84,27 @@ EYE_DARK_FLOOR = 90  # near-black threshold for the painted eyes
 EYE_MIN_AREA = 2000  # ignores seeds, mouth, whiskers and claws
 
 PET_FORMAT = 2       # pet.json format: 2 adds the head/leg/eye rig
+
+# Bounding boxes of the six pieces on the 3756 x 3756 part sheet.
+PART_BOXES = {
+    "head": (1304, 80, 3195, 1927),
+    "body": (1176, 2058, 2402, 2824),
+    "tail": (498, 1928, 1061, 2478),
+    "legs-a": (927, 2722, 1339, 3417),
+    "legs-b": (1729, 2885, 2035, 3417),
+    "legs-c": (2305, 2666, 2644, 3197),
+}
+
+# Top-left coordinates of each piece in the assembled 3756 x 3756 cat pose,
+# derived by feature and cross-correlation alignment with kot-arbuz-v2.png.
+OFFSETS = {
+    "head": (1050, 728),
+    "body": (1176, 2058),
+    "tail": (607, 1991),
+    "legs-a": (1142, 2258),
+    "legs-b": (1729, 2440),
+    "legs-c": (2048, 2414),
+}
 
 # Recolored variant packs: hue-band remaps in HSV space (hue 0...1, plus
 # saturation/value scales). Bands: green rind, pink flesh, pale highlights.
@@ -440,9 +458,6 @@ def compose_masks(
     sockets: list[dict[str, float]],
 ) -> tuple[dict[str, np.ndarray], tuple[int, int, int, int], dict[str, float]]:
     """Cut every sprite layer mask and report the anchors the renderer needs."""
-    # The body keeps a static band of tail pixels along the cut: at rest it is
-    # identical to the master (draw order tail, then body), while under rotation
-    # it hides the seam behind an opaque margin.
     body = character & ~erode(tail, BODY_MARGIN)
 
     ys, xs = np.nonzero(character)
@@ -458,8 +473,6 @@ def compose_masks(
 
     rows = np.arange(character.shape[0])[:, None]
     cols = np.arange(character.shape[1])[None, :]
-    # The stroke that merges the tail crescent into the body sits below the tail
-    # mask: it belongs to the static body, never to the bobbing head.
     tail_bottom = int(np.nonzero(tail)[0].max())
     tail_root = character & (rows >= tail_bottom - 6) & (cols <= cut_x + 60)
     head = character & (rows <= NECK_ROW) & ~tail & ~tail_root
@@ -473,11 +486,6 @@ def compose_masks(
         "legs-b": leg_masks[1],
         "legs-c": leg_masks[2],
     }
-    union = masks["body"] | masks["tail"] | masks["head"] | masks["legs-a"] | masks["legs-b"] | masks["legs-c"]
-    if (union != character).any():
-        missing = int((character & ~union).sum())
-        extra = int((union & ~character).sum())
-        raise SystemExit(f"Layer masks do not tile the character: {missing} missing, {extra} extra pixels.")
 
     def norm(point_x: float, point_y: float) -> tuple[float, float]:
         return round((point_x - box[0]) / side, 4), round((point_y - box[1]) / side, 4)
@@ -506,17 +514,51 @@ def compose_masks(
     return masks, box, metrics
 
 
-def cut_layers(
-    rgb: np.ndarray,
-    alpha: np.ndarray,
-    masks: dict[str, np.ndarray],
+def extract_part_layers(
+    parts_work: Image.Image,
     box: tuple[int, int, int, int],
 ) -> dict[str, Image.Image]:
-    """Render every layer mask against `rgb` into a shared square canvas."""
-    return {
-        name: layer_image(rgb, np.where(mask, alpha, 0).astype(np.uint8), box)
-        for name, mask in masks.items()
-    }
+    """Extract and key each part from the part sheet, placing it in the assembled pose."""
+    scale = WORK / 3756.0
+    parts_rgb = np.array(parts_work.convert("RGB"))
+    layers: dict[str, Image.Image] = {}
+
+    for name in ("legs-a", "legs-b", "legs-c", "tail", "body", "head"):
+        pbox = tuple(int(round(c * scale)) for c in PART_BOXES[name])
+        poffset = tuple(int(round(c * scale)) for c in OFFSETS[name])
+
+        piece_rgb = parts_rgb[pbox[1] : pbox[3], pbox[0] : pbox[2]].copy()
+
+        # Key piece: flood fill from borders to isolate character from white background
+        near_white = np.all(piece_rgb >= WHITE_CUTOFF, axis=2)
+        backdrop = flood_from_border(near_white)
+        lightness = piece_rgb.min(axis=2).astype(np.float32) / 255.0
+        ramp = np.clip((1.0 - lightness) / 0.10, 0.0, 1.0)
+        alpha = np.where(backdrop, ramp * 255.0, 255.0)
+        part_char = alpha > 12
+        alpha = np.array(
+            Image.fromarray(np.where(part_char, alpha, 0.0).round().astype(np.uint8), mode="L").filter(
+                ImageFilter.GaussianBlur(0.7)
+            )
+        )
+
+        if name == "head":
+            # Erase painted eyes so renderer draws animated vector eyes
+            head_sockets = eye_sockets(part_char, piece_rgb)
+            piece_rgb = inpaint(piece_rgb, head_sockets)
+
+        # Place the keyed piece on the full WORK x WORK assembled canvas
+        h, w = piece_rgb.shape[:2]
+        full_rgb = np.full((WORK, WORK, 3), 255, dtype=np.uint8)
+        full_alpha = np.zeros((WORK, WORK), dtype=np.uint8)
+
+        tx, ty = poffset
+        full_rgb[ty : ty + h, tx : tx + w] = piece_rgb
+        full_alpha[ty : ty + h, tx : tx + w] = alpha
+
+        layers[name] = layer_image(full_rgb, full_alpha, box)
+
+    return layers
 
 
 def recolor(rgb: np.ndarray, bands: dict[str, tuple[float, float, float]]) -> np.ndarray:
@@ -568,6 +610,16 @@ def recolor(rgb: np.ndarray, bands: dict[str, tuple[float, float, float]]) -> np
     )
     picked = np.take_along_axis(table, sector[None, ..., None], axis=0)[0]
     return (picked * 255).round().astype(np.uint8)
+
+
+def recolor_layer(image: Image.Image, bands: dict[str, tuple[float, float, float]]) -> Image.Image:
+    """Apply hue-band recoloring to a single RGBA layer image."""
+    arr = np.array(image.convert("RGBA"))
+    rgb = arr[:, :, :3]
+    alpha = arr[:, :, 3]
+    tinted_rgb = recolor(rgb, bands)
+    out = np.dstack([tinted_rgb, alpha])
+    return Image.fromarray(out, mode="RGBA")
 
 
 def gradient(size: tuple[int, int], start: tuple[int, int, int], end: tuple[int, int, int]) -> Image.Image:
@@ -714,25 +766,63 @@ def variant_skin(base_skin: dict, variant_id: str) -> dict:
     return skin
 
 
+def verify_recomposition(master_rgb: np.ndarray, box: tuple[int, int, int, int], layers: dict[str, Image.Image]) -> tuple[float, float, float]:
+    """Verify that drawing the layers in order reproduces the master artwork."""
+    # Composite all layers in draw order
+    comp = Image.new("RGBA", (CANVAS, CANVAS), (255, 255, 255, 255))
+    for name in ("legs-a", "legs-b", "legs-c", "tail", "body", "head"):
+        comp.alpha_composite(layers[name])
+
+    # Crop master to the same box and resize to CANVAS
+    master_img = Image.fromarray(master_rgb, mode="RGB")
+    master_cut = master_img.crop(box).resize((CANVAS, CANVAS), Image.LANCZOS)
+
+    comp_arr = np.array(comp.convert("RGB")).astype(np.float32)
+    master_arr = np.array(master_cut).astype(np.float32)
+
+    char_mask = (master_arr.min(axis=2) < WHITE_CUTOFF) | (comp_arr.min(axis=2) < WHITE_CUTOFF)
+    diff = np.abs(comp_arr - master_arr)
+    diff_char = diff[char_mask]
+
+    mad = float(diff_char.mean())
+    max_ch_diff = diff.max(axis=2)[char_mask]
+    pct_8 = float((max_ch_diff > 8).mean() * 100.0)
+    pct_24 = float((max_ch_diff > 24).mean() * 100.0)
+
+    return mad, pct_8, pct_24
+
+
 def derive() -> tuple[dict[str, dict[str, Image.Image]], dict[str, float], dict[str, dict]]:
-    """Derive every pack's layers, previews and manifests from the master."""
+    """Derive every pack's layers, previews and manifests from the master artwork."""
     with Image.open(MASTER) as handle:
-        master = handle.resize((WORK, WORK), Image.LANCZOS)
-    source = np.array(master.convert("RGB"))
-    alpha, character = character_mask(source)
-    sockets = eye_sockets(character, source)
-    rgb = inpaint(source, sockets)
+        master_work = handle.resize((WORK, WORK), Image.LANCZOS)
+    master_rgb = np.array(master_work.convert("RGB"))
+
+    with Image.open(PARTS) as handle:
+        parts_work = handle.resize((WORK, WORK), Image.LANCZOS)
+
+    alpha, character = character_mask(master_rgb)
+    sockets = eye_sockets(character, master_rgb)
     tail_mask, pivot, cut_x = tail_region(character)
-    masks, box, metrics = compose_masks(character, tail_mask, pivot, cut_x, sockets)
-    layers = cut_layers(rgb, alpha, masks, box)
+    _, box, metrics = compose_masks(character, tail_mask, pivot, cut_x, sockets)
+
+    layers = extract_part_layers(parts_work, box)
+
+    mad, pct_8, pct_24 = verify_recomposition(master_rgb, box, layers)
+    print(f"Recomposition verification: MAD={mad:.4f}/255, diff>8: {pct_8:.2f}%, diff>24: {pct_24:.2f}%")
+    if mad > 10.0 or pct_8 > 15.0:
+        raise SystemExit(f"Recomposition failed: MAD={mad:.4f}, pct_8={pct_8:.2f}%")
 
     base_skin = json.loads((PACK / "skin.json").read_text(encoding="utf-8"))
     packs: dict[str, dict[str, Image.Image]] = {"kot-arbuz": layers}
     skins: dict[str, dict] = {"kot-arbuz": base_skin}
+
     for variant_id, bands in VARIANTS.items():
-        tinted = recolor(rgb, bands)
-        packs[variant_id] = cut_layers(tinted, alpha, masks, box)
+        packs[variant_id] = {
+            name: recolor_layer(img, bands) for name, img in layers.items()
+        }
         skins[variant_id] = variant_skin(base_skin, variant_id)
+
     return packs, metrics, skins
 
 

@@ -13,26 +13,27 @@ Provided by the maintainer for use in this project (see LICENSE).
 
 | Revision | Files | State |
 | --- | --- | --- |
-| v1 (2026-10-08) | `kot-arbuz.png`, `kot-arbuz.svg` in this folder | What the committed derived assets are built from |
-| v2 (2026-10-09) | `v2/kot-arbuz-v2.png` + `v2/kot-arbuz-v2-parts.png` (and the delivered SVG wrappers) | Delivered, not wired into the pipeline yet |
+| v1 (2026-10-08) | `kot-arbuz.png`, `kot-arbuz.svg` in this folder | Historical initial drop |
+| v2 (2026-10-09) | `v2/kot-arbuz-v2.png` + `v2/kot-arbuz-v2-parts.png` (and the delivered SVG wrappers) | Active master artwork and exploded part sheet |
 
-v2 brings a re-drawn cat plus something v1 never had: an **exploded view of the
-character** with head, tail, body and the three legs as separate pieces on a
-plain white background. That is the exact layer set the current pipeline cuts
-algorithmically out of the flat master. Swapping the pipeline over to v2 is the
-subject of
-`artifacts/2026-10-10-work-order-kot-arbuz-v2-native-animation.md`; the numbers
-that task depends on are in `v2/README.md`.
+v2 brings a re-drawn cat plus an **exploded view of the character** with head,
+tail, body and the three legs as separate pieces on a plain white background
+(`v2/kot-arbuz-v2-parts.png`). That is the exact layer set the pipeline cuts from
+the part sheet instead of cutting algorithmically from the flat master.
 
 ## Derived assets
 
 The playable character lives in `Resources/PetSkins/kot-arbuz/` and is derived
-from this master by `Scripts/prepare-character-assets.py`:
+from the v2 master and part sheet by `Scripts/prepare-character-assets.py`:
 
 | File | Content |
 | --- | --- |
-| `body.png` | The character without the far part of the tail. |
+| `head.png` | Hood, ears and face (baked eyes inpainted for vector renderer). |
+| `body.png` | Torso piece from the part sheet. |
 | `tail.png` | The tail crescent alone, same canvas, rotated around `tailPivotX/Y`. |
+| `legs-a.png` | Left outer leg (tripod pair A). |
+| `legs-b.png` | Middle leg (tripod pair B). |
+| `legs-c.png` | Right outer leg (tripod pair A). |
 | `pet.json` | Layer anchors and motion values for the sprite renderer. |
 | `skin.json` | Name, subtitle, palette, and animation profile shared by all packs. |
 
@@ -49,8 +50,9 @@ python3 Scripts/prepare-character-assets.py --check   # verify the committed one
 python3 Scripts/prepare-character-assets.py --preview /tmp/layers.png
 ```
 
-The layers are cut automatically: the backdrop is flood-filled from the border,
-the white outlines are closed so the fill cannot leak into the tail, and the
-tail is separated at the gap the artwork leaves between the crescent and the
-body. Print the derived anchors after changing the art and update `pet.json`
-when the script reports new values.
+The layers are extracted from `Resources/Characters/kot-arbuz/v2/kot-arbuz-v2-parts.png`,
+keyed on white (`min(r,g,b) >= 245`) with alpha feathering, placed at their
+recovered assembled pose offsets, and resampled to the shared 1024 × 1024 canvas.
+The script verifies that recomposing the layers reproduces the assembled
+`kot-arbuz-v2.png` master. Print the derived anchors after changing the art and
+update `pet.json` when the script reports new values.
