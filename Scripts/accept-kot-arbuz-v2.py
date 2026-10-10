@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Acceptance helper for the Kot-Arbuz v2 rebuild (issue #29).
+Acceptance helper for the Kot-Arbuz v2 rebuild (issue #29).
 
 Design rule: every gate in here is exact, and anything heuristic is printed as
 a number for a human to judge — never as a pass/fail. An earlier revision of
@@ -212,9 +212,10 @@ def gate_bundle(app: Path) -> bool:
 
 def report_transforms(base: str) -> None:
     print("\n== for review: part-sheet alignment of the base pack (no verdict) ==")
-    print("   The pieces on the sheet are rotated (legs by 68-79 degrees, the tail by")
-    print("   28), so a bounding-box comparison is meaningless; this searches rotations")
-    print("   instead. Read it as a hint, not a gate: the residual mixes the art")
+    print("   The pieces on the sheet are scaled and translated, not rotated (verified on")
+    print("   PR #32), but a bounding-box comparison against the *old* layers is still")
+    print("   meaningless because they are cut differently. Read this as a hint, not a gate:")
+    print("   the residual mixes the art")
     print("   revision with decomposition differences (the sheet is cut differently")
     print("   from the current layers), so a high number does not by itself mean v1.")
     print("   Identical files compared at the same angle give 0.00.")
