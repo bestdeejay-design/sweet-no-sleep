@@ -433,22 +433,23 @@ def celebration_alpha(time: float, reduced_motion: bool = False) -> float:
 
 
 def celebration_base(canvas: Canvas, center, radius: float, time: float, palette, fade: float) -> None:
+    halo_radius = radius * 0.90
     halo_pulse = 1.0 + 0.06 * math.sin(time * 5.0)
     halo_base = 0.10 + 0.12 * (0.5 + 0.5 * math.sin(time * 5.0))
-    half_w = radius * 1.16 * halo_pulse
-    half_h = radius * 0.98 * halo_pulse
+    half_w = halo_radius * 1.16 * halo_pulse
+    half_h = halo_radius * 0.98 * halo_pulse
     canvas.ellipse(
         (center[0] - half_w, center[1] - half_h, half_w * 2, half_h * 2),
         outline=palette["accent"],
-        width=max(radius * 0.05, 1),
+        width=max(halo_radius * 0.05, 1),
         outline_opacity=min(halo_base * fade, 1.0),
     )
     for x, y, phase in ((-1.12, -0.78, 0.0), (1.12, -0.82, 2.1), (-1.06, 0.44, 4.2), (1.04, 0.48, 1.05)):
-        point = (center[0] + x * radius, center[1] + y * radius)
+        point = (center[0] + x * halo_radius, center[1] + y * halo_radius)
         blink = max(0.0, math.sin(time * 3.0 + phase)) ** 2.0
         if blink <= 0.02:
             continue
-        arm = radius * 0.09 * (0.85 + 0.15 * blink)
+        arm = halo_radius * 0.09 * (0.85 + 0.15 * blink)
         plus_spark(canvas, point, arm, max(arm * 0.38, 0.8), palette["furLight"], min(blink * fade, 1.0))
 
 
@@ -712,8 +713,9 @@ def draw_kiwi(canvas: Canvas, size, time: float, mood: str, palette: PetPalette,
             0.15 if mood in (CELEBRATING, DANCING) else (0.13 if mood in (BREAK_REMINDER, WAITING_FOR_APPROVAL) else 0.08)
         )
         halo_color = WAITING_COLOR if is_waiting else palette.accent
+        halo_radius = radius * 0.90
         canvas.ellipse(
-            (center[0] - radius * 1.16, center[1] - radius * 0.98, radius * 2.32, radius * 2.32),
+            (center[0] - halo_radius * 1.16, center[1] - halo_radius * 0.98, halo_radius * 2.32, halo_radius * 2.32),
             fill=halo_color,
             fill_opacity=halo_opacity,
         )
@@ -1381,8 +1383,8 @@ def draw_sprite(canvas: Canvas, size, time: float, mood: str, palette: PetPalett
                 light: str, agent_count: int, attention, gaze, animated: bool = True) -> None:
     """Port of `SpriteCharacterRenderer.draw`."""
     width, height = size
-    side = height * 0.88
-    feet = (width * 0.5, height * 0.862)
+    side = height * 0.84
+    feet = (width * 0.5, height * 0.88)
     rect = (feet[0] - side / 2, feet[1] - side, side, side)
     pet_radius = min(width, height) * 0.335
 
@@ -1413,7 +1415,7 @@ def draw_sprite(canvas: Canvas, size, time: float, mood: str, palette: PetPalett
     draw_sprite_halo(
         canvas,
         (rect[0] + rect[2] / 2, rect[1] + rect[3] * 0.56),
-        side * 0.52,
+        side * 0.36,
         palette,
         mood,
     )
@@ -1472,7 +1474,7 @@ def draw_sprite(canvas: Canvas, size, time: float, mood: str, palette: PetPalett
         draw_petting_hearts(pet, rect, time, palette, animated)
     if animated and (is_celebrating or is_dancing):
         draw_sprite_celebration(
-            pet, (rect[0] + rect[2] / 2, rect[1] + rect[3] * 0.5), side * 0.44, time, palette, animated
+            pet, (rect[0] + rect[2] / 2, rect[1] + rect[3] * 0.5), side * 0.34, time, palette, animated
         )
     if mood in (CURIOUS, BREAK_REMINDER):
         sparkle = (rect[0] + rect[2] - side * 0.16, rect[1] + side * 0.20)
@@ -1664,6 +1666,14 @@ def check(outdir: Path) -> int:
                 first = image.convert("RGBA").getchannel("A")
                 if first.getextrema()[0] != 0:
                     errors.append(f"{path.name}: the background is not transparent")
+                border_touching_frames = 0
+                for frame_idx in range(image.n_frames):
+                    image.seek(frame_idx)
+                    alpha = np.array(image.convert("RGBA"))[:, :, 3]
+                    if (alpha[0, :] > 0).any() or (alpha[-1, :] > 0).any() or (alpha[:, 0] > 0).any() or (alpha[:, -1] > 0).any():
+                        border_touching_frames += 1
+                if border_touching_frames > 0:
+                    errors.append(f"{path.name}: {border_touching_frames} of {image.n_frames} frames touch the canvas border")
             size_kb = path.stat().st_size / 1024
             print(f"{path.name}: {OUTPUT}x{OUTPUT}, {FRAMES} frames, {size_kb:.0f} KB")
     if errors:
