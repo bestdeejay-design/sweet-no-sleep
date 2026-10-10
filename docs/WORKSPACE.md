@@ -80,6 +80,16 @@ python3 Scripts/render-character-animations.py        # headless 15 s loops
 Never edit the derived PNGs by hand — change the master (or the pipeline) and
 regenerate, or `check-project.sh` will fail.
 
+### Accepting a character-art change
+
+`Scripts/accept-kot-arbuz-v2.py` is the maintainer's acceptance helper for the
+v2 rebuild (issue #29): four exact gates (pipeline `--check`, derived assets
+changed against a base revision, the script wired to the v2 sources, and — with
+`--app` — the assembled bundle carrying byte-identical assets), plus visual
+sheets of the layers and of each preview at the on-screen character sizes.
+Anything heuristic it prints is labelled as such and never gates. The procedure
+around it is in `artifacts/2026-10-10-acceptance-kot-arbuz-v2.md`.
+
 ## Adding another checkout
 
 ```bash

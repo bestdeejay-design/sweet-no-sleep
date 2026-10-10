@@ -39,6 +39,40 @@ UI tests; portfolio image swaps need manual cache-busting; docs scatter.
   README runbook (lsregister -u/-f) + consider `LSCanRefuseMultipleCopies`
   / explicit bundle-id routing in `agent-event.sh` (`open -b`).
 
+- **B-25 · Aura clipped by the frame (renders and panel).** The mood aura is
+  drawn wider than the canvas that holds it, so instead of a soft round blob it
+  ends in straight cuts. Measured 2026-10-10 on the committed loops: 120 of 188
+  frames per cat have non-transparent pixels on the canvas border, and the worst
+  frame's content bounding box is the whole 420 x 420 canvas (152 px of content
+  on the left edge, 154 on the right, 248 on the bottom). The geometry predicts
+  it: with `side = 0.88 x height`, `feetRatio = 0.862` and a halo of
+  `radius = 0.52 x side` drawn as `2.32 x radius`, the ellipse spans -12.9 px to
+  432.9 px horizontally and 11.1 px to 457.0 px vertically on a 420 px canvas —
+  12.9 px cut on each side and 37 px at the bottom. The live panel has the same
+  geometry (`petSide = petSize + 48`, `spriteHeightRatio = 0.88`), so at 45 pt
+  the aura is cut about 2.8 pt per side and 8.1 pt at the bottom, at 170 pt
+  about 6.7 pt and 19 pt. *Accept:* the aura fits the frame everywhere — either
+  a larger render canvas / panel margin or a smaller sprite ratio, decided and
+  justified in the PR — plus an automated guard: no non-transparent pixel may
+  touch the animation canvas border, checked by
+  `Scripts/render-character-animations.py --check`; and a Mac pass at 45/132/170
+  pt confirming the round edge on screen. Both renderers are affected:
+  `Sources/SweetNoSleep/SpriteCharacterRenderer.swift` (`drawHalo`) and the
+  Pillow port in `Scripts/render-character-animations.py`
+  (`draw_sprite_halo`), which must stay in step.
+
+- **B-26 · Waiting reason is never sanitized.** In
+  `Sources/SweetNoSleep/SweetNoSleepModel.swift` `handleAgentEvent` builds
+  `cleanReason` (trim whitespace, cap at 200 characters) and then never uses
+  it — `markAgentWaiting(sessionID:reason:)` receives the raw `reason`. The
+  compiler says so: `warning: immutable value 'cleanReason' was never used`
+  (`SweetNoSleepModel.swift:608`, present at `main` `a9caffa`). Both delivery
+  channels (URL scheme and loopback webhook) take the value from outside the
+  process, so whatever is capped today is not capped on the path that renders
+  the bubble and the dashboard row. *Accept:* the sanitized value is the one
+  that reaches the session, a unit test covers a 500-character and a
+  whitespace-only reason, and the compiler warning is gone.
+
 ## P1 — robustness
 
 - **B-05 · Webhook toggle races.** Rapid enable/disable, port occupied by a
