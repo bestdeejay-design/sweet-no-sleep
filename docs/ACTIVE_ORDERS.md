@@ -63,4 +63,29 @@ the layer set `prepare-character-assets.py` cuts algorithmically today.
   measurements in `Resources/Characters/kot-arbuz/v2/README.md`.
 - The v2 silhouette and the derived rig anchors match v1, so the renderer
   should need no changes; the work is the layer pipeline and re-verification.
+- The part sheet is **rotated** (legs 68–79°, tail 28°), so the pieces need a
+  full similarity transform, not an offset — reconnaissance appended to the
+  issue on 2026-10-10.
+- Acceptance is scripted: `Scripts/accept-kot-arbuz-v2.py` with the runbook in
+  `artifacts/2026-10-10-acceptance-kot-arbuz-v2.md`.
 - One PR, `check-project.sh` green.
+
+## Order 5 — clipped pet aura (issue #30, B-25)
+
+Added 2026-10-10 from live use: the mood aura is drawn wider than the frame
+that holds it, so it ends in straight cuts instead of a round glow. Measured on
+the committed loops — 120 of 188 frames per cat touch the canvas border — and
+the same geometry applies to the live panel at every pet size. Full work order:
+<https://github.com/bestdeejay-design/sweet-no-sleep/issues/30>. The arena
+should fold it into the #29 PR if it is already touching
+`render-character-animations.py`, otherwise land it first; the required guard is
+that no non-transparent pixel may touch the animation canvas border.
+
+## Order 6 — waiting reason is never sanitized (issue #31, B-26)
+
+Added 2026-10-10 from the same reconnaissance. `handleAgentEvent` computes
+`cleanReason` (trim, 200-character cap) and passes the raw value on, so the text
+the bubble and the dashboard show is unsanitized on both delivery channels; the
+compiler warns about the unused value. Full work order:
+<https://github.com/bestdeejay-design/sweet-no-sleep/issues/31>. Small, can
+travel with any other PR.
