@@ -604,11 +604,7 @@ final class SweetNoSleepModel: ObservableObject {
     /// Shared agent-event pipeline for both delivery channels: the
     /// sweetnosleep:// URL scheme and the loopback webhook server.
     func handleAgentEvent(action: String, sessionID: String, reason: String?) {
-        let trimmedReason = reason?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let cleanReason: String? = {
-            guard let value = trimmedReason, !value.isEmpty else { return nil }
-            return String(value.prefix(200))
-        }()
+        let cleanReason = Self.sanitizedReason(reason)
         switch action.lowercased() {
         case "start":
             renewAgentSession(sessionID: sessionID)
@@ -619,7 +615,7 @@ final class SweetNoSleepModel: ObservableObject {
             guard agentSessions[sessionID] != nil else { return }
             renewAgentSession(sessionID: sessionID)
         case "waiting":
-            markAgentWaiting(sessionID: sessionID, reason: reason)
+            markAgentWaiting(sessionID: sessionID, reason: cleanReason)
         case "done":
             finishAgentSession(sessionID: sessionID, failed: false)
         case "failed":
@@ -745,7 +741,7 @@ final class SweetNoSleepModel: ObservableObject {
     /// Marks a session as waiting for input. An unknown session is accepted as
     /// well, so a hook that only reports questions still lights the cue.
     private func markAgentWaiting(sessionID: String, reason: String?) {
-        let cleanReason = reason.map(Self.sanitizedReason)
+        let cleanReason = Self.sanitizedReason(reason)
         let alreadyWaiting = agentSessions[sessionID]?.isWaiting ?? false
         renewAgentSession(sessionID: sessionID, status: .waiting, reason: cleanReason)
         guard !alreadyWaiting else { return }
@@ -802,12 +798,14 @@ final class SweetNoSleepModel: ObservableObject {
     }
 
     /// Keeps only the reason text that is safe to show: one line, no control
-    /// characters, at most 200 characters.
-    private static func sanitizedReason(_ reason: String) -> String {
+    /// characters, at most 200 characters, returning nil if empty.
+    static func sanitizedReason(_ reason: String?) -> String? {
+        guard let reason else { return nil }
         let flattened = reason
             .components(separatedBy: .controlCharacters)
             .joined(separator: " ")
             .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !flattened.isEmpty else { return nil }
         return String(flattened.prefix(200))
     }
 
