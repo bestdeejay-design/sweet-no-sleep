@@ -2401,6 +2401,46 @@
         }
       }
     },
+    "Awake sources": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Awake sources"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fuentes de actividad"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "スリープ防止の要因"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "깨어 있게 하는 원인"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Источники бодрствования"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清醒来源"
+          }
+        }
+      }
+    },
     "Battery below %d%% - assertions released.": {
       "localizations": {
         "en": {
@@ -4801,6 +4841,46 @@
         }
       }
     },
+    "Interface language: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interface language: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idioma de la interfaz: %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "インターフェースの言語：%@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "인터페이스 언어: %@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Язык интерфейса: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "界面语言：%@"
+          }
+        }
+      }
+    },
     "Interval between break reminders": {
       "localizations": {
         "en": {
@@ -5557,6 +5637,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "情绪权重：数值越高，该情绪越容易出现；0 表示关闭。"
+          }
+        }
+      }
+    },
+    "New packs in that folder appear in the picker automatically; Refresh list still works.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New packs in that folder appear in the picker automatically; Refresh list still works."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los nuevos packs de esa carpeta aparecen automáticamente en el selector; Actualizar lista sigue funcionando."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "そのフォルダの新しいパックは自動的にピッカーに表示されます。リストを更新も引き続き使えます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "그 폴더의 새 팩은 선택기에 자동으로 나타나요. 목록 새로 고침도 그대로 작동해요."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новые наборы в этой папке автоматически появляются в выборе; «Обновить список» тоже работает."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "该文件夹中的新包会自动出现在选择器中；“刷新列表”仍然可用。"
           }
         }
       }
@@ -7721,6 +7841,46 @@
         }
       }
     },
+    "Sweet No Sleep - %@ keep-awake": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sweet No Sleep - %@ keep-awake"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sweet No Sleep - mantener activo (%@)"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sweet No Sleep - 起動状態の維持（%@）"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sweet No Sleep - 깨어 있기 (%@)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sweet No Sleep — удержание (%@)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sweet No Sleep - 保持唤醒（%@）"
+          }
+        }
+      }
+    },
     "Sweet No Sleep - AI agent work in progress": {
       "localizations": {
         "en": {
@@ -7917,6 +8077,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "已阻止系统空闲睡眠"
+          }
+        }
+      }
+    },
+    "System language": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System language"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idioma del sistema"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "システムの言語"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시스템 언어"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Системный язык"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统语言"
           }
         }
       }
@@ -9161,6 +9361,86 @@
         }
       }
     },
+    "agent × %d": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "agent × %d"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "agentes × %d"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "エージェント × %d"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "에이전트 × %d"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "агенты × %d"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "智能体 × %d"
+          }
+        }
+      }
+    },
+    "focus": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "focus"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "enfoque"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "集中"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "집중"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "фокус"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "专注"
+          }
+        }
+      }
+    },
     "macOS could not keep the display awake (error %d); the system is still protected from idle sleep.": {
       "localizations": {
         "en": {
@@ -9321,46 +9601,6 @@
         }
       }
     },
-    "none": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "none"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ninguno"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "なし"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "없음"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "нет"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "无"
-          }
-        }
-      }
-    },
     "manual": {
       "localizations": {
         "en": {
@@ -9401,202 +9641,42 @@
         }
       }
     },
-    "focus": {
+    "none": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "focus"
+            "value": "none"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "enfoque"
+            "value": "ninguno"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "集中"
+            "value": "なし"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "집중"
+            "value": "없음"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "фокус"
+            "value": "нет"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "专注"
-          }
-        }
-      }
-    },
-    "Awake sources": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Awake sources"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fuentes de actividad"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "スリープ防止の要因"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "깨어 있게 하는 원인"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Источники бодрствования"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "清醒来源"
-          }
-        }
-      }
-    },
-    "Sweet No Sleep - %@ keep-awake": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sweet No Sleep - %@ keep-awake"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sweet No Sleep - mantener activo (%@)"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sweet No Sleep - 起動状態の維持（%@）"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sweet No Sleep - 깨어 있기 (%@)"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sweet No Sleep — удержание (%@)"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sweet No Sleep - 保持唤醒（%@）"
-          }
-        }
-      }
-    },
-    "agent × %d": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "agent × %d"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "agentes × %d"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "エージェント × %d"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "에이전트 × %d"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "агенты × %d"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "智能体 × %d"
-          }
-        }
-      }
-    },
-    "New packs in that folder appear in the picker automatically; Refresh list still works.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New packs in that folder appear in the picker automatically; Refresh list still works."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Los nuevos packs de esa carpeta aparecen automáticamente en el selector; Actualizar lista sigue funcionando."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "そのフォルダの新しいパックは自動的にピッカーに表示されます。リストを更新も引き続き使えます。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "그 폴더의 새 팩은 선택기에 자동으로 나타나요. 목록 새로 고침도 그대로 작동해요."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Новые наборы в этой папке автоматически появляются в выборе; «Обновить список» тоже работает."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "该文件夹中的新包会自动出现在选择器中；“刷新列表”仍然可用。"
+            "value": "无"
           }
         }
       }

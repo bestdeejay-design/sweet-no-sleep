@@ -264,6 +264,15 @@ final class SweetNoSleepModel: ObservableObject {
         }
     }
 
+    /// In-app interface language override. Empty string = follow the system.
+    @Published var overrideLanguage: String {
+        didSet {
+            defaults.set(overrideLanguage, forKey: Key.overrideLanguage)
+            // Views read L10n on every render; bump so they re-render.
+            objectWillChange.send()
+        }
+    }
+
     @Published var playfulMomentIntervalSeconds: Int {
         didSet {
             defaults.set(playfulMomentIntervalSeconds, forKey: Key.playfulMomentIntervalSeconds)
@@ -355,6 +364,7 @@ final class SweetNoSleepModel: ObservableObject {
             max(defaults.object(forKey: Key.playfulMomentIntervalSeconds) as? Int ?? 90, 15),
             120
         )
+        overrideLanguage = defaults.string(forKey: Key.overrideLanguage) ?? ""
         playfulDancingWeight = min(
             max(defaults.object(forKey: Key.playfulDancingWeight) as? Int ?? 5, 0),
             10
@@ -1314,6 +1324,7 @@ final class SweetNoSleepModel: ObservableObject {
         static let animationsEnabled = "pet.animationsEnabled"
         static let playfulMomentsEnabled = "pet.playfulMomentsEnabled"
         static let playfulMomentIntervalSeconds = "pet.playfulMomentIntervalSeconds"
+        static let overrideLanguage = "app.language"
         static let playfulDancingWeight = "pet.playfulDancingWeight"
         static let playfulStretchingWeight = "pet.playfulStretchingWeight"
         static let playfulCuriousWeight = "pet.playfulCuriousWeight"

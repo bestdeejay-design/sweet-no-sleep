@@ -15,13 +15,35 @@ struct SettingsView: View {
                 PowerSettingsPane(model: model)
                     .tabItem { Label(L10n.text("Power"), systemImage: "battery.100percent") }
             }
-            HStack(spacing: 6) {
-                Text("Sweet No Sleep")
-                    .font(.system(size: 10, weight: .medium, design: .rounded))
+            HStack(spacing: 10) {
+                Picker(selection: $model.overrideLanguage, label: EmptyView()) {
+                    Text(L10n.text("System language")).tag("")
+                    Text("English").tag("en")
+                    Text("\u{0420}\u{0443}\u{0441}\u{0441}\u{043a}\u{0438}\u{0439}").tag("ru")
+                    Text("Español").tag("es")
+                    Text("\u{d55c}\u{ad6d}\u{c5b4}").tag("ko")
+                    Text("\u{4e2d}\u{6587}").tag("zh-Hans")
+                    Text("\u{65e5}\u{672c}\u{8a9e}").tag("ja")
+                }
+                .labelsHidden()
+                .font(.system(size: 11, design: .rounded))
+                .frame(width: 150)
                 Spacer()
                 Text(L10n.format("Version %@ (build %@)", version, build))
                     .font(.system(size: 10, design: .rounded))
             }
+            .padding(.horizontal, 14)
+            .padding(.bottom, 4)
+            HStack(spacing: 6) {
+                Text(L10n.format("Interface language: %@", L10n.text("System language")))
+                    .font(.system(size: 9, design: .rounded))
+                Spacer()
+                Text("Sweet No Sleep")
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+            }
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 14)
+            .padding(.bottom, 2)
             .foregroundStyle(.secondary)
             .padding(.horizontal, 14)
             .padding(.vertical, 6)
