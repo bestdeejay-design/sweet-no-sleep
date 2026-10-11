@@ -521,6 +521,8 @@ def extract_part_layers(
     """Extract and key each part from the part sheet, placing it in the assembled pose."""
     scale = WORK / 3756.0
     parts_rgb = np.array(parts_work.convert("RGB"))
+    # слои режутся из листа деталей, поэтому кант светлеем именно здесь
+    parts_rgb = lighten_hood(parts_rgb)
     layers: dict[str, Image.Image] = {}
 
     for name in ("legs-a", "legs-b", "legs-c", "tail", "body", "head"):
@@ -536,11 +538,31 @@ def extract_part_layers(
         ramp = np.clip((1.0 - lightness) / 0.10, 0.0, 1.0)
         alpha = np.where(backdrop, ramp * 255.0, 255.0)
         part_char = alpha > 12
+        # The part boxes overlap (body ∩ legs-a 164x103, body ∩ legs-c 98x159), so a
+        # rectangle crop drags in a neighbour's corner. Keep only the components that
+        # belong to this piece: anything under a fifth of the largest blob is a
+        # neighbour's fragment, not part of the piece.
+        blobs = label_blobs(part_char, factor=2, min_pixels=64)
+        if blobs:
+            biggest = max(int(blob.sum()) for blob in blobs)
+            keep = np.zeros_like(part_char)
+            for blob in blobs:
+                if int(blob.sum()) >= biggest * 0.2:
+                    keep |= blob
+            part_char = keep
         alpha = np.array(
             Image.fromarray(np.where(part_char, alpha, 0.0).round().astype(np.uint8), mode="L").filter(
                 ImageFilter.GaussianBlur(0.7)
             )
         )
+        # The blur above feathers the whole mask, which leaves the artwork's light
+        # rim semi-transparent (0.9 % of the head layer was alpha < 255 and the
+        # maintainer sees it as a washed-out outline). Hard the interior back to 255
+        # and keep the feather only on the outermost pixel.
+        interior = np.asarray(
+            Image.fromarray((part_char * 255).astype(np.uint8), mode="L").filter(ImageFilter.MinFilter(3))
+        ) > 127
+        alpha[interior] = 255
 
         if name == "head":
             # Erase painted eyes so renderer draws animated vector eyes
@@ -559,6 +581,38 @@ def extract_part_layers(
         layers[name] = layer_image(full_rgb, full_alpha, box)
 
     return layers
+
+
+def lighten_hood(rgb: np.ndarray, amount: float = 0.55, reach: int = 14) -> np.ndarray:
+    """Lift the pale green rim around the muzzle (the "hood" contour) toward white.
+
+    The v2 artwork draws that rim in a light green (about 214,255,181), which the
+    hue-band recolour treats as ordinary green, so every palette variant ends up
+    with its own dull version of it. Lightening the rim in the master before the
+    packs are derived gives all three themes the same brighter hood.
+    """
+    values = rgb.astype(np.float32) / 255.0
+    maximum = values.max(axis=2)
+    minimum = values.min(axis=2)
+    delta = maximum - minimum
+    red, green, blue = values[..., 0], values[..., 1], values[..., 2]
+    mask = delta > 1e-6
+    hue = np.zeros_like(maximum)
+    hue = np.where(mask & (maximum == red), ((green - blue) / np.where(mask, delta, 1)) % 6, hue)
+    hue = np.where(mask & (maximum == green) & ~(maximum == red), (blue - red) / np.where(mask, delta, 1) + 2, hue)
+    hue = np.where(mask & ~(maximum == red) & ~(maximum == green), (red - green) / np.where(mask, delta, 1) + 4, hue)
+    hue = hue / 6.0
+    light_green = (hue > 0.16) & (hue < 0.50) & (minimum > 0.55)
+    pink = ((hue > 0.83) | (hue < 0.08)) & (delta > 0.05)
+    if not pink.any():
+        return rgb
+    near_face = np.asarray(
+        Image.fromarray((pink * 255).astype(np.uint8), mode="L").filter(ImageFilter.MaxFilter(2 * reach + 1))
+    ) > 127
+    hood = light_green & near_face
+    out = values.copy()
+    out[hood] = out[hood] + (1.0 - out[hood]) * amount
+    return (out * 255).round().astype(np.uint8)
 
 
 def recolor(rgb: np.ndarray, bands: dict[str, tuple[float, float, float]]) -> np.ndarray:
@@ -797,6 +851,7 @@ def derive() -> tuple[dict[str, dict[str, Image.Image]], dict[str, float], dict[
     with Image.open(MASTER) as handle:
         master_work = handle.resize((WORK, WORK), Image.LANCZOS)
     master_rgb = np.array(master_work.convert("RGB"))
+    master_rgb = lighten_hood(master_rgb)
 
     with Image.open(PARTS) as handle:
         parts_work = handle.resize((WORK, WORK), Image.LANCZOS)
