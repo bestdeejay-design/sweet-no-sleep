@@ -62,7 +62,9 @@ def binary_path(argument: str | None) -> pathlib.Path | None:
         if candidate.is_dir() and candidate.suffix == ".app":
             candidate = candidate / "Contents" / "MacOS" / "SweetNoSleep"
         if candidate.is_file():
-            return candidate
+            # Resolve here: `main` prints this path with `relative_to(ROOT)`, which
+            # raises on a relative path — and `check-project.sh` passes one.
+            return candidate.resolve()
     for fallback in CANDIDATES:
         path = ROOT / fallback
         if path.is_file():
