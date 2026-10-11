@@ -863,6 +863,9 @@ def derive() -> tuple[dict[str, dict[str, Image.Image]], dict[str, float], dict[
 
     layers = extract_part_layers(parts_work, box)
 
+    # The pivot must sit at the real joint of these layers, not at the old cut.
+    metrics["tailPivotX"], metrics["tailPivotY"] = tail_joint_pivot(layers)
+
     mad, pct_8, pct_24 = verify_recomposition(master_rgb, box, layers)
     print(f"Recomposition verification: MAD={mad:.4f}/255, diff>8: {pct_8:.2f}%, diff>24: {pct_24:.2f}%")
     if mad > 10.0 or pct_8 > 15.0:
@@ -879,6 +882,35 @@ def derive() -> tuple[dict[str, dict[str, Image.Image]], dict[str, float], dict[
         skins[variant_id] = variant_skin(base_skin, variant_id)
 
     return packs, metrics, skins
+
+
+def tail_joint_pivot(layers: dict[str, Image.Image]) -> tuple[float, float]:
+    """Where the tail meets the body, pushed a little inside the body.
+
+    `tail_region()` derives the pivot from the old algorithmic cut, which no longer
+    matches a tail taken from the part sheet: measured on the v2 layers it sat
+    178 px from the real joint, i.e. near the tip, so the tail swung around the
+    wrong end and its base flew off the hip. Take the closest pair of tail and body
+    pixels instead (coarse grid is enough for a pivot), and move a third of the way
+    into the body so the joint stays covered while the tail swings.
+    """
+    tail = np.asarray(layers["tail"])[..., 3] > 8
+    body = np.asarray(layers["body"])[..., 3] > 8
+    canvas = tail.shape[0]
+    step = 8
+    ty, tx = np.nonzero(tail[::step, ::step])
+    by, bx = np.nonzero(body[::step, ::step])
+    if not len(ty) or not len(by):
+        return 0.0, 0.0
+    tp = np.stack([tx * step, ty * step], axis=1).astype(np.float64)
+    bp = np.stack([bx * step, by * step], axis=1).astype(np.float64)
+    if len(bp) > 4000:
+        bp = bp[:: max(1, len(bp) // 4000)]
+    distance = ((tp[:, None, :] - bp[None, :, :]) ** 2).sum(axis=2)
+    i, j = np.unravel_index(int(np.argmin(distance)), distance.shape)
+    joint_tail, joint_body = tp[i], bp[j]
+    pivot = joint_tail + (joint_body - joint_tail) * 0.35
+    return float(pivot[0] / canvas), float(pivot[1] / canvas)
 
 
 def preview_for(pack_layers: dict[str, Image.Image], metrics: dict[str, float], skin: dict) -> tuple[Image.Image, Image.Image]:
