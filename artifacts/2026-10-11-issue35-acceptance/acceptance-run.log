@@ -1,0 +1,52 @@
+== gate 1: pipeline self-consistency ==
+   PASS: Character asset check passed.
+   derived rig: tailPivotX: 0.268359375, tailPivotY: 0.7109375, characterWidth: 0.9106, characterHeight: 0.8759, cutX: 0.1953, headPivotX: 0.5, headPivotY: 0.7026, legPivotAX: 0.3686, legPivotAY: 0.8394, legPivotBX: 0.5155, legPivotBY: 0.8394, legPivotCX: 0.656, legPivotCY: 0.8394, eyeLeftX: 0.4626, eyeLeftY: 0.51, eyeRightX: 0.7495, eyeRightY: 0.437, eyeRadiusX: 0.0246, eyeRadiusY: 0.0356
+
+== gate 2: committed assets vs base 3c8ac30 ==
+   kot-arbuz: head:CHANGED  body:CHANGED  tail:CHANGED  legs-a:CHANGED  legs-b:CHANGED  legs-c:CHANGED  preview:CHANGED
+   kot-arbuz-moonlight: head:CHANGED  body:CHANGED  tail:CHANGED  legs-a:CHANGED  legs-b:CHANGED  legs-c:CHANGED  preview:CHANGED
+   kot-arbuz-strawberry: head:CHANGED  body:CHANGED  tail:CHANGED  legs-a:CHANGED  legs-b:CHANGED  legs-c:CHANGED  preview:CHANGED
+   PASS: 18 of 18 layer files differ from the base
+
+== gate 3: pipeline wired to the v2 sources ==
+   The master `Resources/Characters/kot-arbuz/v2/kot-arbuz-v2.png` is a 3756 x 3756
+   `Resources/Characters/kot-arbuz/v2/kot-arbuz-v2-parts.png` carries the character
+   MASTER = ROOT / "Resources" / "Characters" / "kot-arbuz" / "v2" / "kot-arbuz-v2.png"
+   PARTS = ROOT / "Resources" / "Characters" / "kot-arbuz" / "v2" / "kot-arbuz-v2-parts.png"
+   PASS: at least one art source resolves inside Characters/kot-arbuz/v2/
+
+== gate 4: assembled app vs source (Sweet No Sleep — Kiwi Cat.app) ==
+   PASS: the bundle carries the committed layers and previews
+
+== gate 5: the assembled character is a single blob ==
+   kot-arbuz: 507082 opaque px, 0 px outside the main blob
+   kot-arbuz-moonlight: 507082 opaque px, 0 px outside the main blob
+   kot-arbuz-strawberry: 507082 opaque px, 0 px outside the main blob
+   PASS: worst pack has 0 stranded px (tolerance 32)
+
+== for review: part-sheet alignment of the base pack (no verdict) ==
+   The pieces on the sheet are scaled and translated, not rotated (verified on
+   PR #32), but a bounding-box comparison against the *old* layers is still
+   meaningless because they are cut differently. Read this as a hint, not a gate:
+   the residual mixes the art
+   revision with decomposition differences (the sheet is cut differently
+   from the current layers), so a high number does not by itself mean v1.
+   Identical files compared at the same angle give 0.00.
+   layer      current: angle   resid    base rev: angle   resid
+   head                    0   11.52                  4   31.85
+   body                    0    2.78                 16   40.14
+   tail                    0    5.99                132   56.34
+   legs-a                  0    4.44                 88   27.68
+   legs-b                  0    5.94               -108   35.27
+   legs-c                  0    4.72                -52   35.90
+
+== summary ==
+   gate 1 pipeline --check : PASS
+   gate 2 art switched     : PASS (18 files changed)
+   gate 3 wired to v2      : PASS
+   gate 4 bundle fresh     : PASS
+   gate 5 single blob      : PASS (worst pack 0 px stranded)
+
+VERDICT: ACCEPT
+   Still eyeball the visual sheets: the gates prove the pack is new and
+   self-consistent, they cannot tell you the cat looks right.

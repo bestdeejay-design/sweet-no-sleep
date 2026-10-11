@@ -1,0 +1,149 @@
+Shell syntax checks passed.
+Localization check passed: 242 English source keys match the catalog, and all 242 keys ship in 6 locales (en, es, ja, ko, ru, zh-Hans).
+self-test: OpenStep strings round-trip ok (9 entries, 714 bytes)
+en: 242 keys resolved at runtime through the CFBundle strings loader; Bundle.module offers 6 locales and its table parses to 242 entries
+es: 242 keys resolved at runtime through the CFBundle strings loader; Bundle.module offers 6 locales and its table parses to 242 entries
+ja: 242 keys resolved at runtime through the CFBundle strings loader; Bundle.module offers 6 locales and its table parses to 242 entries
+ko: 242 keys resolved at runtime through the CFBundle strings loader; Bundle.module offers 6 locales and its table parses to 242 entries
+ru: 242 keys resolved at runtime through the CFBundle strings loader; Bundle.module offers 6 locales and its table parses to 242 entries
+zh-Hans: 242 keys resolved at runtime through the CFBundle strings loader; Bundle.module offers 6 locales and its table parses to 242 entries
+Localization runtime check passed: 6 locales (en, es, ja, ko, ru, zh-Hans) resolve all 242 keys at runtime.
+Rendered app icon, menu-bar icons, skin previews, and social images into /Users/best/Projects/sweet-no-sleep/Resources/Art/Rendered
+Media validation passed: 8 editable SVG sources and complete generated outputs.
+Skin validation passed: 6 manifest(s), 6 unique IDs, 3 sprite character(s).
+Character asset check passed.
+Recomposition verification: MAD=4.5228/255, diff>8: 7.57%, diff>24: 4.14%
+Layers derived from the master artwork:
+  tailPivotX: 0.268359375
+  tailPivotY: 0.7109375
+  characterWidth: 0.9106
+  characterHeight: 0.8759
+  cutX: 0.1953
+  headPivotX: 0.5
+  headPivotY: 0.7026
+  legPivotAX: 0.3686
+  legPivotAY: 0.8394
+  legPivotBX: 0.5155
+  legPivotBY: 0.8394
+  legPivotCX: 0.656
+  legPivotCY: 0.8394
+  eyeLeftX: 0.4626
+  eyeLeftY: 0.51
+  eyeRightX: 0.7495
+  eyeRightY: 0.437
+  eyeRadiusX: 0.0246
+  eyeRadiusY: 0.0356
+animation-kot-arbuz.webp: 525x525, 188 frames, 4216 KB
+animation-kot-arbuz.gif: 525x525, 188 frames, 6422 KB
+animation-kiwi.webp: 525x525, 188 frames, 4154 KB
+animation-kiwi.gif: 525x525, 188 frames, 5349 KB
+effect-45pt-kot-arbuz.png: 116x116, 17 KB
+effect-45pt-kot-arbuz@4x.png: 464x464, 143 KB
+effect-45pt-kot-arbuz-moonlight.png: 116x116, 16 KB
+effect-45pt-kot-arbuz-moonlight@4x.png: 464x464, 123 KB
+effect-45pt-kot-arbuz-strawberry.png: 116x116, 17 KB
+effect-45pt-kot-arbuz-strawberry@4x.png: 464x464, 128 KB
+Character animation check passed: 2 cats, transparent 525x525 loops, 3 45 pt effect frames.
+Agent hook smoke tests passed (10 mocked URL events).
+ok path start
+ok path heartbeat strips query
+ok unknown path
+ok auth ok
+ok bad host
+ok bad origin
+ok bad token
+ok session json
+ok empty body
+ok empty session
+ok port occupied at launch
+ok start when free
+ok deliver while running
+ok stop drops further events
+ok old token rejected after regen
+ok new token accepted
+ok rapid toggle ends running
+ok 500-char reason capped at 200
+ok whitespace-only reason absent
+ok empty reason absent
+ok nil reason absent
+ok normal reason unchanged
+ok control chars flattened and trimmed
+Webhook auth/lifecycle tests passed.
+MCP server smoke test passed.
+Building for debugging...
+[Planning deferred tasks]
+[1 / 2]
+[2 / 3] SweetNoSleep-product
+[13 / 75]
+[15 / 75]
+[21 / 75]
+[26 / 75]
+[28 / 75]
+[33 / 75]
+[36 / 75]
+[40 / 75]
+[46 / 75]
+[49 / 75]
+[51 / 75]
+[52 / 75]
+[62 / 75]
+[66 / 75]
+[70 / 75]
+[72 / 75]
+[74 / 75] SweetNoSleep-product
+[76 / 78] SweetNoSleep-product
+Build complete! (8,22 с)
+Panel wander smoke test passed: 48 eased frame steps moved pet.panelOrigin to the target.
+ok   shipped launch consults bundle then user, no repository root
+ok   bundle root is the app's own PetSkins
+ok   shipped launch renders the baked-in v2 kot-arbuz
+ok   kot-arbuz is read from inside the bundle
+ok   shipped launch renders the baked-in v2 kot-arbuz-moonlight
+ok   kot-arbuz-moonlight is read from inside the bundle
+ok   blank override variable is ignored
+ok   explicit override sits between bundle and user
+ok   explicit override is the only way the checkout's pack wins
+ok   user pack overrides the bundled kot-arbuz
+ok   user pack leaves the other bundled packs alone
+ok   unbundled run consults the nearest repository root
+ok   unbundled run reads the checkout it was built from
+ok   app outside a checkout resolves only its bundle
+Pack root tests passed.
+debug instruments report from dist/Sweet No Sleep — Kiwi Cat.app/Contents/MacOS/SweetNoSleep:
+  idle
+  working
+  celebrating
+  dancing
+  stretching
+  curious
+  breakReminder
+  resting
+  dragging
+  walking
+  waitingForApproval
+Debug instruments check passed: 11 mood ids match `KiwiMood`, parser and docs.
+pack roots resolved by the app (SweetNoSleep --pack-roots, run from this checkout):
+  bundle     present  /Users/best/Projects/sweet-no-sleep/dist/Sweet No Sleep — Kiwi Cat.app/Contents/Resources/PetSkins
+  user       present  /Users/best/Library/Application Support/SweetNoSleep/PetSkins
+packs and the head.png each one renders:
+  kiwi                     -            /Users/best/Projects/sweet-no-sleep/dist/Sweet No Sleep — Kiwi Cat.app/Contents/Resources/PetSkins/kiwi
+  kot-arbuz                0b1153817b9a /Users/best/Projects/sweet-no-sleep/dist/Sweet No Sleep — Kiwi Cat.app/Contents/Resources/PetSkins/kot-arbuz
+  kot-arbuz-moonlight      21f7913be9ed /Users/best/Projects/sweet-no-sleep/dist/Sweet No Sleep — Kiwi Cat.app/Contents/Resources/PetSkins/kot-arbuz-moonlight
+  kot-arbuz-strawberry     06c787f2c58c /Users/best/Projects/sweet-no-sleep/dist/Sweet No Sleep — Kiwi Cat.app/Contents/Resources/PetSkins/kot-arbuz-strawberry
+  moonlight                -            /Users/best/Projects/sweet-no-sleep/dist/Sweet No Sleep — Kiwi Cat.app/Contents/Resources/PetSkins/moonlight
+  strawberry               -            /Users/best/Projects/sweet-no-sleep/dist/Sweet No Sleep — Kiwi Cat.app/Contents/Resources/PetSkins/strawberry
+PASS: the app renders 6 bundled pack(s) from its own bundle, byte-identical to Resources/PetSkins
+debug instruments report from dist/Sweet No Sleep — Kiwi Cat.app/Contents/MacOS/SweetNoSleep:
+  idle
+  working
+  celebrating
+  dancing
+  stretching
+  curious
+  breakReminder
+  resting
+  dragging
+  walking
+  waitingForApproval
+Debug instruments check passed: 11 mood ids match `KiwiMood`, parser and docs.
+EXIT=0
