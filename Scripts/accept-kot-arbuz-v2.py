@@ -214,6 +214,48 @@ def gate_bundle(app: Path) -> bool:
     return not problems
 
 
+def connected_gate(tolerance: int = 32) -> tuple[bool, dict[str, int]]:
+    """Gate 5: the six layers composed in rig order must be one connected blob.
+
+    Catches a piece crop that swept up a corner of a neighbour: the fragment is
+    detached from the piece, so the assembled character ends up as several
+    components. Propagation is numpy-based (the opaque mask only), so it is exact.
+    """
+    print("\n== gate 5: the assembled character is a single blob ==")
+    results: dict[str, int] = {}
+    for pack in PACKS:
+        stack = Image.new("RGBA", (1024, 1024), (0, 0, 0, 0))
+        for layer in LAYERS:
+            path = ROOT / "Resources" / "PetSkins" / pack / f"{layer}.png"
+            if path.is_file():
+                stack.alpha_composite(Image.open(path).convert("RGBA"))
+        opaque = np.asarray(stack)[..., 3] > 8
+        total = int(opaque.sum())
+        ys, xs = np.nonzero(opaque)
+        if not len(ys):
+            results[pack] = 0
+            continue
+        reach = np.zeros_like(opaque)
+        reach[int(np.median(ys)), int(np.median(xs))] = True
+        reach &= opaque
+        for _ in range(4000):
+            prev = reach.copy()
+            reach[1:, :] |= prev[:-1, :]
+            reach[:-1, :] |= prev[1:, :]
+            reach[:, 1:] |= prev[:, :-1]
+            reach[:, :-1] |= prev[:, 1:]
+            reach &= opaque
+            if np.array_equal(reach, prev):
+                break
+        stranded = total - int(reach.sum())
+        results[pack] = stranded
+        print(f"   {pack}: {total} opaque px, {stranded} px outside the main blob")
+    worst = max(results.values()) if results else 0
+    ok = worst <= tolerance
+    print(f"   {'PASS' if ok else 'FAIL'}: worst pack has {worst} stranded px (tolerance {tolerance})")
+    return ok, results
+
+
 def report_transforms(base: str) -> None:
     print("\n== for review: part-sheet alignment of the base pack (no verdict) ==")
     print("   The pieces on the sheet are scaled and translated, not rotated (verified on")
@@ -310,6 +352,7 @@ def main() -> int:
     changed_ok, changed = gate_changed(arguments.base)
     wiring_ok, _ = gate_wiring()
     bundle_ok = gate_bundle(Path(arguments.app)) if arguments.app else True
+    connected_ok, connected = connected_gate()
 
     report_transforms(arguments.base)
     if arguments.out:
@@ -321,7 +364,8 @@ def main() -> int:
     print(f"   gate 3 wired to v2      : {'PASS' if wiring_ok else 'FAIL'}")
     if arguments.app:
         print(f"   gate 4 bundle fresh     : {'PASS' if bundle_ok else 'FAIL'}")
-    ok = pipeline_ok and changed_ok and wiring_ok and bundle_ok
+    print(f"   gate 5 single blob      : {'PASS' if connected_ok else 'FAIL'} (worst pack {max(connected.values()) if connected else 0} px stranded)")
+    ok = pipeline_ok and changed_ok and wiring_ok and bundle_ok and connected_ok
     print("\nVERDICT: " + ("ACCEPT" if ok else "REJECT - see the FAIL lines above"))
     if ok:
         print("   Still eyeball the visual sheets: the gates prove the pack is new and")

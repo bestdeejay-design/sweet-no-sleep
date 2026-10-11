@@ -41,6 +41,33 @@ The bounding boxes describe where each piece sits **in the exploded sheet**,
 not where it belongs on the assembled cat. The offsets back into the assembled
 pose have to be derived by matching each piece against `kot-arbuz-v2.png`.
 
+### The boxes overlap — crop by component, not by rectangle
+
+**Added 2026-10-11.** The six boxes above are *bounding* boxes of pieces drawn close
+together, and two of them overlap:
+
+| Overlap | Size |
+| --- | --- |
+| `body` ∩ `legs-a` | 164 x 103 px |
+| `body` ∩ `legs-c` | 98 x 159 px |
+
+Cropping a piece by its rectangle therefore picks up a corner of its neighbour.
+Measured on the layers delivered in PR #32 / PR #34: `body.png` carried two extra
+connected components — 754 px at canvas (274,866)-(309,899) and 423 px at
+(740,869)-(762,899) — which are the **tops of the outer legs**, and `legs-c.png`
+carried a 20 px fragment of its neighbour. In the assembled pet they render as two
+small green triangles beside the legs: absent from the artist's artwork, absent from
+the v1 derivation, and easy to miss in a loop where the pet is 370 px tall.
+
+Rule: after cropping by the box, keep only the connected component(s) that belong to
+that piece — the component containing the box centre, or the largest one — and drop
+everything else. When a box overlaps a neighbour, the neighbour's fragment falls in
+the crop but does not touch the piece, so a component test removes it.
+
+Acceptance: composing the six layers in rig order must produce **exactly one
+connected component** (v1: one, 506 917 px; PR #34: four). `Scripts/accept-kot-arbuz-v2.py`
+gates this now.
+
 ### Separating the pieces from the white background
 
 The delivered files are rasters on an opaque white background (the SVG wrappers
