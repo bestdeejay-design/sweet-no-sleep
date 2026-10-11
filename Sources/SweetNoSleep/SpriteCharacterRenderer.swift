@@ -11,8 +11,10 @@ import SwiftUI
 /// cursor, blink on Kiwi's cadence and close while resting - the same motion
 /// vocabulary as `KiwiPetView`, applied to the watermelon cat's own artwork.
 enum SpriteCharacterRenderer {
-    /// Fraction of the canvas height the sprite occupies; keeps every character
-    /// at the same on-screen size as the procedural cat.
+    /// Fraction of the pet frame's side the sprite occupies; keeps every
+    /// character at the same on-screen size as the procedural cat. The frame is
+    /// the square v1 filled, so these are v1's ratios: the aura margin lives in
+    /// the canvas around the frame (`PetPanelLayout.auraCanvasScale`), not here.
     private static let spriteHeightRatio: CGFloat = 0.88
     /// Baseline the paws rest on, matching `KiwiPetView.drawPet`.
     private static let feetRatio: CGFloat = 0.862

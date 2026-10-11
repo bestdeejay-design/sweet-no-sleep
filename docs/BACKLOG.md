@@ -60,6 +60,12 @@ UI tests; portfolio image swaps need manual cache-busting; docs scatter.
   `Sources/SweetNoSleep/SpriteCharacterRenderer.swift` (`drawHalo`) and the
   Pillow port in `Scripts/render-character-animations.py`
   (`draw_sprite_halo`), which must stay in step.
+  *Resolved (PR #34):* the effects keep their v1 strength and the frame grew
+  instead — `PetPanelLayout.auraCanvasScale = 1.25` gives the live panel the
+  ring (the pet is still laid out in the `petSize + 48` frame, so its on-screen
+  size is unchanged), the loops render the same 420 px frame on a 525 px canvas,
+  and `--check` fails if any pixel touches the border. The Mac pass at
+  45/132/170 pt is the remaining acceptance item and stays with the maintainer.
 
 - **B-27 · ✅ Withdrawn (2026-10-11) — mis-specified.** Filed as "see-through
   slits punched into the character by the white-key", with 385 px (v1) / 403 px
@@ -139,7 +145,15 @@ UI tests; portfolio image swaps need manual cache-busting; docs scatter.
 
 - **B-20 · Waiting-cue discoverability.** Live confusion: a stale hook session showed "1 waiting" but the user could not find the question — the bubble hides permanently after "Not now" (`dismissedWaitingIDs`) and dashboard rows show only short ids/states. *Accept:* dashboard row shows the question text; opening the dashboard re-arms the bubble for undismissed waiting sessions; "End agent sessions" confirm mentions which sessions end.
 
-- **B-21 · Debug mood trigger.** Promo filming was painful: playful moods are random with a 60 s floor, so capturing the dance required blind waiting. *Accept:* hidden `sweetnosleep://debug/mood?mood=dancing&duration=4` (and `?list=1`) behind `agentBridge.enabled`; undocumented in README, documented in CODE_AUDIT; lets demos and tests trigger any `KiwiMood` deterministically.
+- **B-21 · ✅ Done (PR #34) — debug mood, placement and size.** Promo filming was
+  painful: playful moods are random with a 60 s floor, so capturing the dance
+  required blind waiting, and the panel could only be dragged by hand. Delivered
+  behind `agentBridge.enabled`: `sweetnosleep://debug/mood?mood=<id>&duration=`
+  (plus `?list=1` and the headless `--debug-moods`),
+  `sweetnosleep://debug/place?x=&y=[&screen=]` and
+  `sweetnosleep://debug/size?pt=`. Absent from the user READMEs, documented in
+  `docs/CODE_AUDIT.md`. `place` moves the pet, not the waiting bubble, and
+  persists like a drag.
 - **B-22 · Native-speaker localization review.** PR #26 translations were written by the arena; RU/ES wording, gender assumptions (pet = masculine), and KO/ZH/JA nuance need a human pass. *Accept:* maintainer/native review notes applied; validator stays green.
 - **B-23 · Notarized public builds.** v1.0.0 ships ad-hoc signed (right-click → Open). For wider distribution: Developer ID signing + notarization, or document the friction prominently; consider update delivery (manual re-download vs Sparkle). *Accept:* a release whose first launch needs no workaround, or a README banner that survives contact with a real user.
 - **B-24 · Retire `localize.sh`.** The Crowdin-based script predates PR #26's direct-translation flow and can overwrite hand-edited catalog entries. *Accept:* script removed or clearly gated; README workflow updated to match how localization actually happens now.

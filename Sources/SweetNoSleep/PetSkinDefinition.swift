@@ -285,7 +285,8 @@ struct PetSkinDefinition: Codable, Identifiable, Hashable {
 }
 
 /// Loads built-in packs from the app bundle and user-created packs from
-/// Application Support. In a source checkout it also reads the repo Resources.
+/// Application Support. An unbundled (source) run also reads the nearest repo
+/// Resources; which roots apply is decided by `PetPackRoots`.
 enum PetSkinLibrary {
     static var userDirectory: URL? {
         guard let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return nil }
@@ -293,18 +294,41 @@ enum PetSkinLibrary {
     }
 
     static func load() -> [PetSkinDefinition] {
+        load(roots: packRoots())
+    }
+
+    /// Loads every pack under `roots`, in order. Later roots override earlier
+    /// ones, so a user pack can safely replace a built-in ID without changing app
+    /// source. See `PetPackRoots` for which roots a launch consults.
+    static func load(roots: [PetPackRoot]) -> [PetSkinDefinition] {
         var definitions: [String: PetSkinDefinition] = [:]
-        for root in skinDirectories() {
-            for folder in skinFolders(in: root) {
+        for root in roots {
+            for folder in skinFolders(in: root.url) {
                 guard let definition = loadDefinition(from: folder) else { continue }
-                // Later roots override earlier ones, so a user pack can safely
-                // replace a built-in ID without changing app source.
                 definitions[definition.id] = definition
             }
         }
         return definitions.values.sorted {
             $0.name.localizedStandardCompare($1.name) == .orderedAscending
         }
+    }
+
+    /// The pack roots of this process, in precedence order.
+    static func packRoots() -> [PetPackRoot] {
+        let workingDirectory = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        // #filePath may be absolute in Xcode or relative under SwiftPM.
+        let sourceFile = URL(fileURLWithPath: String(#filePath), relativeTo: workingDirectory)
+            .absoluteURL
+            .standardizedFileURL
+        return PetPackRoots.resolve(
+            bundleURL: Bundle.main.bundleURL,
+            bundleResources: Bundle.main.resourceURL,
+            sourceFile: sourceFile,
+            executable: Bundle.main.executableURL,
+            workingDirectory: workingDirectory,
+            userDirectory: userDirectory,
+            environment: ProcessInfo.processInfo.environment
+        )
     }
 
     /// Reads one pack folder: `skin.json` plus the optional `pet.json` character
@@ -335,43 +359,6 @@ enum PetSkinLibrary {
               let manifest = try? JSONDecoder().decode(PetCharacterManifest.self, from: data)
         else { return nil }
         return manifest.art
-    }
-
-    private static func skinDirectories() -> [URL] {
-        var roots: [URL] = []
-        if let bundleResources = Bundle.main.resourceURL {
-            roots.append(bundleResources.appendingPathComponent("PetSkins", isDirectory: true))
-        }
-
-        // #filePath may be absolute in Xcode or relative under SwiftPM. Also
-        // search upward from the running executable so `swift run --package-path`
-        // works even when the process was launched from a different directory.
-        let workingDirectory = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
-        let sourceFile = URL(fileURLWithPath: String(#filePath), relativeTo: workingDirectory)
-            .absoluteURL
-            .standardizedFileURL
-        appendRepositoryRoots(startingAt: sourceFile.deletingLastPathComponent(), to: &roots)
-
-        if let executable = Bundle.main.executableURL {
-            appendRepositoryRoots(startingAt: executable.deletingLastPathComponent(), to: &roots)
-        }
-        appendRepositoryRoots(startingAt: workingDirectory, to: &roots)
-
-        // User packs are last and can intentionally override a bundled ID.
-        if let userDirectory { roots.append(userDirectory) }
-
-        var seenPaths = Set<String>()
-        return roots.filter { seenPaths.insert($0.standardizedFileURL.path).inserted }
-    }
-
-    private static func appendRepositoryRoots(startingAt start: URL, to roots: inout [URL]) {
-        var directory = start.standardizedFileURL
-        for _ in 0..<8 {
-            roots.append(directory.appendingPathComponent("Resources/PetSkins", isDirectory: true))
-            let parent = directory.deletingLastPathComponent()
-            guard parent.path != directory.path else { break }
-            directory = parent
-        }
     }
 
     private static func skinFolders(in root: URL) -> [URL] {

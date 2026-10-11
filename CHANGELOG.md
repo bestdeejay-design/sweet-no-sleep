@@ -5,6 +5,34 @@ The format follows Keep a Changelog, versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+- **Pack-root precedence (issue #33):** a shipped `.app` now renders only the packs
+  inside its own bundle (plus user packs in Application Support). Before, the
+  repository's `Resources/PetSkins` was found by walking up from the build path and
+  could override the bundle, so a build made inside a checkout still drew the v1
+  Kot-Arbuz. Repository roots are now consulted only by unbundled runs, and
+  `SWEET_NO_SLEEP_PACK_ROOT` is the explicit opt-in. `PetPackRoots` holds the rule,
+  `SweetNoSleep --pack-roots` reports the resolved roots, and
+  `Scripts/test-pack-roots.sh` plus `Scripts/verify-pack-roots.py` gate it in CI.
+- **Kot-Arbuz v2 art and aura (PR #32):** the layers are derived from the v2 part sheet, the
+  aura is no longer clipped by the panel, and the waiting reason is sanitized.
+- **The aura keeps its v1 strength (issue #30 follow-up):** the pre-fix effect
+  geometry is restored - halo `side * 0.52`, celebration `side * 0.44`, halo
+  factor `1.0`, sprite side `0.88` and feet baseline `0.862` of the pet frame -
+  and the canvas around the pet grew instead of the effect shrinking:
+  `PetPanelLayout.auraCanvasScale = 1.25`, so the panel holds the frame v1 used
+  plus the margin the halo needs, and the pet keeps its on-screen size. The
+  animation loops follow the same geometry: the pet is still drawn in a 420 px
+  frame and the delivered canvas is 525 px, with the `--check` guard proving no
+  pixel touches the border. The menu-bar dashboard's companion thumbnail keeps
+  its 116 pt card and v1's cropped look (`KiwiPetView.drawsAuraMargin`), since
+  the ring would grow the hand-tuned dashboard. `--effect-frames` adds one still per celebration
+  effect (leaves, moon dust, berry hearts) at the 45 pt Settings size.
+- **Debug instruments (B-21):** behind `agentBridge.enabled`,
+  `sweetnosleep://debug/mood` (with `?list=1` and a headless `SweetNoSleep
+  --debug-moods`), `sweetnosleep://debug/place` and
+  `sweetnosleep://debug/size?pt=` show a mood on demand, place the panel at
+  exact screen points, and set the pet size. Documented in
+  `docs/CODE_AUDIT.md`, absent from the user READMEs.
 - **Workspace consolidation:** the PR checkouts that sat next to the project
   (`sweet-no-sleep-pr9/-pr16/-pr22`) were git worktrees of this repository and
   are now relocated to `builds/{pr9,pr16,pr22}` with `git worktree move`; only

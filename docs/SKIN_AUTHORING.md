@@ -25,6 +25,19 @@ For example:
 
 The app reads manifests at launch, when **Refresh list** is clicked, and when the user skins folder changes (polled about every 2 seconds). A restart is not required. Bundled packs are in `Resources/PetSkins/` and are copied into the `.app` by `Scripts/build-app.sh`.
 
+### Which pack folders a launch reads (issue #33)
+
+Packs are merged from these roots, in this order; a later root's pack replaces an earlier one with the same ID:
+
+| Root | Consulted when | Precedence |
+| --- | --- | --- |
+| the app's own bundle, `Contents/Resources/PetSkins` | always | base |
+| `Resources/PetSkins` of a source checkout | only an unbundled run (`swift run`), and only the nearest one above the source file, the executable, or the working directory | over the bundle |
+| `$SWEET_NO_SLEEP_PACK_ROOT` (a `PetSkins` folder you name) | only when set; replaces the checkout search | over the bundle |
+| `~/Library/Application Support/SweetNoSleep/PetSkins` | always | last: overrides everything |
+
+A launch from an `.app` never walks up from its build path, so a stale checkout that happens to sit above the bundle cannot replace the packs the app was built with. To see what a build resolves, run `SweetNoSleep --pack-roots`; `Scripts/verify-pack-roots.py <app>` checks the assembled bundle.
+
 ## `skin.json` format
 
 Copy this template and change the values:

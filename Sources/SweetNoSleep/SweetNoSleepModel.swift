@@ -83,6 +83,9 @@ final class SweetNoSleepModel: ObservableObject {
     private var sessionTimer: Timer?
     private var heartbeatTimer: Timer?
     private var moodTimer: Timer?
+    /// Live `sweetnosleep://debug/mood` override, if any (`applyDebugMood`).
+    private var debugMoodUntil: Date?
+    private var debugMoodTimer: Timer?
     private var playfulTimer: Timer?
     private var breakTimer: Timer?
     private var sessionEndDate: Date?
@@ -582,12 +585,28 @@ final class SweetNoSleepModel: ObservableObject {
 
     // MARK: Local agent bridge
 
+    /// Set by `PetPanelController`: applies a `sweetnosleep://debug/place`
+    /// request. The model owns the URL, the controller owns the window, so the
+    /// controller registers this hook (see `DebugInstruments`).
+    var debugPlacementHandler: (@MainActor (CGPoint, Int?) -> Void)?
+
     /// Accepts an opt-in local URL event from a CLI hook or companion script:
     /// sweetnosleep://agent/start|heartbeat|waiting|done|failed?session=<id>[&reason=<text>]
+    ///
+    /// The same opt-in reaches the debug instruments, which are documented in
+    /// `docs/CODE_AUDIT.md` and change nothing when they are not used:
+    /// sweetnosleep://debug/mood|place|size
     func handleAgentURL(_ url: URL) {
         guard agentBridgeEnabled,
-              url.scheme?.lowercased() == "sweetnosleep",
-              url.host?.lowercased() == "agent",
+              url.scheme?.lowercased() == "sweetnosleep"
+        else { return }
+
+        if DebugInstruments.command(for: url) != nil {
+            handleDebugURL(url)
+            return
+        }
+
+        guard url.host?.lowercased() == "agent",
               let action = url.pathComponents.dropFirst().first
         else { return }
 
@@ -601,14 +620,64 @@ final class SweetNoSleepModel: ObservableObject {
         handleAgentEvent(action: action, sessionID: sessionID, reason: reason)
     }
 
+    // MARK: Debug instruments (docs/CODE_AUDIT.md)
+
+    /// Applies a parsed `sweetnosleep://debug/...` request. Reports go to
+    /// standard output, the same channel as the app's `--…` reports: launch the
+    /// app from a terminal (or read the log) to see them.
+    private func handleDebugURL(_ url: URL) {
+        switch DebugInstruments.command(for: url) {
+        case .listMoods:
+            for id in DebugInstruments.moodIDs {
+                print(id)
+            }
+        case let .mood(mood, duration):
+            applyDebugMood(mood, duration: duration)
+        case let .place(x, y, screen):
+            debugPlacementHandler?(CGPoint(x: x, y: y), screen)
+        case let .size(points):
+            petSize = points
+        case nil:
+            return
+        }
+    }
+
+    /// Shows `mood` for `duration` seconds, whatever the state machine would
+    /// pick meanwhile, and hands the pet back to the real state afterwards. A
+    /// second call replaces the first; the override never writes to the stored
+    /// session or power state.
+    func applyDebugMood(_ mood: KiwiMood, duration: TimeInterval) {
+        debugMoodTimer?.invalidate()
+        moodTimer?.invalidate()
+        moodTimer = nil
+        debugMoodUntil = Date().addingTimeInterval(duration)
+        self.mood = mood
+        debugMoodTimer = Timer.scheduledTimer(withTimeInterval: duration, repeats: false) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.debugMoodTimer = nil
+                self.debugMoodUntil = nil
+                self.mood = self.baseMood()
+            }
+        }
+    }
+
+    /// True while a `debug/mood` override owns the pet's mood.
+    private var isDebugMoodActive: Bool {
+        guard let debugMoodUntil else { return false }
+        return debugMoodUntil > Date()
+    }
+
+    /// Writes a mood unless a debug override owns it for the moment.
+    private func applyMood(_ newMood: KiwiMood) {
+        guard !isDebugMoodActive else { return }
+        mood = newMood
+    }
+
     /// Shared agent-event pipeline for both delivery channels: the
     /// sweetnosleep:// URL scheme and the loopback webhook server.
     func handleAgentEvent(action: String, sessionID: String, reason: String?) {
-        let trimmedReason = reason?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let cleanReason: String? = {
-            guard let value = trimmedReason, !value.isEmpty else { return nil }
-            return String(value.prefix(200))
-        }()
+        let cleanReason = Self.sanitizedReason(reason)
         switch action.lowercased() {
         case "start":
             renewAgentSession(sessionID: sessionID)
@@ -619,7 +688,7 @@ final class SweetNoSleepModel: ObservableObject {
             guard agentSessions[sessionID] != nil else { return }
             renewAgentSession(sessionID: sessionID)
         case "waiting":
-            markAgentWaiting(sessionID: sessionID, reason: reason)
+            markAgentWaiting(sessionID: sessionID, reason: cleanReason)
         case "done":
             finishAgentSession(sessionID: sessionID, failed: false)
         case "failed":
@@ -745,7 +814,7 @@ final class SweetNoSleepModel: ObservableObject {
     /// Marks a session as waiting for input. An unknown session is accepted as
     /// well, so a hook that only reports questions still lights the cue.
     private func markAgentWaiting(sessionID: String, reason: String?) {
-        let cleanReason = reason.map(Self.sanitizedReason)
+        let cleanReason = Self.sanitizedReason(reason)
         let alreadyWaiting = agentSessions[sessionID]?.isWaiting ?? false
         renewAgentSession(sessionID: sessionID, status: .waiting, reason: cleanReason)
         guard !alreadyWaiting else { return }
@@ -802,12 +871,14 @@ final class SweetNoSleepModel: ObservableObject {
     }
 
     /// Keeps only the reason text that is safe to show: one line, no control
-    /// characters, at most 200 characters.
-    private static func sanitizedReason(_ reason: String) -> String {
+    /// characters, at most 200 characters, returning nil if empty.
+    static func sanitizedReason(_ reason: String?) -> String? {
+        guard let reason else { return nil }
         let flattened = reason
             .components(separatedBy: .controlCharacters)
             .joined(separator: " ")
             .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !flattened.isEmpty else { return nil }
         return String(flattened.prefix(200))
     }
 
@@ -870,11 +941,11 @@ final class SweetNoSleepModel: ObservableObject {
 
     func beginDragging() {
         moodTimer?.invalidate()
-        mood = .dragging
+        applyMood(.dragging)
     }
 
     func endDragging() {
-        mood = baseMood()
+        applyMood(baseMood())
     }
 
     @discardableResult
@@ -886,13 +957,13 @@ final class SweetNoSleepModel: ObservableObject {
               !hasWaitingAgent,
               (mood == .idle || mood == .working)
         else { return false }
-        mood = .walking
+        applyMood(.walking)
         return true
     }
 
     func endWandering() {
         guard mood == .walking else { return }
-        mood = baseMood()
+        applyMood(baseMood())
     }
 
     func dismissBreakReminder(snoozeMinutes: Int? = nil) {
@@ -1290,17 +1361,17 @@ final class SweetNoSleepModel: ObservableObject {
     private func setMood(_ newMood: KiwiMood) {
         moodTimer?.invalidate()
         moodTimer = nil
-        mood = newMood
+        applyMood(newMood)
     }
 
     private func setTemporaryMood(_ newMood: KiwiMood, duration: TimeInterval, then finalMood: KiwiMood) {
         moodTimer?.invalidate()
-        mood = newMood
+        applyMood(newMood)
         moodTimer = Timer.scheduledTimer(withTimeInterval: duration, repeats: false) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 let fallback = self.isKeepingAwake && finalMood == .idle ? .working : finalMood
-                self.mood = self.baseMood() == .idle ? fallback : self.baseMood()
+                self.applyMood(self.baseMood() == .idle ? fallback : self.baseMood())
             }
         }
     }

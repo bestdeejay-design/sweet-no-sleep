@@ -222,7 +222,11 @@ private struct MenuBarDashboard: View {
 
     private var companionCard: some View {
         HStack(spacing: 15) {
-            KiwiPetView(model: model, sizeOverride: 104, allowsDragging: false, tracksCursor: false)
+            // The thumbnail is a fixed box inside a hand-tuned card: it keeps
+            // the pet the size it has always had (a `68 + 48 = 116` pt frame,
+            // which is the box) and crops the widest aura edge, instead of
+            // growing the card by the aura ring.
+            KiwiPetView(model: model, sizeOverride: 68, allowsDragging: false, tracksCursor: false, auraCanvasScale: 1)
                 .frame(width: 116, height: 116)
                 .background(
                     RadialGradient(

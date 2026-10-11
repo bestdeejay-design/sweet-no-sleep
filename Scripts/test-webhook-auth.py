@@ -11,6 +11,7 @@ from webhook_http_policy import (  # noqa: E402
     action_for,
     authorize,
     parse_session,
+    sanitize_reason,
 )
 
 TOKEN = "a" * 32
@@ -62,6 +63,16 @@ def main() -> int:
     life.stop()
     life.start()
     check(life.running, "rapid toggle ends running")
+
+    # Sanitization tests (B-26)
+    long_reason = "a" * 500
+    check(sanitize_reason(long_reason) == "a" * 200, "500-char reason capped at 200")
+    check(sanitize_reason("   \n\t  ") is None, "whitespace-only reason absent")
+    check(sanitize_reason("") is None, "empty reason absent")
+    check(sanitize_reason(None) is None, "nil reason absent")
+    check(sanitize_reason("Approve deploy?") == "Approve deploy?", "normal reason unchanged")
+    check(sanitize_reason("Approve\ndeploy?\r\n") == "Approve deploy?", "control chars flattened and trimmed")
+
     print("Webhook auth/lifecycle tests passed.")
     return 0
 
