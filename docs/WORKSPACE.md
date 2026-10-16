@@ -15,7 +15,7 @@ project:
 
 | Path | Ref | What it was |
 | --- | --- | --- |
-| `builds/pr9/` | `tmp-build` | Agent integrations F0–F5 (issue #11). Superseded by `main`; pushed as `origin/tmp-build`. |
+| `builds/pr9/` | `tmp-build` | Agent integrations F0–F5 (issue #11). Superseded by `main`; archived as the tag `archive/tmp-build`. |
 | `builds/pr16/` | `pr-16-acceptance` | PR #16: Kot-Arbuz sprite pack + dashboard overflow fix. Patch-equivalent work is in `main`. |
 | `builds/pr22/` | detached HEAD `a3cd424` | PR #22: layered sprite rig and the three Kot-Arbuz skins. The commit is an ancestor of `main`. |
 

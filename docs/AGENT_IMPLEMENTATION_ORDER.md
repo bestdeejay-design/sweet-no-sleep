@@ -10,7 +10,7 @@
 Implement the **AI Agent Integrations v2** feature set in the `sweet-no-sleep` macOS app, exactly as specified by the frozen artifacts below. You are the implementer. The maintainer (user) will hand this document to you by URL only — treat it as the complete brief.
 
 - Repository: `bestdeejay-design/sweet-no-sleep`
-- Current implementation branch (your working base): `arena/22936f10-sweet-no-sleep`
+- Current implementation branch (your working base): `main` (the old arena branch is archived as `archive/arena/22936f10-sweet-no-sleep`)
 - Open PR: **#9** — add the new implementation commits to this branch/PR.
 - Reference issue: **#11** — the plan and consultation live there.
 
@@ -57,7 +57,7 @@ Implement **F0–F5** from the plan, honoring every audit decision:
 
 ## 6. Commit & PR Protocol
 
-- Work directly on `arena/22936f10-sweet-no-sleep` (the PR #9 branch). Commit in small logical steps with Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `chore:`).
+- Work directly on `main` (the old arena branch is archived as `archive/arena/22936f10-sweet-no-sleep`) (the PR #9 branch). Commit in small logical steps with Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `chore:`).
 - Push to origin. Update PR #9 with a description listing: files changed, per-feature notes, DoD results, and any conservative-reading decisions you made.
 - **Never merge the PR. Never force-push.** The maintainer merges after Mac acceptance.
 
